@@ -38,6 +38,21 @@
     padding: 16px;
     margin-bottom: 14px;
     box-shadow: 0 10px 25px rgba(80,60,230,0.35);
+    position: relative;
+  }
+  .bell-btn {
+    width: 38px; height: 38px; border-radius: 50%;
+    background: rgba(0,0,0,0.25);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; position: relative; flex-shrink: 0;
+    cursor: pointer;
+  }
+  .bell-btn .red-dot {
+    position: absolute; top: 2px; right: 2px;
+    width: 10px; height: 10px; border-radius: 50%;
+    background: #ff4757; border: 2px solid #1e1147;
+    display: none;
+    animation: pulseGlow 1.2s ease infinite;
   }
   .avatar {
     width: 52px; height: 52px; border-radius: 50%;
@@ -180,6 +195,39 @@
     animation: spin 0.6s linear infinite; margin-right: 6px; vertical-align: middle;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ---------- BROADCAST FULL PAGE ---------- */
+  #broadcastPage {
+    position: fixed; inset: 0; background: var(--tg-theme-bg-color, #0f1115);
+    display: none; flex-direction: column; z-index: 500;
+  }
+  .broadcast-header {
+    display: flex; align-items: center; gap: 12px; padding: 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  .broadcast-header button { width: auto; margin: 0; padding: 8px 14px; box-shadow: none; background: rgba(255,255,255,0.08); }
+  .broadcast-body { flex: 1; overflow-y: auto; padding: 16px; }
+  .broadcast-body img { width: 100%; border-radius: 16px; margin-bottom: 12px; }
+  .comment-item {
+    background: rgba(255,255,255,0.05); border-radius: 12px; padding: 10px 12px; margin-bottom: 8px;
+  }
+  .comment-item .cu { font-size: 12px; font-weight: 700; color: #6f9dff; }
+  .comment-item .ct { font-size: 13px; margin-top: 2px; }
+  .comment-input-row { display: flex; gap: 8px; padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); border-top: 1px solid rgba(255,255,255,0.08); }
+  .comment-input-row input { margin-top: 0; }
+  .comment-input-row button { width: auto; margin-top: 0; padding: 10px 18px; }
+
+  /* ---------- PROFILE EXTRAS: gift + referral ---------- */
+  .list-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 4px; cursor: pointer;
+  }
+  .list-row .left { display: flex; align-items: center; gap: 10px; font-size: 14px; }
+  .divider { height: 1px; background: rgba(255,255,255,0.08); margin: 4px 0; }
+  .ref-history-item {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 13px;
+  }
 </style>
 </head>
 <body>
@@ -208,6 +256,9 @@
       <div class="header-username" id="headerUsername">@username</div>
     </div>
     <div class="coin-pill">🪙 <span id="coinCount">0</span></div>
+    <div class="bell-btn" onclick="openBroadcast()">
+      🔔<span class="red-dot" id="redDot"></span>
+    </div>
   </div>
 
   <div id="tab-earn" class="tab-content"></div>
@@ -249,6 +300,18 @@
     <div class="success-coins" id="successCoins" style="display:none"></div>
     <div class="success-sub" id="successSub"></div>
     <button onclick="closeSuccess()" style="margin-top:16px">Theek Hai</button>
+  </div>
+</div>
+
+<div id="broadcastPage">
+  <div class="broadcast-header">
+    <button onclick="closeBroadcast()">← Wapas</button>
+    <b>📢 Announcement</b>
+  </div>
+  <div class="broadcast-body" id="broadcastBody"></div>
+  <div class="comment-input-row">
+    <input id="commentInput" placeholder="Comment likho...">
+    <button onclick="postComment()">Bhejo</button>
   </div>
 </div>
 
@@ -333,6 +396,67 @@ async function init() {
 
   loadUser();
   loadTasks();
+  checkNotifications();
+}
+
+// ---------- BROADCAST / NOTIFICATIONS ----------
+let currentBroadcastId = null;
+
+async function checkNotifications() {
+  const status = await fetch('/api/notifications/status', { headers: apiHeaders() }).then(r => r.json());
+  document.getElementById('redDot').style.display = status.hasNew ? 'block' : 'none';
+}
+
+async function openBroadcast() {
+  document.getElementById('broadcastPage').style.display = 'flex';
+  const data = await fetch('/api/broadcast/latest', { headers: apiHeaders() }).then(r => r.json());
+  const body = document.getElementById('broadcastBody');
+
+  if (!data.broadcast) {
+    body.innerHTML = '<div class="card"><p class="hint">Abhi koi announcement nahi hai.</p></div>';
+    return;
+  }
+
+  currentBroadcastId = data.broadcast.id;
+  const photoHtml = data.broadcast.photo_file_id
+    ? `<img src="/api/broadcast-photo/${data.broadcast.id}">` : '';
+
+  const commentsHtml = data.comments.map(c => `
+    <div class="comment-item">
+      <div class="cu">${c.username}</div>
+      <div class="ct">${c.comment}</div>
+    </div>
+  `).join('') || '<p class="hint">Sabse pehle comment karo!</p>';
+
+  body.innerHTML = `
+    ${photoHtml}
+    <div class="card">${data.broadcast.message || ''}</div>
+    <h4>💬 Comments</h4>
+    ${commentsHtml}
+  `;
+
+  await fetch('/api/broadcast/mark-seen', {
+    method: 'POST', headers: apiHeaders(),
+    body: JSON.stringify({ broadcast_id: data.broadcast.id })
+  });
+  document.getElementById('redDot').style.display = 'none';
+}
+
+function closeBroadcast() {
+  document.getElementById('broadcastPage').style.display = 'none';
+}
+
+async function postComment() {
+  const input = document.getElementById('commentInput');
+  const comment = input.value.trim();
+  if (!comment || !currentBroadcastId) return;
+
+  await fetch(`/api/broadcast/${currentBroadcastId}/comment`, {
+    method: 'POST', headers: apiHeaders(),
+    body: JSON.stringify({ comment })
+  });
+  input.value = '';
+  openBroadcast(); // refresh comments
 }
 
 function switchTab(tab) {
@@ -444,6 +568,7 @@ async function createTask() {
 
 async function loadProfile() {
   const stats = await fetch('/api/profile', { headers: apiHeaders() }).then(r => r.json());
+  const ref = await fetch('/api/referrals', { headers: apiHeaders() }).then(r => r.json());
   const el = document.getElementById('tab-profile');
 
   const myTasksHtml = stats.my_tasks.length === 0
@@ -456,6 +581,15 @@ async function loadProfile() {
           </div>
           <div class="progress-bar"><div class="progress-fill" style="width:${(t.current_count/t.target_members)*100}%"></div></div>
           <div style="font-size:12px; opacity:0.7; margin-top:4px">${t.current_count}/${t.target_members} members mile</div>
+        </div>
+      `).join('');
+
+  const refHistoryHtml = ref.history.length === 0
+    ? '<p class="hint">Abhi tak koi refer nahi hua. Link share karo aur kamana shuru karo!</p>'
+    : ref.history.map(r => `
+        <div class="ref-history-item">
+          <span>@${r.username || 'user'}</span>
+          <b style="color:#35d07f">+${r.commission_earned} 🪙</b>
         </div>
       `).join('');
 
@@ -475,13 +609,77 @@ async function loadProfile() {
       <div class="stat-box"><div class="val">📋 ${stats.my_tasks.length}</div><div class="lbl">Tasks Banaye</div></div>
     </div>
 
+    <div class="card">
+      <div class="list-row" onclick="toggleSection('giftSection')">
+        <div class="left">🎁 <span>Gift Code Claim Karo</span></div>
+        <span>›</span>
+      </div>
+      <div id="giftSection" style="display:none; margin-top:8px">
+        <input id="giftCodeInput" placeholder="Gift code daalo">
+        <button class="success-btn" onclick="claimGift()" id="giftClaimBtn">Claim Karo</button>
+        <div id="giftMsg"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="list-row" onclick="toggleSection('refSection')">
+        <div class="left">🔗 <span>Refer & Earn</span></div>
+        <span>›</span>
+      </div>
+      <div id="refSection" style="display:none; margin-top:8px">
+        <p class="hint">Har naye referral pe <b>250 coins</b> milte hain + unki har earning ka <b>2% commission</b>, hamesha ke liye!</p>
+        <input id="refLinkBox" value="${ref.link}" readonly>
+        <button onclick="shareRefLink('${ref.link}')">📤 Link Share Karo</button>
+        <div class="stat-grid" style="margin-top:12px">
+          <div class="stat-box"><div class="val">👥 ${ref.count}</div><div class="lbl">Total Referrals</div></div>
+          <div class="stat-box"><div class="val">💰 ${ref.totalEarned}</div><div class="lbl">Commission Kamaya</div></div>
+        </div>
+        <h4 style="margin-top:14px">📜 History</h4>
+        ${refHistoryHtml}
+      </div>
+    </div>
+
     <h4 style="margin-top:16px">📂 Aapke Bane Hue Tasks</h4>
     ${myTasksHtml}
   `;
+}
+
+function toggleSection(id) {
+  const el = document.getElementById(id);
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+function shareRefLink(link) {
+  tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent('Join karo aur coins kamao! 🚀')}`);
+}
+
+async function claimGift() {
+  const btn = document.getElementById('giftClaimBtn');
+  const code = document.getElementById('giftCodeInput').value.trim();
+  const msgEl = document.getElementById('giftMsg');
+  if (!code) return;
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Check ho raha hai...';
+
+  const res = await fetch('/api/gift/claim', {
+    method: 'POST', headers: apiHeaders(),
+    body: JSON.stringify({ code })
+  }).then(r => r.json());
+
+  btn.disabled = false;
+  btn.innerText = 'Claim Karo';
+
+  if (res.error) {
+    msgEl.innerHTML = `<div class="msg error">❌ ${res.error}</div>`;
+  } else {
+    document.getElementById('giftCodeInput').value = '';
+    showSuccess('Gift Claim Ho Gaya! 🎁', 'Coins aapke wallet me add ho gaye', res.amount);
+    loadUser();
+  }
 }
 
 init();
 </script>
 </body>
 </html>
-
