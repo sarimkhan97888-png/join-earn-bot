@@ -6,57 +6,180 @@
 <title>Join & Earn</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
-  * { box-sizing: border-box; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   body {
-    font-family: -apple-system, sans-serif;
-    background: var(--tg-theme-bg-color, #fff);
-    color: var(--tg-theme-text-color, #000);
-    margin: 0; padding: 16px 16px 80px 16px;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--tg-theme-bg-color, #0f1115);
+    color: var(--tg-theme-text-color, #fff);
+    margin: 0; padding: 14px 14px 90px 14px;
+    min-height: 100vh;
   }
-  .card {
-    background: var(--tg-theme-secondary-bg-color, #f4f4f5);
-    border-radius: 12px; padding: 14px; margin-bottom: 12px;
-  }
-  .coins { font-size: 22px; font-weight: bold; text-align: center; }
-  button {
-    background: var(--tg-theme-button-color, #2481cc);
-    color: var(--tg-theme-button-text-color, #fff);
-    border: none; border-radius: 8px; padding: 10px 16px;
-    font-size: 14px; width: 100%; margin-top: 8px; cursor: pointer;
-  }
-  input {
-    width: 100%; padding: 8px; margin-top: 6px; border-radius: 6px;
-    border: 1px solid #ccc;
-  }
-  .msg { padding: 10px; border-radius: 8px; margin-bottom: 10px; font-size: 13px; }
-  .msg.error { background: #fdecea; color: #b00020; }
-  .msg.success { background: #e6f4ea; color: #1e7e34; }
-  .progress-bar { background: #ddd; border-radius: 6px; height: 8px; margin-top: 6px; overflow: hidden; }
-  .progress-fill { background: #2ecc71; height: 100%; }
-  .badge { font-size: 11px; padding: 2px 8px; border-radius: 10px; color: #fff; }
-  .badge.active { background: #f39c12; }
-  .badge.completed { background: #2ecc71; }
-  .badge.pending { background: #f39c12; }
-  .badge.approved { background: #2ecc71; }
-  .badge.rejected { background: #e74c3c; }
-  .stat-row { display: flex; justify-content: space-between; margin: 6px 0; }
 
+  /* ---------- 3D CARD STYLE ---------- */
+  .card {
+    background: linear-gradient(145deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 18px;
+    padding: 16px;
+    margin-bottom: 14px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.05);
+    animation: fadeSlideUp 0.35s ease;
+  }
+  @keyframes fadeSlideUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ---------- HEADER ---------- */
+  .header-card {
+    display: flex; align-items: center; gap: 12px;
+    background: linear-gradient(135deg, #3b6cf6, #6f3bf6);
+    border-radius: 20px;
+    padding: 16px;
+    margin-bottom: 14px;
+    box-shadow: 0 10px 25px rgba(80,60,230,0.35);
+  }
+  .avatar {
+    width: 52px; height: 52px; border-radius: 50%;
+    background: rgba(255,255,255,0.25);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; font-weight: bold; color: #fff;
+    border: 2px solid rgba(255,255,255,0.5);
+    overflow: hidden; flex-shrink: 0;
+  }
+  .avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .header-info { flex: 1; }
+  .header-name { font-weight: 700; font-size: 16px; }
+  .header-username { font-size: 12px; opacity: 0.85; }
+  .coin-pill {
+    background: rgba(0,0,0,0.25);
+    border-radius: 30px; padding: 8px 14px;
+    font-weight: 700; font-size: 15px;
+    display: flex; align-items: center; gap: 6px;
+    white-space: nowrap;
+  }
+
+  /* ---------- 3D BUTTONS ---------- */
+  button {
+    background: linear-gradient(145deg, #4f7dfb, #2f5be0);
+    color: #fff; border: none; border-radius: 12px;
+    padding: 12px 16px; font-size: 14px; font-weight: 600;
+    width: 100%; margin-top: 8px; cursor: pointer;
+    box-shadow: 0 5px 0 #1e3fa3, 0 8px 15px rgba(47,91,224,0.35);
+    transition: transform 0.08s ease, box-shadow 0.08s ease;
+  }
+  button:active {
+    transform: translateY(4px);
+    box-shadow: 0 1px 0 #1e3fa3, 0 3px 8px rgba(47,91,224,0.35);
+  }
+  button.secondary {
+    background: linear-gradient(145deg, #2a2f3a, #1b1e26);
+    box-shadow: 0 5px 0 #0c0d10, 0 8px 15px rgba(0,0,0,0.35);
+  }
+  button.secondary:active { box-shadow: 0 1px 0 #0c0d10; }
+  button.success-btn {
+    background: linear-gradient(145deg, #35d07f, #1fa763);
+    box-shadow: 0 5px 0 #12703f, 0 8px 15px rgba(31,167,99,0.35);
+  }
+  button.success-btn:active { box-shadow: 0 1px 0 #12703f; }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  input {
+    width: 100%; padding: 12px; margin-top: 8px; border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.15);
+    background: rgba(255,255,255,0.05); color: #fff; font-size: 14px;
+  }
+  input::placeholder { color: rgba(255,255,255,0.4); }
+
+  h4 { margin: 4px 0 10px 0; font-size: 15px; }
+  p.hint { font-size: 12.5px; opacity: 0.75; line-height: 1.5; margin: 4px 0; }
+
+  .msg { padding: 12px; border-radius: 12px; margin: 10px 0; font-size: 13px; animation: fadeSlideUp 0.3s ease; }
+  .msg.error { background: rgba(231,76,60,0.15); color: #ff8a80; border: 1px solid rgba(231,76,60,0.3); }
+  .msg.success { background: rgba(46,204,113,0.15); color: #6dffb0; border: 1px solid rgba(46,204,113,0.3); }
+
+  .progress-bar { background: rgba(255,255,255,0.1); border-radius: 8px; height: 10px; margin-top: 8px; overflow: hidden; }
+  .progress-fill {
+    background: linear-gradient(90deg, #35d07f, #1fa763);
+    height: 100%; border-radius: 8px;
+    transition: width 0.6s ease;
+  }
+
+  .badge { font-size: 11px; padding: 4px 10px; border-radius: 20px; color: #fff; font-weight: 600; }
+  .badge.active { background: linear-gradient(145deg,#f7b733,#e0910f); }
+  .badge.completed { background: linear-gradient(145deg,#35d07f,#1fa763); }
+
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .stat-box {
+    background: rgba(255,255,255,0.05); border-radius: 14px; padding: 12px;
+    text-align: center; border: 1px solid rgba(255,255,255,0.08);
+  }
+  .stat-box .val { font-size: 20px; font-weight: 700; }
+  .stat-box .lbl { font-size: 11px; opacity: 0.7; margin-top: 2px; }
+
+  /* ---------- BOTTOM NAV ---------- */
   .bottom-nav {
     position: fixed; bottom: 0; left: 0; right: 0;
-    display: flex;
-    background: var(--tg-theme-secondary-bg-color, #f4f4f5);
-    border-top: 1px solid #ccc;
-    padding: 6px 0;
+    display: flex; gap: 6px;
+    background: rgba(15,17,21,0.95);
+    backdrop-filter: blur(10px);
+    border-top: 1px solid rgba(255,255,255,0.08);
+    padding: 10px 10px calc(10px + env(safe-area-inset-bottom));
+    z-index: 100;
   }
   .bottom-nav button {
-    flex: 1; margin: 0 4px; background: transparent; color: var(--tg-theme-text-color, #000);
-    font-size: 12px; padding: 8px 2px;
+    flex: 1; margin: 0; background: transparent; box-shadow: none;
+    color: rgba(255,255,255,0.55); font-size: 11px; padding: 8px 2px;
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
   }
+  .bottom-nav button .icon { font-size: 18px; }
   .bottom-nav button.active {
-    background: var(--tg-theme-button-color, #2481cc);
-    color: var(--tg-theme-button-text-color, #fff);
-    border-radius: 8px;
+    background: linear-gradient(145deg, #4f7dfb, #2f5be0);
+    color: #fff; border-radius: 14px;
+    box-shadow: 0 4px 12px rgba(47,91,224,0.45);
   }
+  .bottom-nav button:active { transform: scale(0.94); }
+
+  /* ---------- SUCCESS OVERLAY ---------- */
+  #successOverlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+    display: none; align-items: center; justify-content: center; z-index: 999;
+  }
+  .success-box {
+    background: linear-gradient(160deg, #1b1e26, #0f1115);
+    border-radius: 22px; padding: 30px 26px; text-align: center;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    border: 1px solid rgba(255,255,255,0.08);
+    animation: popIn 0.35s cubic-bezier(.34,1.56,.64,1);
+    max-width: 280px;
+  }
+  @keyframes popIn {
+    from { opacity: 0; transform: scale(0.7); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  .check-circle {
+    width: 70px; height: 70px; border-radius: 50%;
+    background: linear-gradient(145deg, #35d07f, #1fa763);
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 16px auto;
+    box-shadow: 0 10px 25px rgba(31,167,99,0.5);
+    animation: pulseGlow 1.4s ease infinite;
+  }
+  @keyframes pulseGlow {
+    0%,100% { box-shadow: 0 10px 25px rgba(31,167,99,0.5); }
+    50% { box-shadow: 0 10px 40px rgba(31,167,99,0.85); }
+  }
+  .check-circle svg { width: 34px; height: 34px; }
+  .success-title { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+  .success-sub { font-size: 13px; opacity: 0.75; line-height: 1.5; }
+  .success-coins { font-size: 24px; font-weight: 800; color: #35d07f; margin: 10px 0; }
+
+  .spinner {
+    width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: #fff; border-radius: 50%; display: inline-block;
+    animation: spin 0.6s linear infinite; margin-right: 6px; vertical-align: middle;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
@@ -64,8 +187,8 @@
 <div id="blockScreen" style="display:none">
   <div class="card">
     <h3>⚠️ Pehle Join Karo</h3>
-    <p>App use karne ke liye ye dono join karna zaroori hai:</p>
-    <div id="joinStatus"></div>
+    <p class="hint">App use karne ke liye ye dono join karna zaroori hai. Join karne ke baad neeche button dabao.</p>
+    <div id="joinStatus" style="margin:12px 0; font-size:14px"></div>
     <button onclick="location.reload()">✅ Maine Join Kar Liya, Check Karo</button>
   </div>
 </div>
@@ -73,57 +196,60 @@
 <div id="deviceBlockScreen" style="display:none">
   <div class="card">
     <h3>🚫 Device Block</h3>
-    <p>Ye device pehle se kisi doosre account ke saath register hai. Ek device se sirf ek hi account allowed hai.</p>
+    <p class="hint">Ye device pehle se kisi doosre account ke saath register hai. Security ke liye ek device se sirf ek hi account allowed hai.</p>
   </div>
 </div>
 
 <div id="mainScreen" style="display:none">
-  <div class="card">
-    <div class="coins">🪙 <span id="coinCount">0</span> Coins</div>
+  <div class="header-card">
+    <div class="avatar" id="avatarBox">👤</div>
+    <div class="header-info">
+      <div class="header-name" id="headerName">User</div>
+      <div class="header-username" id="headerUsername">@username</div>
+    </div>
+    <div class="coin-pill">🪙 <span id="coinCount">0</span></div>
   </div>
 
-  <!-- TAB 1: EARN -->
   <div id="tab-earn" class="tab-content"></div>
 
-  <!-- TAB 2: ADD TASK -->
   <div id="tab-addtask" class="tab-content" style="display:none">
     <div class="card">
-      <h4>Step 1: Bot ko Admin Banao</h4>
-      <p style="font-size:13px">Apne group/channel me is bot ko admin banao aur "Invite Users / Add Members" permission ON karo.</p>
-      <p style="font-size:13px">Fir yahan uska <b>@username</b> daalo verify karne ke liye:</p>
+      <h4>🛠️ Step 1 — Bot Ko Admin Banao</h4>
+      <p class="hint">Apne group/channel me is bot ko <b>Administrator</b> banao aur "Invite Users / Add Members" permission zaroor ON karo. Bina isके verification fail ho jayega.</p>
+      <p class="hint">Fir yahan uska <b>@username</b> daalo:</p>
       <input id="chatUsername" placeholder="@yourchannel">
-      <button onclick="verifyAdmin()">🔍 Verify Karo</button>
+      <button onclick="verifyAdmin()" id="verifyAdminBtn">🔍 Verify Karo</button>
       <div id="adminMsg"></div>
     </div>
 
     <div id="createFormCard" class="card" style="display:none">
-      <h4>Step 2: Kitne Members Chahiye?</h4>
+      <h4>🎯 Step 2 — Target Set Karo</h4>
+      <p class="hint">Kitne naye members chahiye is task ke through?</p>
       <input id="targetMembers" type="number" placeholder="e.g. 5">
-      <button onclick="createTask()">🚀 Task Banao</button>
+      <button onclick="createTask()" class="success-btn" id="createTaskBtn">🚀 Task Launch Karo</button>
       <div id="createMsg"></div>
     </div>
   </div>
 
-  <!-- TAB 3: PROFILE -->
   <div id="tab-profile" class="tab-content" style="display:none"></div>
-
-  <!-- TAB 4: WITHDRAW -->
-  <div id="tab-withdraw" class="tab-content" style="display:none">
-    <div class="card">
-      <h4>💸 Withdraw Karo</h4>
-      <input id="withdrawAmount" type="number" placeholder="Kitne coins withdraw karne hain">
-      <button onclick="requestWithdraw()">Request Bhejo</button>
-      <div id="withdrawMsg"></div>
-    </div>
-    <div id="withdrawHistory"></div>
-  </div>
 </div>
 
 <div id="bottomNav" class="bottom-nav" style="display:none">
-  <button id="nav-earn" class="active" onclick="switchTab('earn')">💰 Earn</button>
-  <button id="nav-addtask" onclick="switchTab('addtask')">➕ Add Task</button>
-  <button id="nav-profile" onclick="switchTab('profile')">👤 Profile</button>
-  <button id="nav-withdraw" onclick="switchTab('withdraw')">💸 Withdraw</button>
+  <button id="nav-earn" class="active" onclick="switchTab('earn')"><span class="icon">💰</span>Earn</button>
+  <button id="nav-addtask" onclick="switchTab('addtask')"><span class="icon">➕</span>Add Task</button>
+  <button id="nav-profile" onclick="switchTab('profile')"><span class="icon">👤</span>Profile</button>
+</div>
+
+<div id="successOverlay">
+  <div class="success-box">
+    <div class="check-circle">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <div class="success-title" id="successTitle">Successful!</div>
+    <div class="success-coins" id="successCoins" style="display:none"></div>
+    <div class="success-sub" id="successSub"></div>
+    <button onclick="closeSuccess()" style="margin-top:16px">Theek Hai</button>
+  </div>
 </div>
 
 <script>
@@ -140,18 +266,40 @@ function apiHeaders() {
   };
 }
 
-// ---------- Device ID: har phone/browser ke liye ek fixed random ID ----------
+// ---------- Device Fingerprint (cache clear hone pe bhi zyada tar same rehta hai) ----------
 function getDeviceId() {
-  let id = localStorage.getItem('device_id');
-  if (!id) {
-    id = 'dev_' + Date.now() + '_' + Math.random().toString(36).substring(2, 15);
-    localStorage.setItem('device_id', id);
+  const raw = [
+    navigator.userAgent, navigator.language,
+    screen.width + 'x' + screen.height, screen.colorDepth,
+    navigator.hardwareConcurrency || '', navigator.platform,
+    tg.platform, new Date().getTimezoneOffset()
+  ].join('|');
+
+  let hash = 0;
+  for (let i = 0; i < raw.length; i++) {
+    hash = ((hash << 5) - hash) + raw.charCodeAt(i);
+    hash |= 0;
   }
-  return id;
+  return 'fp_' + Math.abs(hash);
+}
+
+function showSuccess(title, sub, coins) {
+  document.getElementById('successTitle').innerText = title;
+  document.getElementById('successSub').innerText = sub || '';
+  const coinsEl = document.getElementById('successCoins');
+  if (coins) {
+    coinsEl.style.display = 'block';
+    coinsEl.innerText = `+${coins} 🪙`;
+  } else {
+    coinsEl.style.display = 'none';
+  }
+  document.getElementById('successOverlay').style.display = 'flex';
+}
+function closeSuccess() {
+  document.getElementById('successOverlay').style.display = 'none';
 }
 
 async function init() {
-  // Step 1: Device lock check
   const deviceId = getDeviceId();
   const deviceRes = await fetch('/api/device/check', {
     method: 'POST', headers: apiHeaders(),
@@ -163,7 +311,6 @@ async function init() {
     return;
   }
 
-  // Step 2: Mandatory join check
   const check = await fetch('/api/check-membership', { headers: apiHeaders() }).then(r => r.json());
   if (!check.allOk) {
     document.getElementById('blockScreen').style.display = 'block';
@@ -172,20 +319,28 @@ async function init() {
     return;
   }
 
-  // Step 3: Sab theek — main app dikhao
   document.getElementById('mainScreen').style.display = 'block';
   document.getElementById('bottomNav').style.display = 'flex';
+
+  const u = tg.initDataUnsafe.user || {};
+  document.getElementById('headerName').innerText = u.first_name || 'User';
+  document.getElementById('headerUsername').innerText = u.username ? '@' + u.username : '';
+  if (u.photo_url) {
+    document.getElementById('avatarBox').innerHTML = `<img src="${u.photo_url}">`;
+  } else {
+    document.getElementById('avatarBox').innerText = (u.first_name || 'U')[0].toUpperCase();
+  }
+
   loadUser();
   loadTasks();
 }
 
 function switchTab(tab) {
-  ['earn', 'addtask', 'profile', 'withdraw'].forEach(t => {
+  ['earn', 'addtask', 'profile'].forEach(t => {
     document.getElementById(`tab-${t}`).style.display = (t === tab) ? 'block' : 'none';
     document.getElementById(`nav-${t}`).classList.toggle('active', t === tab);
   });
   if (tab === 'profile') loadProfile();
-  if (tab === 'withdraw') loadWithdrawals();
 }
 
 async function loadUser() {
@@ -197,140 +352,136 @@ async function loadTasks() {
   const tasks = await fetch('/api/tasks', { headers: apiHeaders() }).then(r => r.json());
   const el = document.getElementById('tab-earn');
   if (tasks.length === 0) {
-    el.innerHTML = '<div class="card">Abhi koi task available nahi hai.</div>';
+    el.innerHTML = '<div class="card"><h4>😴 Abhi Kuch Nahi</h4><p class="hint">Koi task available nahi hai — thodi der me wapas check karo, naye tasks aate rehte hain.</p></div>';
     return;
   }
   el.innerHTML = tasks.map(t => `
     <div class="card">
-      <b>${t.chat_title || t.chat_username}</b>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px">
+        <b style="font-size:15px">${t.chat_title || t.chat_username}</b>
+        <span class="badge active">⏳ Active</span>
+      </div>
+      <p class="hint">Join karke verify karo aur turant 100 coins pao</p>
       <div class="progress-bar"><div class="progress-fill" style="width:${(t.current_count/t.target_members)*100}%"></div></div>
-      <div style="font-size:12px">${t.current_count}/${t.target_members} members</div>
-      <button onclick="tg.openTelegramLink('https://t.me/${(t.chat_username||'').replace('@','')}')">🔗 Join Karo</button>
-      <button onclick="verifyTask(${t.id})">✅ Verify Join</button>
+      <div style="font-size:12px; opacity:0.7; margin-top:4px">${t.current_count}/${t.target_members} members</div>
+      <button class="secondary" onclick="tg.openTelegramLink('https://t.me/${(t.chat_username||'').replace('@','')}')">🔗 Pehle Join Karo</button>
+      <button class="success-btn" onclick="verifyTask(${t.id}, this)">✅ Verify Karke Coins Pao</button>
       <div id="msg-${t.id}"></div>
     </div>
   `).join('');
 }
 
-async function verifyTask(taskId) {
+async function verifyTask(taskId, btn) {
+  btn.disabled = true;
+  const originalText = btn.innerText;
+  btn.innerHTML = '<span class="spinner"></span> Check ho raha hai...';
+
   const res = await fetch(`/api/tasks/${taskId}/verify`, { method: 'POST', headers: apiHeaders() }).then(r => r.json());
   const msgEl = document.getElementById(`msg-${taskId}`);
+  btn.disabled = false;
+  btn.innerText = originalText;
+
   if (res.error) {
-    msgEl.innerHTML = `<div class="msg error">${res.error}</div>`;
+    msgEl.innerHTML = `<div class="msg error">❌ ${res.error}</div>`;
   } else {
-    msgEl.innerHTML = `<div class="msg success">🎉 +${res.coinsEarned} coins mile!</div>`;
+    showSuccess('Successful! 🎉', 'Coins aapke wallet me add ho gaye hain', res.coinsEarned);
     loadUser();
     loadTasks();
   }
 }
 
 async function verifyAdmin() {
+  const btn = document.getElementById('verifyAdminBtn');
   const chatIdentifier = document.getElementById('chatUsername').value.trim();
+  if (!chatIdentifier) return;
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Verify ho raha hai...';
+
   const res = await fetch('/api/verify-admin', {
     method: 'POST', headers: apiHeaders(),
     body: JSON.stringify({ chatIdentifier })
   }).then(r => r.json());
 
+  btn.disabled = false;
+  btn.innerText = '🔍 Verify Karo';
+
   const msgEl = document.getElementById('adminMsg');
   if (res.error) {
-    msgEl.innerHTML = `<div class="msg error">${res.error}</div>`;
+    msgEl.innerHTML = `<div class="msg error">❌ ${res.error}</div>`;
     document.getElementById('createFormCard').style.display = 'none';
   } else {
-    msgEl.innerHTML = `<div class="msg success">✅ Verified: ${res.title}</div>`;
+    msgEl.innerHTML = `<div class="msg success">✅ Verified: <b>${res.title}</b></div>`;
     verifiedChat = { chat_id: res.chat_id, chat_username: chatIdentifier, chat_title: res.title };
     document.getElementById('createFormCard').style.display = 'block';
   }
 }
 
 async function createTask() {
+  const btn = document.getElementById('createTaskBtn');
   const target = parseInt(document.getElementById('targetMembers').value);
   if (!verifiedChat || !target) return;
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Ban raha hai...';
 
   const res = await fetch('/api/tasks/create', {
     method: 'POST', headers: apiHeaders(),
     body: JSON.stringify({ ...verifiedChat, target_members: target })
   }).then(r => r.json());
 
+  btn.disabled = false;
+  btn.innerText = '🚀 Task Launch Karo';
+
   const msgEl = document.getElementById('createMsg');
   if (res.error) {
-    msgEl.innerHTML = `<div class="msg error">${res.error}</div>`;
+    msgEl.innerHTML = `<div class="msg error">❌ ${res.error}</div>`;
   } else {
-    msgEl.innerHTML = `<div class="msg success">✅ Task ban gaya! ${res.costPaid} coins kate.</div>`;
+    showSuccess('Task Live Ho Gaya! 🚀', `${res.costPaid} coins kate — ab members aana shuru honge`);
     loadUser();
   }
 }
 
-// ---------- PROFILE TAB ----------
 async function loadProfile() {
   const stats = await fetch('/api/profile', { headers: apiHeaders() }).then(r => r.json());
   const el = document.getElementById('tab-profile');
 
   const myTasksHtml = stats.my_tasks.length === 0
-    ? '<div class="card">Aapne abhi tak koi task nahi banaya.</div>'
+    ? '<div class="card"><p class="hint">Aapne abhi tak koi task nahi banaya. "Add Task" tab me jaake pehla task banao.</p></div>'
     : stats.my_tasks.map(t => `
         <div class="card">
           <div style="display:flex; justify-content:space-between; align-items:center">
-            <b>${t.chat_title || t.chat_username}</b>
+            <b style="font-size:14px">${t.chat_title || t.chat_username}</b>
             <span class="badge ${t.status}">${t.status === 'completed' ? '✅ Complete' : '⏳ Active'}</span>
           </div>
           <div class="progress-bar"><div class="progress-fill" style="width:${(t.current_count/t.target_members)*100}%"></div></div>
-          <div style="font-size:12px">${t.current_count}/${t.target_members} members mile</div>
+          <div style="font-size:12px; opacity:0.7; margin-top:4px">${t.current_count}/${t.target_members} members mile</div>
         </div>
       `).join('');
 
   el.innerHTML = `
-    <div class="card">
-      <div class="stat-row"><span>🪙 Total Coins</span><b>${stats.coins}</b></div>
-      <div class="stat-row"><span>✅ Tasks Complete Kiye</span><b>${stats.tasks_completed}</b></div>
-      <div class="stat-row"><span>💰 Total Kamaye</span><b>${stats.total_earned}</b></div>
+    <div class="card" style="text-align:center">
+      <div class="avatar" style="margin:0 auto 10px auto; width:64px; height:64px; font-size:26px">
+        ${stats.photo_url ? `<img src="${stats.photo_url}">` : (stats.first_name || 'U')[0].toUpperCase()}
+      </div>
+      <div style="font-weight:700; font-size:16px">${stats.first_name || 'User'}</div>
+      <div style="opacity:0.6; font-size:13px">${stats.username ? '@' + stats.username : 'username nahi hai'}</div>
     </div>
-    <h4>Aapke Bane Hue Tasks</h4>
+
+    <div class="stat-grid">
+      <div class="stat-box"><div class="val">🪙 ${stats.coins}</div><div class="lbl">Current Coins</div></div>
+      <div class="stat-box"><div class="val">✅ ${stats.tasks_completed}</div><div class="lbl">Tasks Complete</div></div>
+      <div class="stat-box"><div class="val">💰 ${stats.total_earned}</div><div class="lbl">Total Kamaye</div></div>
+      <div class="stat-box"><div class="val">📋 ${stats.my_tasks.length}</div><div class="lbl">Tasks Banaye</div></div>
+    </div>
+
+    <h4 style="margin-top:16px">📂 Aapke Bane Hue Tasks</h4>
     ${myTasksHtml}
   `;
-}
-
-// ---------- WITHDRAW TAB ----------
-async function requestWithdraw() {
-  const amount = parseInt(document.getElementById('withdrawAmount').value);
-  const msgEl = document.getElementById('withdrawMsg');
-  if (!amount || amount <= 0) {
-    msgEl.innerHTML = '<div class="msg error">Sahi amount daalo</div>';
-    return;
-  }
-  const res = await fetch('/api/withdraw', {
-    method: 'POST', headers: apiHeaders(),
-    body: JSON.stringify({ amount })
-  }).then(r => r.json());
-
-  if (res.error) {
-    msgEl.innerHTML = `<div class="msg error">${res.error}</div>`;
-  } else {
-    msgEl.innerHTML = `<div class="msg success">✅ Withdraw request bhej di gayi hai</div>`;
-    document.getElementById('withdrawAmount').value = '';
-    loadUser();
-    loadWithdrawals();
-  }
-}
-
-async function loadWithdrawals() {
-  const list = await fetch('/api/withdrawals', { headers: apiHeaders() }).then(r => r.json());
-  const el = document.getElementById('withdrawHistory');
-  if (list.length === 0) {
-    el.innerHTML = '<div class="card">Koi withdraw history nahi hai.</div>';
-    return;
-  }
-  el.innerHTML = '<h4>History</h4>' + list.map(w => `
-    <div class="card">
-      <div style="display:flex; justify-content:space-between">
-        <span>🪙 ${w.amount} coins</span>
-        <span class="badge ${w.status}">${w.status}</span>
-      </div>
-      <div style="font-size:11px; opacity:0.7">${new Date(w.created_at).toLocaleString()}</div>
-    </div>
-  `).join('');
 }
 
 init();
 </script>
 </body>
 </html>
+
