@@ -49,6 +49,11 @@
   </div>
 </div>
 
+<div id="debugCard" class="card" style="border:2px solid orange">
+  <b>🔧 Debug Info (isko mujhe screenshot karke bhejo)</b>
+  <div id="debugText" style="font-size:12px; margin-top:8px; word-break:break-all"></div>
+</div>
+
 <div id="mainScreen" style="display:none">
   <div class="card">
     <div class="coins">🪙 <span id="coinCount">0</span> Coins</div>
@@ -95,6 +100,15 @@ function apiHeaders() {
 }
 
 async function init() {
+  const debugInfo = {
+    initData_length: tg.initData ? tg.initData.length : 0,
+    platform: tg.platform,
+    version: tg.version,
+    url: window.location.href,
+    initDataUnsafe_user: tg.initDataUnsafe ? tg.initDataUnsafe.user : 'none'
+  };
+  document.getElementById('debugText').innerText = JSON.stringify(debugInfo, null, 2);
+
   const check = await fetch('/api/check-membership', { headers: apiHeaders() }).then(r => r.json());
   if (!check.allOk) {
     document.getElementById('blockScreen').style.display = 'block';
