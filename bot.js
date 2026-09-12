@@ -52,23 +52,14 @@ bot.start(async (ctx) => {
   }
 
   return ctx.reply(
-    '🎉 Welcome! Ab app open karo aur coins kamana shuru karo.',
-    Markup.keyboard([
-      Markup.button.webApp('🚀 Open App', process.env.WEBHOOK_URL + '/webapp')
-    ]).resize()
+    '🎉 Welcome! Neeche-left corner me jo Menu button (☰ icon) hai, usse app open karo aur coins kamana shuru karo.'
   );
 });
 
 bot.action('recheck_join', async (ctx) => {
   const check = await checkMandatoryJoin(ctx.from.id);
   if (check.allOk) {
-    await ctx.editMessageText('✅ Verified! Ab app open karo.');
-    return ctx.reply(
-      '🚀 App kholne ke liye neeche button dabao:',
-      Markup.keyboard([
-        Markup.button.webApp('🚀 Open App', process.env.WEBHOOK_URL + '/webapp')
-      ]).resize()
-    );
+    await ctx.editMessageText('✅ Verified! Neeche-left corner me Menu button (☰) dabao app kholne ke liye.');
   } else {
     return ctx.answerCbQuery('❌ Abhi bhi dono join nahi kiye. Pehle join karo.', { show_alert: true });
   }
