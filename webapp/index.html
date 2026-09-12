@@ -11,7 +11,7 @@
     font-family: -apple-system, sans-serif;
     background: var(--tg-theme-bg-color, #fff);
     color: var(--tg-theme-text-color, #000);
-    margin: 0; padding: 16px;
+    margin: 0; padding: 16px 16px 80px 16px;
   }
   .card {
     background: var(--tg-theme-secondary-bg-color, #f4f4f5);
@@ -24,9 +24,6 @@
     border: none; border-radius: 8px; padding: 10px 16px;
     font-size: 14px; width: 100%; margin-top: 8px; cursor: pointer;
   }
-  .tabs { display: flex; gap: 8px; margin-bottom: 16px; }
-  .tabs button { background: #ddd; color: #333; }
-  .tabs button.active { background: var(--tg-theme-button-color, #2481cc); color: #fff; }
   input {
     width: 100%; padding: 8px; margin-top: 6px; border-radius: 6px;
     border: 1px solid #ccc;
@@ -36,6 +33,30 @@
   .msg.success { background: #e6f4ea; color: #1e7e34; }
   .progress-bar { background: #ddd; border-radius: 6px; height: 8px; margin-top: 6px; overflow: hidden; }
   .progress-fill { background: #2ecc71; height: 100%; }
+  .badge { font-size: 11px; padding: 2px 8px; border-radius: 10px; color: #fff; }
+  .badge.active { background: #f39c12; }
+  .badge.completed { background: #2ecc71; }
+  .badge.pending { background: #f39c12; }
+  .badge.approved { background: #2ecc71; }
+  .badge.rejected { background: #e74c3c; }
+  .stat-row { display: flex; justify-content: space-between; margin: 6px 0; }
+
+  .bottom-nav {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    display: flex;
+    background: var(--tg-theme-secondary-bg-color, #f4f4f5);
+    border-top: 1px solid #ccc;
+    padding: 6px 0;
+  }
+  .bottom-nav button {
+    flex: 1; margin: 0 4px; background: transparent; color: var(--tg-theme-text-color, #000);
+    font-size: 12px; padding: 8px 2px;
+  }
+  .bottom-nav button.active {
+    background: var(--tg-theme-button-color, #2481cc);
+    color: var(--tg-theme-button-text-color, #fff);
+    border-radius: 8px;
+  }
 </style>
 </head>
 <body>
@@ -45,13 +66,15 @@
     <h3>⚠️ Pehle Join Karo</h3>
     <p>App use karne ke liye ye dono join karna zaroori hai:</p>
     <div id="joinStatus"></div>
-    <button onclick="recheckJoin()">✅ Maine Join Kar Liya, Check Karo</button>
+    <button onclick="location.reload()">✅ Maine Join Kar Liya, Check Karo</button>
   </div>
 </div>
 
-<div id="debugCard" class="card" style="border:2px solid orange">
-  <b>🔧 Debug Info (isko mujhe screenshot karke bhejo)</b>
-  <div id="debugText" style="font-size:12px; margin-top:8px; word-break:break-all"></div>
+<div id="deviceBlockScreen" style="display:none">
+  <div class="card">
+    <h3>🚫 Device Block</h3>
+    <p>Ye device pehle se kisi doosre account ke saath register hai. Ek device se sirf ek hi account allowed hai.</p>
+  </div>
 </div>
 
 <div id="mainScreen" style="display:none">
@@ -59,14 +82,11 @@
     <div class="coins">🪙 <span id="coinCount">0</span> Coins</div>
   </div>
 
-  <div class="tabs">
-    <button id="tabEarn" class="active" onclick="showTab('earn')">Earn Coins</button>
-    <button id="tabCreate" onclick="showTab('create')">Add Task</button>
-  </div>
+  <!-- TAB 1: EARN -->
+  <div id="tab-earn" class="tab-content"></div>
 
-  <div id="earnSection"></div>
-
-  <div id="createSection" style="display:none">
+  <!-- TAB 2: ADD TASK -->
+  <div id="tab-addtask" class="tab-content" style="display:none">
     <div class="card">
       <h4>Step 1: Bot ko Admin Banao</h4>
       <p style="font-size:13px">Apne group/channel me is bot ko admin banao aur "Invite Users / Add Members" permission ON karo.</p>
@@ -83,6 +103,27 @@
       <div id="createMsg"></div>
     </div>
   </div>
+
+  <!-- TAB 3: PROFILE -->
+  <div id="tab-profile" class="tab-content" style="display:none"></div>
+
+  <!-- TAB 4: WITHDRAW -->
+  <div id="tab-withdraw" class="tab-content" style="display:none">
+    <div class="card">
+      <h4>💸 Withdraw Karo</h4>
+      <input id="withdrawAmount" type="number" placeholder="Kitne coins withdraw karne hain">
+      <button onclick="requestWithdraw()">Request Bhejo</button>
+      <div id="withdrawMsg"></div>
+    </div>
+    <div id="withdrawHistory"></div>
+  </div>
+</div>
+
+<div id="bottomNav" class="bottom-nav" style="display:none">
+  <button id="nav-earn" class="active" onclick="switchTab('earn')">💰 Earn</button>
+  <button id="nav-addtask" onclick="switchTab('addtask')">➕ Add Task</button>
+  <button id="nav-profile" onclick="switchTab('profile')">👤 Profile</button>
+  <button id="nav-withdraw" onclick="switchTab('withdraw')">💸 Withdraw</button>
 </div>
 
 <script>
@@ -99,16 +140,30 @@ function apiHeaders() {
   };
 }
 
-async function init() {
-  const debugInfo = {
-    initData_length: tg.initData ? tg.initData.length : 0,
-    platform: tg.platform,
-    version: tg.version,
-    url: window.location.href,
-    initDataUnsafe_user: tg.initDataUnsafe ? tg.initDataUnsafe.user : 'none'
-  };
-  document.getElementById('debugText').innerText = JSON.stringify(debugInfo, null, 2);
+// ---------- Device ID: har phone/browser ke liye ek fixed random ID ----------
+function getDeviceId() {
+  let id = localStorage.getItem('device_id');
+  if (!id) {
+    id = 'dev_' + Date.now() + '_' + Math.random().toString(36).substring(2, 15);
+    localStorage.setItem('device_id', id);
+  }
+  return id;
+}
 
+async function init() {
+  // Step 1: Device lock check
+  const deviceId = getDeviceId();
+  const deviceRes = await fetch('/api/device/check', {
+    method: 'POST', headers: apiHeaders(),
+    body: JSON.stringify({ device_id: deviceId })
+  }).then(r => r.json());
+
+  if (!deviceRes.allowed) {
+    document.getElementById('deviceBlockScreen').style.display = 'block';
+    return;
+  }
+
+  // Step 2: Mandatory join check
   const check = await fetch('/api/check-membership', { headers: apiHeaders() }).then(r => r.json());
   if (!check.allOk) {
     document.getElementById('blockScreen').style.display = 'block';
@@ -116,13 +171,21 @@ async function init() {
       `${check.groupOk ? '✅' : '❌'} Group<br>${check.channelOk ? '✅' : '❌'} Channel`;
     return;
   }
+
+  // Step 3: Sab theek — main app dikhao
   document.getElementById('mainScreen').style.display = 'block';
+  document.getElementById('bottomNav').style.display = 'flex';
   loadUser();
   loadTasks();
 }
 
-async function recheckJoin() {
-  location.reload();
+function switchTab(tab) {
+  ['earn', 'addtask', 'profile', 'withdraw'].forEach(t => {
+    document.getElementById(`tab-${t}`).style.display = (t === tab) ? 'block' : 'none';
+    document.getElementById(`nav-${t}`).classList.toggle('active', t === tab);
+  });
+  if (tab === 'profile') loadProfile();
+  if (tab === 'withdraw') loadWithdrawals();
 }
 
 async function loadUser() {
@@ -132,7 +195,7 @@ async function loadUser() {
 
 async function loadTasks() {
   const tasks = await fetch('/api/tasks', { headers: apiHeaders() }).then(r => r.json());
-  const el = document.getElementById('earnSection');
+  const el = document.getElementById('tab-earn');
   if (tasks.length === 0) {
     el.innerHTML = '<div class="card">Abhi koi task available nahi hai.</div>';
     return;
@@ -159,13 +222,6 @@ async function verifyTask(taskId) {
     loadUser();
     loadTasks();
   }
-}
-
-function showTab(tab) {
-  document.getElementById('tabEarn').classList.toggle('active', tab === 'earn');
-  document.getElementById('tabCreate').classList.toggle('active', tab === 'create');
-  document.getElementById('earnSection').style.display = tab === 'earn' ? 'block' : 'none';
-  document.getElementById('createSection').style.display = tab === 'create' ? 'block' : 'none';
 }
 
 async function verifyAdmin() {
@@ -202,6 +258,76 @@ async function createTask() {
     msgEl.innerHTML = `<div class="msg success">✅ Task ban gaya! ${res.costPaid} coins kate.</div>`;
     loadUser();
   }
+}
+
+// ---------- PROFILE TAB ----------
+async function loadProfile() {
+  const stats = await fetch('/api/profile', { headers: apiHeaders() }).then(r => r.json());
+  const el = document.getElementById('tab-profile');
+
+  const myTasksHtml = stats.my_tasks.length === 0
+    ? '<div class="card">Aapne abhi tak koi task nahi banaya.</div>'
+    : stats.my_tasks.map(t => `
+        <div class="card">
+          <div style="display:flex; justify-content:space-between; align-items:center">
+            <b>${t.chat_title || t.chat_username}</b>
+            <span class="badge ${t.status}">${t.status === 'completed' ? '✅ Complete' : '⏳ Active'}</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill" style="width:${(t.current_count/t.target_members)*100}%"></div></div>
+          <div style="font-size:12px">${t.current_count}/${t.target_members} members mile</div>
+        </div>
+      `).join('');
+
+  el.innerHTML = `
+    <div class="card">
+      <div class="stat-row"><span>🪙 Total Coins</span><b>${stats.coins}</b></div>
+      <div class="stat-row"><span>✅ Tasks Complete Kiye</span><b>${stats.tasks_completed}</b></div>
+      <div class="stat-row"><span>💰 Total Kamaye</span><b>${stats.total_earned}</b></div>
+    </div>
+    <h4>Aapke Bane Hue Tasks</h4>
+    ${myTasksHtml}
+  `;
+}
+
+// ---------- WITHDRAW TAB ----------
+async function requestWithdraw() {
+  const amount = parseInt(document.getElementById('withdrawAmount').value);
+  const msgEl = document.getElementById('withdrawMsg');
+  if (!amount || amount <= 0) {
+    msgEl.innerHTML = '<div class="msg error">Sahi amount daalo</div>';
+    return;
+  }
+  const res = await fetch('/api/withdraw', {
+    method: 'POST', headers: apiHeaders(),
+    body: JSON.stringify({ amount })
+  }).then(r => r.json());
+
+  if (res.error) {
+    msgEl.innerHTML = `<div class="msg error">${res.error}</div>`;
+  } else {
+    msgEl.innerHTML = `<div class="msg success">✅ Withdraw request bhej di gayi hai</div>`;
+    document.getElementById('withdrawAmount').value = '';
+    loadUser();
+    loadWithdrawals();
+  }
+}
+
+async function loadWithdrawals() {
+  const list = await fetch('/api/withdrawals', { headers: apiHeaders() }).then(r => r.json());
+  const el = document.getElementById('withdrawHistory');
+  if (list.length === 0) {
+    el.innerHTML = '<div class="card">Koi withdraw history nahi hai.</div>';
+    return;
+  }
+  el.innerHTML = '<h4>History</h4>' + list.map(w => `
+    <div class="card">
+      <div style="display:flex; justify-content:space-between">
+        <span>🪙 ${w.amount} coins</span>
+        <span class="badge ${w.status}">${w.status}</span>
+      </div>
+      <div style="font-size:11px; opacity:0.7">${new Date(w.created_at).toLocaleString()}</div>
+    </div>
+  `).join('');
 }
 
 init();
