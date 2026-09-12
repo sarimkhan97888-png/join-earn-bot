@@ -183,27 +183,6 @@ async function getProfileStats(userId) {
   };
 }
 
-// ---------- WITHDRAWALS ----------
-
-async function createWithdrawal(userId, amount) {
-  const deducted = await deductCoins(userId, amount, 'withdrawal_request');
-  if (!deducted) return null;
-
-  const res = await pool.query(
-    `INSERT INTO withdrawals (user_id, amount) VALUES ($1, $2) RETURNING *`,
-    [userId, amount]
-  );
-  return res.rows[0];
-}
-
-async function getWithdrawals(userId) {
-  const res = await pool.query(
-    'SELECT * FROM withdrawals WHERE user_id = $1 ORDER BY created_at DESC',
-    [userId]
-  );
-  return res.rows;
-}
-
 module.exports = {
   pool,
   getOrCreateUser,
@@ -220,7 +199,5 @@ module.exports = {
   getUserTaskStatus,
   getVerifiedUsersByChatId,
   checkAndRegisterDevice,
-  getProfileStats,
-  createWithdrawal,
-  getWithdrawals
+  getProfileStats
 };

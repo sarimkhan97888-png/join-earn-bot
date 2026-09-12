@@ -8,7 +8,7 @@ const bot = new Telegraf(process.env.BOT_TOKEN);
 const REQUIRED_GROUP = process.env.REQUIRED_GROUP;     // mandatory GC username
 const REQUIRED_CHANNEL = process.env.REQUIRED_CHANNEL; // mandatory Channel username
 
-const SIGNUP_BONUS = 500;        // pehli baar task banane wale ko free coins
+const SIGNUP_BONUS = 550;        // pehli baar task banane wale ko free coins
 const COST_PER_MEMBER = 110;     // dusri baar se, per member cost
 const REWARD_PER_JOIN = 100;     // verify karne wale ko milne wala reward
 

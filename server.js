@@ -208,28 +208,7 @@ app.post('/api/tasks/create', authMiddleware, async (req, res) => {
 // ---------- API: profile stats (kitne task, kitne coins, apne tasks ki history) ----------
 app.get('/api/profile', authMiddleware, async (req, res) => {
   const stats = await db.getProfileStats(req.tgUser.id);
-  res.json(stats);
-});
-
-// ---------- API: withdraw request banana ----------
-app.post('/api/withdraw', authMiddleware, async (req, res) => {
-  const amount = parseInt(req.body.amount);
-  if (!amount || amount <= 0) {
-    return res.status(400).json({ error: 'Sahi amount daalo' });
-  }
-
-  const withdrawal = await db.createWithdrawal(req.tgUser.id, amount);
-  if (!withdrawal) {
-    return res.status(400).json({ error: 'Coins kam hain, itna withdraw nahi kar sakte' });
-  }
-
-  res.json({ success: true, withdrawal });
-});
-
-// ---------- API: withdraw history dekhna ----------
-app.get('/api/withdrawals', authMiddleware, async (req, res) => {
-  const list = await db.getWithdrawals(req.tgUser.id);
-  res.json(list);
+  res.json({ ...stats, username: req.tgUser.username, first_name: req.tgUser.first_name, photo_url: req.tgUser.photo_url });
 });
 
 // ---------- Telegram webhook ----------
