@@ -61,6 +61,15 @@ function authMiddleware(req, res, next) {
   next();
 }
 
+// ---------- API: device lock check (ek device = ek account) ----------
+app.post('/api/device/check', authMiddleware, async (req, res) => {
+  const { device_id } = req.body;
+  if (!device_id) return res.status(400).json({ error: 'device_id missing' });
+
+  const result = await db.checkAndRegisterDevice(device_id, req.tgUser.id);
+  res.json(result);
+});
+
 // ---------- API: mandatory join check ----------
 app.get('/api/check-membership', authMiddleware, async (req, res) => {
   console.log('📋 Checking membership for user:', req.tgUser.id);
@@ -194,6 +203,33 @@ app.post('/api/tasks/create', authMiddleware, async (req, res) => {
 
   const task = await db.createTask(userId, chat_id, chat_username, chat_title, target_members);
   res.json({ success: true, task, costPaid: cost });
+});
+
+// ---------- API: profile stats (kitne task, kitne coins, apne tasks ki history) ----------
+app.get('/api/profile', authMiddleware, async (req, res) => {
+  const stats = await db.getProfileStats(req.tgUser.id);
+  res.json(stats);
+});
+
+// ---------- API: withdraw request banana ----------
+app.post('/api/withdraw', authMiddleware, async (req, res) => {
+  const amount = parseInt(req.body.amount);
+  if (!amount || amount <= 0) {
+    return res.status(400).json({ error: 'Sahi amount daalo' });
+  }
+
+  const withdrawal = await db.createWithdrawal(req.tgUser.id, amount);
+  if (!withdrawal) {
+    return res.status(400).json({ error: 'Coins kam hain, itna withdraw nahi kar sakte' });
+  }
+
+  res.json({ success: true, withdrawal });
+});
+
+// ---------- API: withdraw history dekhna ----------
+app.get('/api/withdrawals', authMiddleware, async (req, res) => {
+  const list = await db.getWithdrawals(req.tgUser.id);
+  res.json(list);
 });
 
 // ---------- Telegram webhook ----------
