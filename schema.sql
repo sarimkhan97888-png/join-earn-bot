@@ -47,3 +47,19 @@ CREATE TABLE IF NOT EXISTS coin_history (
 CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status);
 CREATE INDEX IF NOT EXISTS idx_user_tasks_user ON user_tasks(user_id);
 CREATE INDEX IF NOT EXISTS idx_user_tasks_task ON user_tasks(task_id);
+
+-- 5) DEVICE_REGISTRY: ek device sirf ek hi user account se juda rahega
+CREATE TABLE IF NOT EXISTS device_registry (
+    device_id   TEXT PRIMARY KEY,        -- browser me generate hone wala random ID
+    user_id     BIGINT REFERENCES users(id),
+    created_at  TIMESTAMP DEFAULT NOW()
+);
+
+-- 6) WITHDRAWALS: coins withdraw karne ki requests aur unki history
+CREATE TABLE IF NOT EXISTS withdrawals (
+    id          SERIAL PRIMARY KEY,
+    user_id     BIGINT REFERENCES users(id),
+    amount      INTEGER NOT NULL,
+    status      TEXT DEFAULT 'pending',   -- pending / approved / rejected
+    created_at  TIMESTAMP DEFAULT NOW()
+);
