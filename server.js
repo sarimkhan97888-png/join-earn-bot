@@ -49,15 +49,23 @@ function verifyInitData(initData) {
 // Har API request pe initData se user nikalne wala middleware
 function authMiddleware(req, res, next) {
   const initData = req.headers['x-telegram-init-data'];
+  console.log('🔍 Auth check | initData length:', initData ? initData.length : 0);
+
   const user = verifyInitData(initData || '');
-  if (!user) return res.status(401).json({ error: 'Invalid Telegram auth' });
+  if (!user) {
+    console.log('❌ Auth FAILED - initData verify nahi hua. Raw initData:', initData ? initData.substring(0, 100) : '(khali hai)');
+    return res.status(401).json({ error: 'Invalid Telegram auth' });
+  }
+  console.log('✅ Auth OK - user:', user.id, user.username || user.first_name);
   req.tgUser = user;
   next();
 }
 
 // ---------- API: mandatory join check ----------
 app.get('/api/check-membership', authMiddleware, async (req, res) => {
+  console.log('📋 Checking membership for user:', req.tgUser.id);
   const check = await checkMandatoryJoin(req.tgUser.id);
+  console.log('📋 Membership result:', JSON.stringify(check));
   res.json(check);
 });
 
