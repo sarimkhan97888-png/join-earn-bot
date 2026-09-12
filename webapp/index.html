@@ -276,7 +276,8 @@
     <div id="createFormCard" class="card" style="display:none">
       <h4>🎯 Step 2 — Target Set Karo</h4>
       <p class="hint">Kitne naye members chahiye is task ke through?</p>
-      <input id="targetMembers" type="number" placeholder="e.g. 5">
+      <input id="targetMembers" type="number" min="5" placeholder="Kam se kam 5 members">
+      <p class="hint" style="margin-top:2px">⚠️ Minimum 5 members ka task banana zaroori hai</p>
       <button onclick="createTask()" class="success-btn" id="createTaskBtn">🚀 Task Launch Karo</button>
       <div id="createMsg"></div>
     </div>
@@ -321,6 +322,8 @@ tg.ready();
 tg.expand();
 
 let verifiedChat = null;
+let myUserId = null;
+let iAmAdmin = false;
 
 function apiHeaders() {
   return {
@@ -386,6 +389,7 @@ async function init() {
   document.getElementById('bottomNav').style.display = 'flex';
 
   const u = tg.initDataUnsafe.user || {};
+  myUserId = u.id;
   document.getElementById('headerName').innerText = u.first_name || 'User';
   document.getElementById('headerUsername').innerText = u.username ? '@' + u.username : '';
   if (u.photo_url) {
@@ -394,7 +398,7 @@ async function init() {
     document.getElementById('avatarBox').innerText = (u.first_name || 'U')[0].toUpperCase();
   }
 
-  loadUser();
+  await loadUser();
   loadTasks();
   checkNotifications();
 }
@@ -470,6 +474,7 @@ function switchTab(tab) {
 async function loadUser() {
   const user = await fetch('/api/user', { headers: apiHeaders() }).then(r => r.json());
   document.getElementById('coinCount').innerText = user.coins;
+  iAmAdmin = user.is_admin;
 }
 
 async function loadTasks() {
@@ -479,20 +484,27 @@ async function loadTasks() {
     el.innerHTML = '<div class="card"><h4>😴 Abhi Kuch Nahi</h4><p class="hint">Koi task available nahi hai — thodi der me wapas check karo, naye tasks aate rehte hain.</p></div>';
     return;
   }
-  el.innerHTML = tasks.map(t => `
-    <div class="card">
+  el.innerHTML = tasks.map(t => {
+    const isOwn = (t.owner_id == myUserId) && !iAmAdmin;
+    const actionButtons = isOwn
+      ? `<div class="msg error" style="margin-top:10px">🔒 Apna khud ka banaya task khud complete nahi kar sakte</div>`
+      : `<button class="secondary" onclick="tg.openTelegramLink('https://t.me/${(t.chat_username||'').replace('@','')}')">🔗 Pehle Join Karo</button>
+         <button class="success-btn" onclick="verifyTask(${t.id}, this)">✅ Verify Karke Coins Pao</button>`;
+
+    return `
+    <div class="card" style="${isOwn ? 'opacity:0.75' : ''}">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px">
-        <b style="font-size:15px">${t.chat_title || t.chat_username}</b>
+        <b style="font-size:15px">${t.chat_title || t.chat_username} ${isOwn ? '👑' : ''}</b>
         <span class="badge active">⏳ Active</span>
       </div>
-      <p class="hint">Join karke verify karo aur turant 100 coins pao</p>
+      <p class="hint">${isOwn ? 'Ye aapka khud ka banaya task hai' : 'Join karke verify karo aur turant 100 coins pao'}</p>
       <div class="progress-bar"><div class="progress-fill" style="width:${(t.current_count/t.target_members)*100}%"></div></div>
       <div style="font-size:12px; opacity:0.7; margin-top:4px">${t.current_count}/${t.target_members} members</div>
-      <button class="secondary" onclick="tg.openTelegramLink('https://t.me/${(t.chat_username||'').replace('@','')}')">🔗 Pehle Join Karo</button>
-      <button class="success-btn" onclick="verifyTask(${t.id}, this)">✅ Verify Karke Coins Pao</button>
+      ${actionButtons}
       <div id="msg-${t.id}"></div>
     </div>
-  `).join('');
+  `;
+  }).join('');
 }
 
 async function verifyTask(taskId, btn) {
@@ -544,7 +556,13 @@ async function verifyAdmin() {
 async function createTask() {
   const btn = document.getElementById('createTaskBtn');
   const target = parseInt(document.getElementById('targetMembers').value);
-  if (!verifiedChat || !target) return;
+  const msgEl = document.getElementById('createMsg');
+  if (!verifiedChat) return;
+
+  if (!target || target < 5) {
+    msgEl.innerHTML = `<div class="msg error">❌ Minimum 5 members ka target dalna zaroori hai</div>`;
+    return;
+  }
 
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span> Ban raha hai...';
@@ -557,12 +575,19 @@ async function createTask() {
   btn.disabled = false;
   btn.innerText = '🚀 Task Launch Karo';
 
-  const msgEl = document.getElementById('createMsg');
   if (res.error) {
     msgEl.innerHTML = `<div class="msg error">❌ ${res.error}</div>`;
   } else {
     showSuccess('Task Live Ho Gaya! 🚀', `${res.costPaid} coins kate — ab members aana shuru honge`);
     loadUser();
+
+    // Form ko clear kar do agli baar ke liye
+    document.getElementById('chatUsername').value = '';
+    document.getElementById('targetMembers').value = '';
+    document.getElementById('adminMsg').innerHTML = '';
+    document.getElementById('createMsg').innerHTML = '';
+    document.getElementById('createFormCard').style.display = 'none';
+    verifiedChat = null;
   }
 }
 
@@ -639,9 +664,67 @@ async function loadProfile() {
       </div>
     </div>
 
+    <div class="card">
+      <div class="list-row" onclick="toggleSection('supportSection')">
+        <div class="left">🎫 <span>Support Ticket</span></div>
+        <span>›</span>
+      </div>
+      <div id="supportSection" style="display:none; margin-top:8px">
+        <p class="hint">Koi problem hai? Yahan likho, jaldi jawab milega.</p>
+        <input id="supportMsgInput" placeholder="Apni problem likho...">
+        <button onclick="createTicket()" id="supportBtn">Bhejo</button>
+        <div id="supportMsg"></div>
+        <div id="ticketHistory" style="margin-top:10px"></div>
+      </div>
+    </div>
+
     <h4 style="margin-top:16px">📂 Aapke Bane Hue Tasks</h4>
     ${myTasksHtml}
   `;
+
+  loadTickets();
+}
+
+async function loadTickets() {
+  const tickets = await fetch('/api/support/my-tickets', { headers: apiHeaders() }).then(r => r.json());
+  const el = document.getElementById('ticketHistory');
+  if (!el) return;
+  if (tickets.length === 0) {
+    el.innerHTML = '<p class="hint">Koi ticket nahi hai abhi tak.</p>';
+    return;
+  }
+  el.innerHTML = tickets.map(t => `
+    <div class="card" style="margin-bottom:8px">
+      <div style="display:flex; justify-content:space-between; align-items:center">
+        <span style="font-size:12px; opacity:0.7">#${t.id} • ${new Date(t.created_at).toLocaleDateString()}</span>
+        <span class="badge ${t.status === 'replied' ? 'completed' : 'active'}">${t.status === 'replied' ? '✅ Replied' : '⏳ Open'}</span>
+      </div>
+      <div style="font-size:13px; margin-top:6px">${t.message}</div>
+      ${t.admin_reply ? `<div class="msg success" style="margin-top:8px">📩 ${t.admin_reply}</div>` : ''}
+    </div>
+  `).join('');
+}
+
+async function createTicket() {
+  const btn = document.getElementById('supportBtn');
+  const input = document.getElementById('supportMsgInput');
+  const message = input.value.trim();
+  const msgEl = document.getElementById('supportMsg');
+  if (!message) return;
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Bheja ja raha hai...';
+
+  await fetch('/api/support/create', {
+    method: 'POST', headers: apiHeaders(),
+    body: JSON.stringify({ message })
+  });
+
+  btn.disabled = false;
+  btn.innerText = 'Bhejo';
+  input.value = '';
+  msgEl.innerHTML = '<div class="msg success">✅ Ticket bhej diya, jald hi jawab milega</div>';
+  loadTickets();
 }
 
 function toggleSection(id) {
