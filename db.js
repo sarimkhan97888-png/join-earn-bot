@@ -11,13 +11,13 @@ const pool = new Pool({
 
 async function getOrCreateUser(id, username) {
   const existing = await pool.query('SELECT * FROM users WHERE id = $1', [id]);
-  if (existing.rows.length > 0) return existing.rows[0];
+  if (existing.rows.length > 0) return { user: existing.rows[0], isNew: false };
 
   const created = await pool.query(
     'INSERT INTO users (id, username) VALUES ($1, $2) RETURNING *',
     [id, username]
   );
-  return created.rows[0];
+  return { user: created.rows[0], isNew: true };
 }
 
 async function getUser(id) {
@@ -183,6 +183,161 @@ async function getProfileStats(userId) {
   };
 }
 
+// ---------- REFERRAL SYSTEM ----------
+
+const REFERRAL_SIGNUP_BONUS = 250;
+const REFERRAL_COMMISSION_RATE = 0.02; // 2%
+
+async function setReferrer(referredId, referrerId) {
+  await pool.query('UPDATE users SET referred_by = $1 WHERE id = $2', [referrerId, referredId]);
+  await pool.query(
+    `INSERT INTO referrals (referrer_id, referred_id) VALUES ($1, $2)
+     ON CONFLICT (referred_id) DO NOTHING`,
+    [referrerId, referredId]
+  );
+}
+
+async function creditReferralSignupBonus(referrerId) {
+  await addCoins(referrerId, REFERRAL_SIGNUP_BONUS, 'referral_signup_bonus');
+}
+
+async function creditReferralCommission(referredUserId, baseAmount) {
+  const referredUser = await getUser(referredUserId);
+  if (!referredUser || !referredUser.referred_by) return; // isko koi refer nahi kiya
+
+  const referrerId = referredUser.referred_by;
+  const commission = Math.round(baseAmount * REFERRAL_COMMISSION_RATE);
+  if (commission <= 0) return;
+
+  await addCoins(referrerId, commission, 'referral_commission');
+  await pool.query(
+    `INSERT INTO referral_commissions (referrer_id, referred_id, amount) VALUES ($1, $2, $3)`,
+    [referrerId, referredUserId, commission]
+  );
+}
+
+async function getReferralData(userId) {
+  const rows = await pool.query(
+    `SELECT u.id, u.username, r.created_at,
+            COALESCE((SELECT SUM(amount) FROM referral_commissions
+                      WHERE referred_id = u.id AND referrer_id = $1), 0) AS commission_earned
+     FROM referrals r
+     JOIN users u ON u.id = r.referred_id
+     WHERE r.referrer_id = $1
+     ORDER BY r.created_at DESC`,
+    [userId]
+  );
+  const totalEarned = rows.rows.reduce((sum, r) => sum + parseInt(r.commission_earned), 0);
+  return { history: rows.rows, count: rows.rows.length, totalEarned };
+}
+
+// ---------- GIFT CODES ----------
+
+async function createGiftCode(code, amount, maxUses) {
+  const res = await pool.query(
+    `INSERT INTO gift_codes (code, amount, max_uses) VALUES ($1, $2, $3) RETURNING *`,
+    [code, amount, maxUses]
+  );
+  return res.rows[0];
+}
+
+async function claimGiftCode(code, userId) {
+  const codeCheck = await pool.query('SELECT * FROM gift_codes WHERE code = $1', [code]);
+  if (codeCheck.rows.length === 0) {
+    return { error: 'Ye gift code exist nahi karta' };
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    // Ek user ek code sirf ek baar claim kar sake — DB level unique constraint isko guarantee karta hai
+    const claimInsert = await client.query(
+      `INSERT INTO gift_claims (code, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING RETURNING *`,
+      [code, userId]
+    );
+    if (claimInsert.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return { error: 'Ye code aap pehle hi claim kar chuke ho' };
+    }
+
+    // Atomic increment — sirf tabhi badhega jab limit khatam na hui ho (race-condition proof)
+    const codeUpdate = await client.query(
+      `UPDATE gift_codes SET used_count = used_count + 1
+       WHERE code = $1 AND (max_uses = 0 OR used_count < max_uses)
+       RETURNING *`,
+      [code]
+    );
+    if (codeUpdate.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return { error: 'Is gift code ki limit khatam ho chuki hai' };
+    }
+
+    const amount = codeUpdate.rows[0].amount;
+    await client.query('UPDATE users SET coins = coins + $1 WHERE id = $2', [amount, userId]);
+    await client.query(
+      `INSERT INTO coin_history (user_id, amount, reason) VALUES ($1, $2, 'gift_code')`,
+      [userId, amount]
+    );
+
+    await client.query('COMMIT');
+    return { success: true, amount };
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+// ---------- BROADCAST / NOTIFICATIONS ----------
+
+async function createBroadcast(message, photoFileId) {
+  const res = await pool.query(
+    `INSERT INTO broadcasts (message, photo_file_id) VALUES ($1, $2) RETURNING *`,
+    [message, photoFileId]
+  );
+  return res.rows[0];
+}
+
+async function getLatestBroadcast() {
+  const res = await pool.query('SELECT * FROM broadcasts ORDER BY id DESC LIMIT 1');
+  return res.rows[0] || null;
+}
+
+async function getBroadcastById(id) {
+  const res = await pool.query('SELECT * FROM broadcasts WHERE id = $1', [id]);
+  return res.rows[0];
+}
+
+async function addBroadcastComment(broadcastId, userId, username, comment) {
+  const res = await pool.query(
+    `INSERT INTO broadcast_comments (broadcast_id, user_id, username, comment)
+     VALUES ($1, $2, $3, $4) RETURNING *`,
+    [broadcastId, userId, username, comment]
+  );
+  return res.rows[0];
+}
+
+async function getBroadcastComments(broadcastId) {
+  const res = await pool.query(
+    'SELECT * FROM broadcast_comments WHERE broadcast_id = $1 ORDER BY created_at ASC',
+    [broadcastId]
+  );
+  return res.rows;
+}
+
+async function hasNewBroadcast(userId) {
+  const user = await getUser(userId);
+  const latest = await getLatestBroadcast();
+  if (!latest) return false;
+  return (user.last_seen_broadcast_id || 0) < latest.id;
+}
+
+async function markBroadcastSeen(userId, broadcastId) {
+  await pool.query('UPDATE users SET last_seen_broadcast_id = $1 WHERE id = $2', [broadcastId, userId]);
+}
+
 module.exports = {
   pool,
   getOrCreateUser,
@@ -199,5 +354,18 @@ module.exports = {
   getUserTaskStatus,
   getVerifiedUsersByChatId,
   checkAndRegisterDevice,
-  getProfileStats
+  getProfileStats,
+  setReferrer,
+  creditReferralSignupBonus,
+  creditReferralCommission,
+  getReferralData,
+  createGiftCode,
+  claimGiftCode,
+  createBroadcast,
+  getLatestBroadcast,
+  getBroadcastById,
+  addBroadcastComment,
+  getBroadcastComments,
+  hasNewBroadcast,
+  markBroadcastSeen
 };

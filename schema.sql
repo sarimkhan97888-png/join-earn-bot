@@ -63,3 +63,56 @@ CREATE TABLE IF NOT EXISTS withdrawals (
     status      TEXT DEFAULT 'pending',   -- pending / approved / rejected
     created_at  TIMESTAMP DEFAULT NOW()
 );
+
+-- ---- Referral System ----
+ALTER TABLE users ADD COLUMN IF NOT EXISTS referred_by BIGINT REFERENCES users(id);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS last_seen_broadcast_id INTEGER DEFAULT 0;
+
+CREATE TABLE IF NOT EXISTS referrals (
+    id           SERIAL PRIMARY KEY,
+    referrer_id  BIGINT REFERENCES users(id),
+    referred_id  BIGINT REFERENCES users(id) UNIQUE,
+    created_at   TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS referral_commissions (
+    id           SERIAL PRIMARY KEY,
+    referrer_id  BIGINT REFERENCES users(id),
+    referred_id  BIGINT REFERENCES users(id),
+    amount       INTEGER NOT NULL,
+    created_at   TIMESTAMP DEFAULT NOW()
+);
+
+-- ---- Gift Codes ----
+CREATE TABLE IF NOT EXISTS gift_codes (
+    code        TEXT PRIMARY KEY,
+    amount      INTEGER NOT NULL,
+    max_uses    INTEGER DEFAULT 1,   -- 0 = unlimited
+    used_count  INTEGER DEFAULT 0,
+    created_at  TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS gift_claims (
+    id          SERIAL PRIMARY KEY,
+    code        TEXT,
+    user_id     BIGINT REFERENCES users(id),
+    claimed_at  TIMESTAMP DEFAULT NOW(),
+    UNIQUE(code, user_id)   -- ek user ek code sirf ek hi baar claim kar sakta hai
+);
+
+-- ---- Broadcast / Notification ----
+CREATE TABLE IF NOT EXISTS broadcasts (
+    id             SERIAL PRIMARY KEY,
+    message        TEXT,
+    photo_file_id  TEXT,
+    created_at     TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS broadcast_comments (
+    id            SERIAL PRIMARY KEY,
+    broadcast_id  INTEGER REFERENCES broadcasts(id),
+    user_id       BIGINT,
+    username      TEXT,
+    comment       TEXT,
+    created_at    TIMESTAMP DEFAULT NOW()
+);

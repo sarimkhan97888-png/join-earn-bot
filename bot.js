@@ -7,10 +7,20 @@ const bot = new Telegraf(process.env.BOT_TOKEN);
 
 const REQUIRED_GROUP = process.env.REQUIRED_GROUP;     // mandatory GC username
 const REQUIRED_CHANNEL = process.env.REQUIRED_CHANNEL; // mandatory Channel username
+const ADMIN_ID = process.env.ADMIN_ID;
 
 const SIGNUP_BONUS = 550;        // pehli baar task banane wale ko free coins
 const COST_PER_MEMBER = 110;     // dusri baar se, per member cost
 const REWARD_PER_JOIN = 100;     // verify karne wale ko milne wala reward
+
+function isAdmin(userId) {
+  return String(userId) === String(ADMIN_ID);
+}
+
+// Bot ka username ek baar nikal ke cache kar lete hain (referral link banane ke liye)
+let BOT_USERNAME = null;
+bot.telegram.getMe().then(info => { BOT_USERNAME = info.username; });
+function getBotUsername() { return BOT_USERNAME; }
 
 // ---------- Helper: check karo user required GC + Channel me hai ya nahi ----------
 async function checkMandatoryJoin(userId) {
@@ -33,7 +43,25 @@ async function checkMandatoryJoin(userId) {
 // ---------- /start command ----------
 bot.start(async (ctx) => {
   const user = ctx.from;
-  await db.getOrCreateUser(user.id, user.username || user.first_name);
+  const { user: dbUser, isNew } = await db.getOrCreateUser(user.id, user.username || user.first_name);
+
+  // ---------- Referral handling ----------
+  // Link aisi hoti hai: https://t.me/BOTUSERNAME?start=ref_123456
+  const payload = ctx.startPayload; // "ref_123456"
+  if (isNew && payload && payload.startsWith('ref_')) {
+    const referrerId = payload.replace('ref_', '');
+    if (referrerId && referrerId != user.id) {
+      const referrer = await db.getUser(referrerId);
+      if (referrer) {
+        await db.setReferrer(user.id, referrerId);
+        await db.creditReferralSignupBonus(referrerId);
+        bot.telegram.sendMessage(
+          referrerId,
+          `🎉 Aapke referral link se ek naya user join hua! +250 coins mil gaye.`
+        ).catch(() => {});
+      }
+    }
+  }
 
   const check = await checkMandatoryJoin(user.id);
 
@@ -89,4 +117,71 @@ bot.on('chat_member', async (ctx) => {
   }
 });
 
-module.exports = { bot, checkMandatoryJoin, SIGNUP_BONUS, COST_PER_MEMBER, REWARD_PER_JOIN };
+// ==================== ADMIN-ONLY COMMANDS (sirf tumhare liye) ====================
+
+// /addcoins <amount> — apne khud ke account me coins add karna
+bot.command('addcoins', async (ctx) => {
+  if (!isAdmin(ctx.from.id)) return; // admin nahi hai to chup chaap ignore
+
+  const args = ctx.message.text.split(' ');
+  const amount = parseInt(args[1]);
+  if (!amount || amount <= 0) {
+    return ctx.reply('Usage: /addcoins <amount>\nExample: /addcoins 1000');
+  }
+
+  await db.getOrCreateUser(ctx.from.id, ctx.from.username);
+  await db.addCoins(ctx.from.id, amount, 'admin_manual_add');
+  ctx.reply(`✅ ${amount} coins add ho gaye aapke account me.`);
+});
+
+// /gift <code> <amount> <maxUses> — naya gift code banana (maxUses 0 = unlimited)
+bot.command('gift', async (ctx) => {
+  if (!isAdmin(ctx.from.id)) return;
+
+  const args = ctx.message.text.split(' ');
+  const code = args[1];
+  const amount = parseInt(args[2]);
+  const maxUses = args[3] ? parseInt(args[3]) : 1;
+
+  if (!code || !amount) {
+    return ctx.reply('Usage: /gift <code> <amount> <maxUses>\nExample: /gift WELCOME100 100 50\n(maxUses 0 likho unlimited ke liye)');
+  }
+
+  try {
+    await db.createGiftCode(code.toUpperCase(), amount, maxUses);
+    ctx.reply(
+      `✅ Gift code ban gaya!\n\n🎁 Code: ${code.toUpperCase()}\n🪙 Amount: ${amount} coins\n👥 Max Uses: ${maxUses === 0 ? 'Unlimited' : maxUses}\n\nIsko users ke saath share karo, wo App ke Profile section me jaake claim kar sakte hain.`
+    );
+  } catch (err) {
+    ctx.reply('❌ Ye code pehle se exist karta hai, doosra naam try karo.');
+  }
+});
+
+// /broadcast <message>  — sirf text broadcast (photo ke bina)
+bot.command('broadcast', async (ctx) => {
+  if (!isAdmin(ctx.from.id)) return;
+
+  const message = ctx.message.text.replace('/broadcast', '').trim();
+  if (!message) {
+    return ctx.reply('Usage: /broadcast <message>\n(Photo ke saath bhejna ho to photo attach karke caption me /broadcast likho)');
+  }
+
+  await db.createBroadcast(message, null);
+  ctx.reply('✅ Broadcast bhej diya! Sabko Mini App me notification bell pe red dot dikhega.');
+});
+
+// Photo + caption "/broadcast ..." — photo wala broadcast
+bot.on('photo', async (ctx) => {
+  if (!isAdmin(ctx.from.id)) return;
+  const caption = ctx.message.caption || '';
+  if (!caption.startsWith('/broadcast')) return; // normal photo hai, ignore karo
+
+  const message = caption.replace('/broadcast', '').trim();
+  const photos = ctx.message.photo;
+  const fileId = photos[photos.length - 1].file_id; // sabse best quality wali photo
+
+  await db.createBroadcast(message, fileId);
+  ctx.reply('✅ Photo broadcast bhej diya! Sabko Mini App me notification bell pe red dot dikhega.');
+});
+
+module.exports = { bot, checkMandatoryJoin, SIGNUP_BONUS, COST_PER_MEMBER, REWARD_PER_JOIN, getBotUsername, isAdmin };

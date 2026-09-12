@@ -5,7 +5,8 @@ const express = require('express');
 const crypto = require('crypto');
 const path = require('path');
 const fs = require('fs');
-const { bot, checkMandatoryJoin, SIGNUP_BONUS, COST_PER_MEMBER, REWARD_PER_JOIN } = require('./bot');
+const https = require('https');
+const { bot, checkMandatoryJoin, SIGNUP_BONUS, COST_PER_MEMBER, REWARD_PER_JOIN, getBotUsername } = require('./bot');
 const db = require('./db');
 
 // Server start hote hi database tables khud-ba-khud ban jayengi (agar pehle se nahi hain)
@@ -116,6 +117,7 @@ app.post('/api/tasks/:id/verify', authMiddleware, async (req, res) => {
     await db.recordUserTaskPending(userId, taskId);
     await db.markUserTaskVerified(userId, taskId);
     await db.addCoins(userId, REWARD_PER_JOIN, 'task_verified');
+    await db.creditReferralCommission(userId, REWARD_PER_JOIN); // referrer ko 2% commission
     const updatedTask = await db.incrementTaskCount(taskId);
 
     // Owner ko notification bhejo
@@ -179,7 +181,7 @@ app.post('/api/tasks/create', authMiddleware, async (req, res) => {
     return res.status(400).json({ error: 'Zaroori details missing hain' });
   }
 
-  const user = await db.getOrCreateUser(userId, req.tgUser.username);
+  const { user } = await db.getOrCreateUser(userId, req.tgUser.username);
 
   let cost = 0;
   if (!user.first_task_used) {
@@ -209,6 +211,71 @@ app.post('/api/tasks/create', authMiddleware, async (req, res) => {
 app.get('/api/profile', authMiddleware, async (req, res) => {
   const stats = await db.getProfileStats(req.tgUser.id);
   res.json({ ...stats, username: req.tgUser.username, first_name: req.tgUser.first_name, photo_url: req.tgUser.photo_url });
+});
+
+// ---------- API: referral link + history ----------
+app.get('/api/referrals', authMiddleware, async (req, res) => {
+  const data = await db.getReferralData(req.tgUser.id);
+  const link = `https://t.me/${getBotUsername()}?start=ref_${req.tgUser.id}`;
+  res.json({ link, ...data });
+});
+
+// ---------- API: gift code claim karna ----------
+app.post('/api/gift/claim', authMiddleware, async (req, res) => {
+  const code = (req.body.code || '').trim().toUpperCase();
+  if (!code) return res.status(400).json({ error: 'Code daalo' });
+
+  const result = await db.claimGiftCode(code, req.tgUser.id);
+  if (result.error) return res.status(400).json({ error: result.error });
+  res.json({ success: true, amount: result.amount });
+});
+
+// ---------- API: naya broadcast hai ya nahi (red dot ke liye) ----------
+app.get('/api/notifications/status', authMiddleware, async (req, res) => {
+  const hasNew = await db.hasNewBroadcast(req.tgUser.id);
+  res.json({ hasNew });
+});
+
+// ---------- API: latest broadcast + uske comments dikhana ----------
+app.get('/api/broadcast/latest', authMiddleware, async (req, res) => {
+  const broadcast = await db.getLatestBroadcast();
+  if (!broadcast) return res.json({ broadcast: null, comments: [] });
+
+  const comments = await db.getBroadcastComments(broadcast.id);
+  res.json({ broadcast, comments });
+});
+
+// ---------- API: broadcast dekh liya, red dot hata do ----------
+app.post('/api/broadcast/mark-seen', authMiddleware, async (req, res) => {
+  const { broadcast_id } = req.body;
+  await db.markBroadcastSeen(req.tgUser.id, broadcast_id);
+  res.json({ success: true });
+});
+
+// ---------- API: broadcast pe comment karna ----------
+app.post('/api/broadcast/:id/comment', authMiddleware, async (req, res) => {
+  const comment = (req.body.comment || '').trim();
+  if (!comment) return res.status(400).json({ error: 'Comment khali nahi ho sakta' });
+
+  const username = req.tgUser.username || req.tgUser.first_name || 'User';
+  const saved = await db.addBroadcastComment(req.params.id, req.tgUser.id, username, comment);
+  res.json({ success: true, comment: saved });
+});
+
+// ---------- Broadcast photo proxy (bot token ko URL me expose hone se bachata hai) ----------
+app.get('/api/broadcast-photo/:id', async (req, res) => {
+  const broadcast = await db.getBroadcastById(req.params.id);
+  if (!broadcast || !broadcast.photo_file_id) return res.status(404).end();
+
+  try {
+    const fileLink = await bot.telegram.getFileLink(broadcast.photo_file_id);
+    https.get(fileLink.href || fileLink.toString(), (tgRes) => {
+      res.set('Content-Type', tgRes.headers['content-type'] || 'image/jpeg');
+      tgRes.pipe(res);
+    }).on('error', () => res.status(500).end());
+  } catch (err) {
+    res.status(500).end();
+  }
 });
 
 // ---------- Telegram webhook ----------
