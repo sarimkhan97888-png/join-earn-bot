@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Join & Earn</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, sans-serif;
+    background: var(--tg-theme-bg-color, #fff);
+    color: var(--tg-theme-text-color, #000);
+    margin: 0; padding: 16px;
+  }
+  .card {
+    background: var(--tg-theme-secondary-bg-color, #f4f4f5);
+    border-radius: 12px; padding: 14px; margin-bottom: 12px;
+  }
+  .coins { font-size: 22px; font-weight: bold; text-align: center; }
+  button {
+    background: var(--tg-theme-button-color, #2481cc);
+    color: var(--tg-theme-button-text-color, #fff);
+    border: none; border-radius: 8px; padding: 10px 16px;
+    font-size: 14px; width: 100%; margin-top: 8px; cursor: pointer;
+  }
+  .tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+  .tabs button { background: #ddd; color: #333; }
+  .tabs button.active { background: var(--tg-theme-button-color, #2481cc); color: #fff; }
+  input {
+    width: 100%; padding: 8px; margin-top: 6px; border-radius: 6px;
+    border: 1px solid #ccc;
+  }
+  .msg { padding: 10px; border-radius: 8px; margin-bottom: 10px; font-size: 13px; }
+  .msg.error { background: #fdecea; color: #b00020; }
+  .msg.success { background: #e6f4ea; color: #1e7e34; }
+  .progress-bar { background: #ddd; border-radius: 6px; height: 8px; margin-top: 6px; overflow: hidden; }
+  .progress-fill { background: #2ecc71; height: 100%; }
+</style>
+</head>
+<body>
+
+<div id="blockScreen" style="display:none">
+  <div class="card">
+    <h3>⚠️ Pehle Join Karo</h3>
+    <p>App use karne ke liye ye dono join karna zaroori hai:</p>
+    <div id="joinStatus"></div>
+    <button onclick="recheckJoin()">✅ Maine Join Kar Liya, Check Karo</button>
+  </div>
+</div>
+
+<div id="mainScreen" style="display:none">
+  <div class="card">
+    <div class="coins">🪙 <span id="coinCount">0</span> Coins</div>
+  </div>
+
+  <div class="tabs">
+    <button id="tabEarn" class="active" onclick="showTab('earn')">Earn Coins</button>
+    <button id="tabCreate" onclick="showTab('create')">Add Task</button>
+  </div>
+
+  <div id="earnSection"></div>
+
+  <div id="createSection" style="display:none">
+    <div class="card">
+      <h4>Step 1: Bot ko Admin Banao</h4>
+      <p style="font-size:13px">Apne group/channel me is bot ko admin banao aur "Invite Users / Add Members" permission ON karo.</p>
+      <p style="font-size:13px">Fir yahan uska <b>@username</b> daalo verify karne ke liye:</p>
+      <input id="chatUsername" placeholder="@yourchannel">
+      <button onclick="verifyAdmin()">🔍 Verify Karo</button>
+      <div id="adminMsg"></div>
+    </div>
+
+    <div id="createFormCard" class="card" style="display:none">
+      <h4>Step 2: Kitne Members Chahiye?</h4>
+      <input id="targetMembers" type="number" placeholder="e.g. 5">
+      <button onclick="createTask()">🚀 Task Banao</button>
+      <div id="createMsg"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const tg = window.Telegram.WebApp;
+tg.ready();
+tg.expand();
+
+let verifiedChat = null;
+
+function apiHeaders() {
+  return {
+    'Content-Type': 'application/json',
+    'X-Telegram-Init-Data': tg.initData
+  };
+}
+
+async function init() {
+  const check = await fetch('/api/check-membership', { headers: apiHeaders() }).then(r => r.json());
+  if (!check.allOk) {
+    document.getElementById('blockScreen').style.display = 'block';
+    document.getElementById('joinStatus').innerHTML =
+      `${check.groupOk ? '✅' : '❌'} Group<br>${check.channelOk ? '✅' : '❌'} Channel`;
+    return;
+  }
+  document.getElementById('mainScreen').style.display = 'block';
+  loadUser();
+  loadTasks();
+}
+
+async function recheckJoin() {
+  location.reload();
+}
+
+async function loadUser() {
+  const user = await fetch('/api/user', { headers: apiHeaders() }).then(r => r.json());
+  document.getElementById('coinCount').innerText = user.coins;
+}
+
+async function loadTasks() {
+  const tasks = await fetch('/api/tasks', { headers: apiHeaders() }).then(r => r.json());
+  const el = document.getElementById('earnSection');
+  if (tasks.length === 0) {
+    el.innerHTML = '<div class="card">Abhi koi task available nahi hai.</div>';
+    return;
+  }
+  el.innerHTML = tasks.map(t => `
+    <div class="card">
+      <b>${t.chat_title || t.chat_username}</b>
+      <div class="progress-bar"><div class="progress-fill" style="width:${(t.current_count/t.target_members)*100}%"></div></div>
+      <div style="font-size:12px">${t.current_count}/${t.target_members} members</div>
+      <button onclick="tg.openTelegramLink('https://t.me/${(t.chat_username||'').replace('@','')}')">🔗 Join Karo</button>
+      <button onclick="verifyTask(${t.id})">✅ Verify Join</button>
+      <div id="msg-${t.id}"></div>
+    </div>
+  `).join('');
+}
+
+async function verifyTask(taskId) {
+  const res = await fetch(`/api/tasks/${taskId}/verify`, { method: 'POST', headers: apiHeaders() }).then(r => r.json());
+  const msgEl = document.getElementById(`msg-${taskId}`);
+  if (res.error) {
+    msgEl.innerHTML = `<div class="msg error">${res.error}</div>`;
+  } else {
+    msgEl.innerHTML = `<div class="msg success">🎉 +${res.coinsEarned} coins mile!</div>`;
+    loadUser();
+    loadTasks();
+  }
+}
+
+function showTab(tab) {
+  document.getElementById('tabEarn').classList.toggle('active', tab === 'earn');
+  document.getElementById('tabCreate').classList.toggle('active', tab === 'create');
+  document.getElementById('earnSection').style.display = tab === 'earn' ? 'block' : 'none';
+  document.getElementById('createSection').style.display = tab === 'create' ? 'block' : 'none';
+}
+
+async function verifyAdmin() {
+  const chatIdentifier = document.getElementById('chatUsername').value.trim();
+  const res = await fetch('/api/verify-admin', {
+    method: 'POST', headers: apiHeaders(),
+    body: JSON.stringify({ chatIdentifier })
+  }).then(r => r.json());
+
+  const msgEl = document.getElementById('adminMsg');
+  if (res.error) {
+    msgEl.innerHTML = `<div class="msg error">${res.error}</div>`;
+    document.getElementById('createFormCard').style.display = 'none';
+  } else {
+    msgEl.innerHTML = `<div class="msg success">✅ Verified: ${res.title}</div>`;
+    verifiedChat = { chat_id: res.chat_id, chat_username: chatIdentifier, chat_title: res.title };
+    document.getElementById('createFormCard').style.display = 'block';
+  }
+}
+
+async function createTask() {
+  const target = parseInt(document.getElementById('targetMembers').value);
+  if (!verifiedChat || !target) return;
+
+  const res = await fetch('/api/tasks/create', {
+    method: 'POST', headers: apiHeaders(),
+    body: JSON.stringify({ ...verifiedChat, target_members: target })
+  }).then(r => r.json());
+
+  const msgEl = document.getElementById('createMsg');
+  if (res.error) {
+    msgEl.innerHTML = `<div class="msg error">${res.error}</div>`;
+  } else {
+    msgEl.innerHTML = `<div class="msg success">✅ Task ban gaya! ${res.costPaid} coins kate.</div>`;
+    loadUser();
+  }
+}
+
+init();
+</script>
+</body>
+</html>
