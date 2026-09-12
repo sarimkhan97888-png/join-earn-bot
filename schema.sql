@@ -116,3 +116,15 @@ CREATE TABLE IF NOT EXISTS broadcast_comments (
     comment       TEXT,
     created_at    TIMESTAMP DEFAULT NOW()
 );
+
+-- ---- Support Tickets ----
+CREATE TABLE IF NOT EXISTS support_tickets (
+    id           SERIAL PRIMARY KEY,
+    user_id      BIGINT REFERENCES users(id),
+    username     TEXT,
+    message      TEXT NOT NULL,
+    admin_reply  TEXT,
+    status       TEXT DEFAULT 'open',   -- open / replied / closed
+    created_at   TIMESTAMP DEFAULT NOW(),
+    replied_at   TIMESTAMP
+);

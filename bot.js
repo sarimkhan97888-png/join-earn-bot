@@ -184,4 +184,26 @@ bot.on('photo', async (ctx) => {
   ctx.reply('✅ Photo broadcast bhej diya! Sabko Mini App me notification bell pe red dot dikhega.');
 });
 
+// /reply <ticket_id> <message> — support ticket ka jawab dena
+bot.command('reply', async (ctx) => {
+  if (!isAdmin(ctx.from.id)) return;
+
+  const args = ctx.message.text.split(' ');
+  const ticketId = parseInt(args[1]);
+  const replyMessage = args.slice(2).join(' ');
+
+  if (!ticketId || !replyMessage) {
+    return ctx.reply('Usage: /reply <ticket_id> <message>\nExample: /reply 3 Aapki problem solve ho gayi hai');
+  }
+
+  const ticket = await db.replyToTicket(ticketId, replyMessage);
+  if (!ticket) return ctx.reply('❌ Ye ticket ID nahi mila');
+
+  ctx.reply(`✅ Reply bhej diya ticket #${ticketId} ko`);
+  bot.telegram.sendMessage(
+    ticket.user_id,
+    `📩 Support Reply (Ticket #${ticketId}):\n\n${replyMessage}`
+  ).catch(() => {});
+});
+
 module.exports = { bot, checkMandatoryJoin, SIGNUP_BONUS, COST_PER_MEMBER, REWARD_PER_JOIN, getBotUsername, isAdmin };

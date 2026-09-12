@@ -56,12 +56,10 @@ async function createTask(ownerId, chatId, chatUsername, chatTitle, targetMember
 }
 
 async function getActiveTasksForUser(userId) {
-  // Un tasks ko dikhao jo active hain, jinke owner khud user nahi hai,
-  // aur jo user pehle se verified/pending nahi kar chuka
+  // Sabhi active tasks dikhao (khud ke bhi) — frontend khud ke task ko lock karke dikhayega
   const res = await pool.query(
     `SELECT t.* FROM tasks t
      WHERE t.status = 'active'
-       AND t.owner_id != $1
        AND t.current_count < t.target_members
        AND NOT EXISTS (
          SELECT 1 FROM user_tasks ut
@@ -338,6 +336,33 @@ async function markBroadcastSeen(userId, broadcastId) {
   await pool.query('UPDATE users SET last_seen_broadcast_id = $1 WHERE id = $2', [broadcastId, userId]);
 }
 
+// ---------- SUPPORT TICKETS ----------
+
+async function createSupportTicket(userId, username, message) {
+  const res = await pool.query(
+    `INSERT INTO support_tickets (user_id, username, message) VALUES ($1, $2, $3) RETURNING *`,
+    [userId, username, message]
+  );
+  return res.rows[0];
+}
+
+async function getMyTickets(userId) {
+  const res = await pool.query(
+    'SELECT * FROM support_tickets WHERE user_id = $1 ORDER BY created_at DESC',
+    [userId]
+  );
+  return res.rows;
+}
+
+async function replyToTicket(ticketId, replyMessage) {
+  const res = await pool.query(
+    `UPDATE support_tickets SET admin_reply = $1, status = 'replied', replied_at = NOW()
+     WHERE id = $2 RETURNING *`,
+    [replyMessage, ticketId]
+  );
+  return res.rows[0];
+}
+
 module.exports = {
   pool,
   getOrCreateUser,
@@ -367,5 +392,8 @@ module.exports = {
   addBroadcastComment,
   getBroadcastComments,
   hasNewBroadcast,
-  markBroadcastSeen
+  markBroadcastSeen,
+  createSupportTicket,
+  getMyTickets,
+  replyToTicket
 };

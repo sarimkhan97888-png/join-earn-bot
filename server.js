@@ -6,7 +6,7 @@ const crypto = require('crypto');
 const path = require('path');
 const fs = require('fs');
 const https = require('https');
-const { bot, checkMandatoryJoin, SIGNUP_BONUS, COST_PER_MEMBER, REWARD_PER_JOIN, getBotUsername } = require('./bot');
+const { bot, checkMandatoryJoin, SIGNUP_BONUS, COST_PER_MEMBER, REWARD_PER_JOIN, getBotUsername, isAdmin } = require('./bot');
 const db = require('./db');
 
 // Server start hote hi database tables khud-ba-khud ban jayengi (agar pehle se nahi hain)
@@ -83,7 +83,7 @@ app.get('/api/check-membership', authMiddleware, async (req, res) => {
 app.get('/api/user', authMiddleware, async (req, res) => {
   await db.getOrCreateUser(req.tgUser.id, req.tgUser.username);
   const user = await db.getUser(req.tgUser.id);
-  res.json(user);
+  res.json({ ...user, is_admin: isAdmin(req.tgUser.id) });
 });
 
 // ---------- API: active tasks list (earning ke liye) ----------
@@ -99,6 +99,10 @@ app.post('/api/tasks/:id/verify', authMiddleware, async (req, res) => {
 
   const task = await db.getTaskById(taskId);
   if (!task) return res.status(404).json({ error: 'Task not found' });
+
+  if (task.owner_id == userId && !isAdmin(userId)) {
+    return res.status(400).json({ error: '🔒 Apna khud ka banaya task khud complete nahi kar sakte' });
+  }
 
   try {
     const member = await bot.telegram.getChatMember(task.chat_id, userId);
@@ -182,6 +186,10 @@ app.post('/api/tasks/create', authMiddleware, async (req, res) => {
   }
 
   const { user } = await db.getOrCreateUser(userId, req.tgUser.username);
+
+  if (target_members < 5) {
+    return res.status(400).json({ error: 'Minimum 5 members ka task banana zaroori hai' });
+  }
 
   let cost = 0;
   if (!user.first_task_used) {
@@ -276,6 +284,28 @@ app.get('/api/broadcast-photo/:id', async (req, res) => {
   } catch (err) {
     res.status(500).end();
   }
+});
+
+// ---------- API: support ticket banana ----------
+app.post('/api/support/create', authMiddleware, async (req, res) => {
+  const message = (req.body.message || '').trim();
+  if (!message) return res.status(400).json({ error: 'Message likho' });
+
+  const username = req.tgUser.username || req.tgUser.first_name || 'User';
+  const ticket = await db.createSupportTicket(req.tgUser.id, username, message);
+
+  bot.telegram.sendMessage(
+    process.env.ADMIN_ID,
+    `🎫 Naya Support Ticket #${ticket.id}\nFrom: @${username} (ID: ${req.tgUser.id})\n\n"${message}"\n\nReply karne ke liye: /reply ${ticket.id} <aapka jawab>`
+  ).catch(() => {});
+
+  res.json({ success: true, ticket });
+});
+
+// ---------- API: apni ticket history dekhna ----------
+app.get('/api/support/my-tickets', authMiddleware, async (req, res) => {
+  const tickets = await db.getMyTickets(req.tgUser.id);
+  res.json(tickets);
 });
 
 // ---------- Telegram webhook ----------
