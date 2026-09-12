@@ -131,6 +131,79 @@ async function getVerifiedUsersByChatId(chatId) {
   return res.rows;
 }
 
+// ---------- DEVICE LOCK (ek device = ek hi account) ----------
+
+async function checkAndRegisterDevice(deviceId, userId) {
+  const existing = await pool.query(
+    'SELECT user_id FROM device_registry WHERE device_id = $1',
+    [deviceId]
+  );
+
+  if (existing.rows.length === 0) {
+    // Naya device — isi user ke naam register kar do
+    await pool.query(
+      'INSERT INTO device_registry (device_id, user_id) VALUES ($1, $2)',
+      [deviceId, userId]
+    );
+    return { allowed: true };
+  }
+
+  if (existing.rows[0].user_id == userId) {
+    return { allowed: true }; // wahi purana user hai, sab theek
+  }
+
+  return { allowed: false }; // koi dusra account isi device se try kar raha hai
+}
+
+// ---------- PROFILE STATS ----------
+
+async function getProfileStats(userId) {
+  const user = await getUser(userId);
+
+  const tasksCompletedRes = await pool.query(
+    `SELECT COUNT(*) FROM user_tasks WHERE user_id = $1 AND status = 'verified'`,
+    [userId]
+  );
+
+  const totalEarnedRes = await pool.query(
+    `SELECT COALESCE(SUM(amount), 0) as total FROM coin_history WHERE user_id = $1 AND amount > 0`,
+    [userId]
+  );
+
+  const myTasksRes = await pool.query(
+    `SELECT * FROM tasks WHERE owner_id = $1 ORDER BY created_at DESC`,
+    [userId]
+  );
+
+  return {
+    coins: user.coins,
+    tasks_completed: parseInt(tasksCompletedRes.rows[0].count),
+    total_earned: parseInt(totalEarnedRes.rows[0].total),
+    my_tasks: myTasksRes.rows
+  };
+}
+
+// ---------- WITHDRAWALS ----------
+
+async function createWithdrawal(userId, amount) {
+  const deducted = await deductCoins(userId, amount, 'withdrawal_request');
+  if (!deducted) return null;
+
+  const res = await pool.query(
+    `INSERT INTO withdrawals (user_id, amount) VALUES ($1, $2) RETURNING *`,
+    [userId, amount]
+  );
+  return res.rows[0];
+}
+
+async function getWithdrawals(userId) {
+  const res = await pool.query(
+    'SELECT * FROM withdrawals WHERE user_id = $1 ORDER BY created_at DESC',
+    [userId]
+  );
+  return res.rows;
+}
+
 module.exports = {
   pool,
   getOrCreateUser,
@@ -145,5 +218,9 @@ module.exports = {
   markUserTaskVerified,
   markUserTaskLeft,
   getUserTaskStatus,
-  getVerifiedUsersByChatId
+  getVerifiedUsersByChatId,
+  checkAndRegisterDevice,
+  getProfileStats,
+  createWithdrawal,
+  getWithdrawals
 };
