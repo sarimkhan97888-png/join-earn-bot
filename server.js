@@ -6,7 +6,8 @@ const crypto = require('crypto');
 const path = require('path');
 const fs = require('fs');
 const https = require('https');
-const { bot, checkMandatoryJoin, SIGNUP_BONUS, COST_PER_MEMBER, REWARD_PER_JOIN, getBotUsername, isAdmin } = require('./bot');
+const { bot, checkMandatoryJoin, SIGNUP_BONUS, COST_PER_MEMBER, REWARD_PER_JOIN, COINS_PER_RUPEE, getBotUsername, isAdmin } = require('./bot');
+const { DEPOSIT_PACKAGES, WITHDRAW_MIN_COINS, calcWithdrawGrossRupees, calcWithdrawNetRupees, findDepositPackage } = require('./constants');
 const db = require('./db');
 
 // Server start hote hi database tables khud-ba-khud ban jayengi (agar pehle se nahi hain)
@@ -22,7 +23,7 @@ async function setupDatabase() {
 }
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: '8mb' })); // screenshot base64 ke liye zyada size chahiye
 app.use('/webapp', express.static(path.join(__dirname, 'webapp')));
 
 // ---------- Telegram WebApp initData verify (security) ----------
@@ -192,6 +193,7 @@ app.post('/api/tasks/create', authMiddleware, async (req, res) => {
   }
 
   let cost = 0;
+  let unitCost = 0;
   if (!user.first_task_used) {
     // Pehli baar — free bonus, max 5 members (500/100) allowed is bonus se
     const maxFreeMembers = Math.floor(SIGNUP_BONUS / REWARD_PER_JOIN);
@@ -203,15 +205,17 @@ app.post('/api/tasks/create', authMiddleware, async (req, res) => {
     await db.pool.query('UPDATE users SET first_task_used = TRUE WHERE id = $1', [userId]);
     await db.addCoins(userId, SIGNUP_BONUS, 'signup_bonus');
     cost = 0; // bonus se cover ho gaya
+    unitCost = 0;
   } else {
     cost = target_members * COST_PER_MEMBER;
+    unitCost = COST_PER_MEMBER;
     const deducted = await db.deductCoins(userId, cost, 'task_created');
     if (!deducted) {
       return res.status(400).json({ error: `Coins kam hain. ${cost} coins chahiye, aapke paas kam hain.` });
     }
   }
 
-  const task = await db.createTask(userId, chat_id, chat_username, chat_title, target_members);
+  const task = await db.createTask(userId, chat_id, chat_username, chat_title, target_members, unitCost);
   res.json({ success: true, task, costPaid: cost });
 });
 
@@ -308,6 +312,161 @@ app.get('/api/support/my-tickets', authMiddleware, async (req, res) => {
   res.json(tickets);
 });
 
+// ---------- API: task ko rate karna (1-5 stars) ----------
+app.post('/api/tasks/:id/rate', authMiddleware, async (req, res) => {
+  const rating = parseInt(req.body.rating);
+  if (!rating || rating < 1 || rating > 5) {
+    return res.status(400).json({ error: 'Rating 1 se 5 ke beech honi chahiye' });
+  }
+  await db.rateTask(req.params.id, req.tgUser.id, rating);
+  res.json({ success: true });
+});
+
+// ---------- API: task report karna ----------
+app.post('/api/tasks/:id/report', authMiddleware, async (req, res) => {
+  const reason = (req.body.reason || 'Other').trim();
+  const result = await db.reportTask(req.params.id, req.tgUser.id, reason);
+
+  if (result.alreadyReported) {
+    return res.status(400).json({ error: 'Aapne ye task pehle hi report kar diya hai' });
+  }
+
+  if (result.flagged) {
+    const task = await db.getTaskById(req.params.id);
+    bot.telegram.sendMessage(
+      process.env.ADMIN_ID,
+      `🚩 Task #${task.id} ("${task.chat_title}") ko ${result.reportCount} reports mil chuki hain aur ye auto-flag ho gaya hai.\n\n` +
+      `Faisla lene ke liye:\n/taskaction ${task.id} approve  (wapas active karo)\n/taskaction ${task.id} remove  (hamesha ke liye hatao)`
+    ).catch(() => {});
+  }
+
+  res.json({ success: true, flagged: result.flagged });
+});
+
+// ---------- API: deposit packages ki list dikhana ----------
+app.get('/api/deposit/packages', authMiddleware, async (req, res) => {
+  res.json(DEPOSIT_PACKAGES);
+});
+
+// ---------- API: deposit shuru karna (3-min timer start) ----------
+app.post('/api/deposit/initiate', authMiddleware, async (req, res) => {
+  const { amount, coins } = req.body;
+  const pkg = findDepositPackage(amount, coins);
+  if (!pkg) return res.status(400).json({ error: 'Ye package valid nahi hai' });
+
+  const username = req.tgUser.username || req.tgUser.first_name || 'User';
+  const deposit = await db.initiateDeposit(req.tgUser.id, username, pkg.amount, pkg.coins);
+  res.json(deposit);
+});
+
+// ---------- API: deposit ka proof submit karna (screenshot + UTR + naam) ----------
+app.post('/api/deposit/submit-proof', authMiddleware, async (req, res) => {
+  const { request_id, name, utr, screenshot_base64 } = req.body;
+
+  if (!name || !utr || !screenshot_base64) {
+    return res.status(400).json({ error: 'Sab fields bharo — naam, UTR, aur screenshot' });
+  }
+
+  const result = await db.submitDepositProof(request_id, req.tgUser.id, name.trim(), utr.trim());
+  if (result.error) return res.status(400).json({ error: result.error });
+
+  // Screenshot ko seedha admin ko bhej do, kahin store nahi karna
+  try {
+    const base64Data = screenshot_base64.replace(/^data:image\/\w+;base64,/, '');
+    const buffer = Buffer.from(base64Data, 'base64');
+    const deposit = result.deposit;
+
+    await bot.telegram.sendPhoto(
+      process.env.ADMIN_ID,
+      { source: buffer },
+      {
+        caption:
+          `💰 Naya Deposit Request #${deposit.id}\n\n` +
+          `👤 Naam: ${deposit.name}\n` +
+          `🆔 Telegram: @${deposit.username} (ID: ${deposit.user_id})\n` +
+          `💵 Amount: ₹${deposit.amount_inr} → 🪙 ${deposit.coins_amount} coins\n` +
+          `🧾 UTR: ${deposit.utr}\n\n` +
+          `Apna UPI app khol ke UTR match karo, fir neeche button dabao:`,
+        reply_markup: {
+          inline_keyboard: [[
+            { text: '✅ Approve', callback_data: `dep_approve_${deposit.id}` },
+            { text: '❌ Reject', callback_data: `dep_reject_${deposit.id}` }
+          ]]
+        }
+      }
+    );
+  } catch (err) {
+    console.error('Deposit screenshot bhejne me error:', err.message);
+  }
+
+  res.json({ success: true });
+});
+
+// ---------- API: apne deposit ka status check karna (timer ke liye) ----------
+app.get('/api/deposit/status/:id', authMiddleware, async (req, res) => {
+  const deposit = await db.getDepositById(req.params.id);
+  if (!deposit || deposit.user_id != req.tgUser.id) return res.status(404).json({ error: 'Not found' });
+  res.json(deposit);
+});
+
+// ---------- API: apni deposit history dekhna ----------
+app.get('/api/deposit/my', authMiddleware, async (req, res) => {
+  const list = await db.getMyDeposits(req.tgUser.id);
+  res.json(list);
+});
+
+// ---------- API: withdraw config (minimum coins, rates) ----------
+app.get('/api/withdraw/config', authMiddleware, async (req, res) => {
+  res.json({ minCoins: WITHDRAW_MIN_COINS });
+});
+
+// ---------- API: withdraw request banana ----------
+app.post('/api/withdraw/create', authMiddleware, async (req, res) => {
+  const coins = parseInt(req.body.coins);
+  const upiId = (req.body.upi_id || '').trim();
+
+  if (!coins || coins < WITHDRAW_MIN_COINS) {
+    return res.status(400).json({ error: `Minimum ${WITHDRAW_MIN_COINS} coins withdraw kar sakte ho` });
+  }
+  if (!upiId || !upiId.includes('@')) {
+    return res.status(400).json({ error: 'Sahi UPI ID daalo (jaise name@bank)' });
+  }
+
+  const grossRupees = calcWithdrawGrossRupees(coins);
+  const netRupees = calcWithdrawNetRupees(coins);
+  const username = req.tgUser.username || req.tgUser.first_name || 'User';
+
+  const result = await db.createWithdrawRequest(req.tgUser.id, username, coins, grossRupees, netRupees, upiId);
+  if (result.error) return res.status(400).json({ error: result.error });
+
+  const w = result.withdraw;
+  bot.telegram.sendMessage(
+    process.env.ADMIN_ID,
+    `💸 Naya Withdraw Request #${w.id}\n\n` +
+    `🆔 Telegram: @${w.username} (ID: ${w.user_id})\n` +
+    `🪙 Coins: ${w.coins}\n` +
+    `💵 Gross: ₹${w.gross_rupees} → Net (fees ke baad): ₹${w.net_rupees}\n` +
+    `📱 UPI ID: ${w.upi_id}\n\n` +
+    `Manually ₹${w.net_rupees} is UPI ID pe bhej do, fir neeche button dabao:`,
+    {
+      reply_markup: {
+        inline_keyboard: [[
+          { text: '✅ Approve (Paid)', callback_data: `wd_approve_${w.id}` },
+          { text: '❌ Reject', callback_data: `wd_reject_${w.id}` }
+        ]]
+      }
+    }
+  ).catch(() => {});
+
+  res.json({ success: true, withdraw: w });
+});
+
+// ---------- API: apni withdraw history dekhna ----------
+app.get('/api/withdraw/my', authMiddleware, async (req, res) => {
+  const list = await db.getMyWithdrawals(req.tgUser.id);
+  res.json(list);
+});
+
 // ---------- Telegram webhook ----------
 app.use(bot.webhookCallback('/webhook'));
 
@@ -321,4 +480,23 @@ app.listen(PORT, async () => {
   } catch (err) {
     console.error('Webhook set karne me error:', err.message);
   }
+
+  // Har 1 ghante me expired tasks check karke refund kar do
+  setInterval(async () => {
+    try {
+      const count = await db.expireOldTasks();
+      if (count > 0) console.log(`⏰ ${count} tasks expire ho gaye, refund kar diya`);
+    } catch (err) {
+      console.error('Auto-expire error:', err.message);
+    }
+  }, 60 * 60 * 1000); // 1 ghanta
+
+  // Har 20 second me deposit ke 3-min timer wali expired requests check karo
+  setInterval(async () => {
+    try {
+      await db.expireOldDepositRequests();
+    } catch (err) {
+      console.error('Deposit auto-expire error:', err.message);
+    }
+  }, 20 * 1000);
 });

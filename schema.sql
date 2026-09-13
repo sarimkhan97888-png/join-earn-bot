@@ -21,9 +21,13 @@ CREATE TABLE IF NOT EXISTS tasks (
     chat_title      TEXT,
     target_members  INTEGER NOT NULL,          -- kitne members chahiye
     current_count   INTEGER DEFAULT 0,         -- ab tak kitne mile
-    status          TEXT DEFAULT 'active',     -- active / completed
+    unit_cost       INTEGER DEFAULT 0,         -- per-member kitna paid hua (expiry refund ke liye)
+    status          TEXT DEFAULT 'active',     -- active / completed / flagged / removed / expired
+    expires_at      TIMESTAMP DEFAULT (NOW() + INTERVAL '7 days'),
     created_at      TIMESTAMP DEFAULT NOW()
 );
+ALTER TABLE tasks ADD COLUMN IF NOT EXISTS unit_cost INTEGER DEFAULT 0;
+ALTER TABLE tasks ADD COLUMN IF NOT EXISTS expires_at TIMESTAMP DEFAULT (NOW() + INTERVAL '7 days');
 
 -- 3) USER_TASKS: kisne kaunsa task join/verify/leave kiya
 CREATE TABLE IF NOT EXISTS user_tasks (
@@ -127,4 +131,62 @@ CREATE TABLE IF NOT EXISTS support_tickets (
     status       TEXT DEFAULT 'open',   -- open / replied / closed
     created_at   TIMESTAMP DEFAULT NOW(),
     replied_at   TIMESTAMP
+);
+
+-- ---- Task Rating & Reporting ----
+CREATE TABLE IF NOT EXISTS task_ratings (
+    id          SERIAL PRIMARY KEY,
+    task_id     INTEGER REFERENCES tasks(id),
+    user_id     BIGINT,
+    rating      INTEGER NOT NULL,   -- 1 se 5
+    created_at  TIMESTAMP DEFAULT NOW(),
+    UNIQUE(task_id, user_id)
+);
+
+CREATE TABLE IF NOT EXISTS task_reports (
+    id          SERIAL PRIMARY KEY,
+    task_id     INTEGER REFERENCES tasks(id),
+    user_id     BIGINT,
+    reason      TEXT,
+    created_at  TIMESTAMP DEFAULT NOW(),
+    UNIQUE(task_id, user_id)   -- ek user ek task ko sirf ek baar report kar sakta hai
+);
+
+-- ---- Manual UPI Deposit ----
+CREATE TABLE IF NOT EXISTS deposit_requests (
+    id              SERIAL PRIMARY KEY,
+    user_id         BIGINT REFERENCES users(id),
+    username        TEXT,
+    name            TEXT,
+    amount_inr      INTEGER,
+    coins_amount    INTEGER,                  -- fixed package se aane wale coins
+    utr             TEXT UNIQUE,              -- UPI transaction ID — duplicate check ke liye UNIQUE
+    status          TEXT DEFAULT 'awaiting_proof', -- awaiting_proof / pending / approved / rejected / expired
+    reject_reason   TEXT,
+    coins_credited  INTEGER,
+    expires_at      TIMESTAMP,
+    created_at      TIMESTAMP DEFAULT NOW(),
+    resolved_at     TIMESTAMP
+);
+-- Purani rows/columns ke saath compatible rehne ke liye (agar pehle se table bani thi)
+ALTER TABLE deposit_requests ADD COLUMN IF NOT EXISTS name TEXT;
+ALTER TABLE deposit_requests ADD COLUMN IF NOT EXISTS expires_at TIMESTAMP;
+ALTER TABLE deposit_requests ADD COLUMN IF NOT EXISTS coins_amount INTEGER;
+ALTER TABLE deposit_requests ALTER COLUMN amount_inr DROP NOT NULL;
+ALTER TABLE deposit_requests ALTER COLUMN utr DROP NOT NULL;
+ALTER TABLE deposit_requests ALTER COLUMN status SET DEFAULT 'awaiting_proof';
+
+-- ---- Withdraw Requests ----
+CREATE TABLE IF NOT EXISTS withdraw_requests (
+    id              SERIAL PRIMARY KEY,
+    user_id         BIGINT REFERENCES users(id),
+    username        TEXT,
+    coins           INTEGER NOT NULL,
+    gross_rupees    INTEGER NOT NULL,
+    net_rupees      INTEGER NOT NULL,
+    upi_id          TEXT NOT NULL,
+    status          TEXT DEFAULT 'pending',   -- pending / approved / rejected
+    reject_reason   TEXT,
+    created_at      TIMESTAMP DEFAULT NOW(),
+    resolved_at     TIMESTAMP
 );

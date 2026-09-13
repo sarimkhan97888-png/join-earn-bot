@@ -46,11 +46,11 @@ async function deductCoins(userId, amount, reason) {
 
 // ---------- TASKS ----------
 
-async function createTask(ownerId, chatId, chatUsername, chatTitle, targetMembers) {
+async function createTask(ownerId, chatId, chatUsername, chatTitle, targetMembers, unitCost) {
   const res = await pool.query(
-    `INSERT INTO tasks (owner_id, chat_id, chat_username, chat_title, target_members)
-     VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-    [ownerId, chatId, chatUsername, chatTitle, targetMembers]
+    `INSERT INTO tasks (owner_id, chat_id, chat_username, chat_title, target_members, unit_cost)
+     VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+    [ownerId, chatId, chatUsername, chatTitle, targetMembers, unitCost]
   );
   return res.rows[0];
 }
@@ -58,7 +58,10 @@ async function createTask(ownerId, chatId, chatUsername, chatTitle, targetMember
 async function getActiveTasksForUser(userId) {
   // Sabhi active tasks dikhao (khud ke bhi) — frontend khud ke task ko lock karke dikhayega
   const res = await pool.query(
-    `SELECT t.* FROM tasks t
+    `SELECT t.*,
+       COALESCE((SELECT ROUND(AVG(rating),1) FROM task_ratings WHERE task_id = t.id), 0) AS avg_rating,
+       COALESCE((SELECT COUNT(*) FROM task_ratings WHERE task_id = t.id), 0) AS rating_count
+     FROM tasks t
      WHERE t.status = 'active'
        AND t.current_count < t.target_members
        AND NOT EXISTS (
@@ -363,6 +366,223 @@ async function replyToTicket(ticketId, replyMessage) {
   return res.rows[0];
 }
 
+// ---------- TASK RATING ----------
+
+async function rateTask(taskId, userId, rating) {
+  await pool.query(
+    `INSERT INTO task_ratings (task_id, user_id, rating) VALUES ($1, $2, $3)
+     ON CONFLICT (task_id, user_id) DO UPDATE SET rating = EXCLUDED.rating`,
+    [taskId, userId, rating]
+  );
+}
+
+// ---------- TASK REPORTING ----------
+
+const REPORT_THRESHOLD = 3; // itni reports pe task khud-ba-khud flag ho jayega
+
+async function reportTask(taskId, userId, reason) {
+  const inserted = await pool.query(
+    `INSERT INTO task_reports (task_id, user_id, reason) VALUES ($1, $2, $3)
+     ON CONFLICT (task_id, user_id) DO NOTHING RETURNING *`,
+    [taskId, userId, reason]
+  );
+  if (inserted.rows.length === 0) {
+    return { alreadyReported: true };
+  }
+
+  const countRes = await pool.query('SELECT COUNT(*) FROM task_reports WHERE task_id = $1', [taskId]);
+  const reportCount = parseInt(countRes.rows[0].count);
+
+  let flagged = false;
+  if (reportCount >= REPORT_THRESHOLD) {
+    await pool.query(`UPDATE tasks SET status = 'flagged' WHERE id = $1 AND status = 'active'`, [taskId]);
+    flagged = true;
+  }
+
+  return { alreadyReported: false, reportCount, flagged };
+}
+
+async function adminTaskAction(taskId, action) {
+  const task = await getTaskById(taskId);
+  if (!task) return null;
+
+  if (action === 'approve') {
+    await pool.query(`UPDATE tasks SET status = 'active' WHERE id = $1`, [taskId]);
+    return { task, refunded: 0 };
+  }
+
+  if (action === 'remove') {
+    const remaining = task.target_members - task.current_count;
+    const refund = remaining * task.unit_cost;
+    await pool.query(`UPDATE tasks SET status = 'removed' WHERE id = $1`, [taskId]);
+    if (refund > 0) await addCoins(task.owner_id, refund, 'task_removed_refund');
+    return { task, refunded: refund };
+  }
+
+  return null;
+}
+
+// ---------- AUTO-EXPIRE TASKS ----------
+
+async function expireOldTasks() {
+  const expiredRes = await pool.query(
+    `SELECT * FROM tasks WHERE status = 'active' AND expires_at < NOW()`
+  );
+
+  for (const task of expiredRes.rows) {
+    const remaining = task.target_members - task.current_count;
+    const refund = remaining * task.unit_cost;
+    await pool.query(`UPDATE tasks SET status = 'expired' WHERE id = $1`, [task.id]);
+    if (refund > 0) await addCoins(task.owner_id, refund, 'task_expired_refund');
+  }
+
+  return expiredRes.rows.length;
+}
+
+// ---------- MANUAL UPI DEPOSIT ----------
+
+const DEPOSIT_WINDOW_MINUTES = 3;
+
+async function initiateDeposit(userId, username, amountInr, coinsAmount) {
+  // Agar pehle se koi awaiting_proof ya pending request hai to wahi wapas de do (duplicate na bane)
+  const existing = await pool.query(
+    `SELECT * FROM deposit_requests WHERE user_id = $1 AND status IN ('awaiting_proof','pending')
+     ORDER BY created_at DESC LIMIT 1`,
+    [userId]
+  );
+  if (existing.rows.length > 0) return existing.rows[0];
+
+  const res = await pool.query(
+    `INSERT INTO deposit_requests (user_id, username, amount_inr, coins_amount, status, expires_at)
+     VALUES ($1, $2, $3, $4, 'awaiting_proof', NOW() + INTERVAL '${DEPOSIT_WINDOW_MINUTES} minutes')
+     RETURNING *`,
+    [userId, username, amountInr, coinsAmount]
+  );
+  return res.rows[0];
+}
+
+async function getDepositById(id) {
+  const res = await pool.query('SELECT * FROM deposit_requests WHERE id = $1', [id]);
+  return res.rows[0];
+}
+
+async function submitDepositProof(requestId, userId, name, utr) {
+  const reqRow = await getDepositById(requestId);
+  if (!reqRow || reqRow.user_id != userId) return { error: 'Request nahi mili' };
+  if (reqRow.status === 'expired') return { error: 'Time khatam ho gaya, dubara try karo' };
+  if (reqRow.status !== 'awaiting_proof') return { error: 'Ye request already submit ho chuki hai' };
+  if (new Date(reqRow.expires_at) < new Date()) {
+    await pool.query(`UPDATE deposit_requests SET status = 'expired' WHERE id = $1`, [requestId]);
+    return { error: 'Time khatam ho gaya, dubara try karo' };
+  }
+
+  try {
+    const updated = await pool.query(
+      `UPDATE deposit_requests SET name = $1, utr = $2, status = 'pending'
+       WHERE id = $3 RETURNING *`,
+      [name, utr, requestId]
+    );
+    return { success: true, deposit: updated.rows[0] };
+  } catch (err) {
+    if (err.code === '23505') {
+      return { error: 'Ye UTR number already use ho chuka hai' };
+    }
+    throw err;
+  }
+}
+
+async function approveDeposit(id) {
+  // Atomic — sirf tabhi update hoga jab status abhi bhi 'pending' ho (double-click safe)
+  const res = await pool.query(
+    `UPDATE deposit_requests SET status = 'approved', resolved_at = NOW()
+     WHERE id = $1 AND status = 'pending' RETURNING *`,
+    [id]
+  );
+  if (res.rows.length === 0) return null;
+
+  const deposit = res.rows[0];
+  const coins = deposit.coins_amount;
+  await addCoins(deposit.user_id, coins, 'deposit_approved');
+  await pool.query('UPDATE deposit_requests SET coins_credited = $1 WHERE id = $2', [coins, id]);
+
+  return { ...deposit, coins };
+}
+
+async function rejectDeposit(id, reason) {
+  const res = await pool.query(
+    `UPDATE deposit_requests SET status = 'rejected', reject_reason = $1, resolved_at = NOW()
+     WHERE id = $2 AND status = 'pending' RETURNING *`,
+    [reason, id]
+  );
+  return res.rows[0] || null;
+}
+
+async function expireOldDepositRequests() {
+  const res = await pool.query(
+    `UPDATE deposit_requests SET status = 'expired'
+     WHERE status = 'awaiting_proof' AND expires_at < NOW() RETURNING id`
+  );
+  return res.rows.length;
+}
+
+async function getMyDeposits(userId) {
+  const res = await pool.query(
+    `SELECT * FROM deposit_requests WHERE user_id = $1 AND status != 'awaiting_proof'
+     ORDER BY created_at DESC`,
+    [userId]
+  );
+  return res.rows;
+}
+
+// ---------- WITHDRAW ----------
+
+async function createWithdrawRequest(userId, username, coins, grossRupees, netRupees, upiId) {
+  const deducted = await deductCoins(userId, coins, 'withdraw_request');
+  if (!deducted) return { error: 'Coins kam hain' };
+
+  const res = await pool.query(
+    `INSERT INTO withdraw_requests (user_id, username, coins, gross_rupees, net_rupees, upi_id)
+     VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+    [userId, username, coins, grossRupees, netRupees, upiId]
+  );
+  return { success: true, withdraw: res.rows[0] };
+}
+
+async function getWithdrawById(id) {
+  const res = await pool.query('SELECT * FROM withdraw_requests WHERE id = $1', [id]);
+  return res.rows[0];
+}
+
+async function approveWithdraw(id) {
+  const res = await pool.query(
+    `UPDATE withdraw_requests SET status = 'approved', resolved_at = NOW()
+     WHERE id = $1 AND status = 'pending' RETURNING *`,
+    [id]
+  );
+  return res.rows[0] || null;
+}
+
+async function rejectWithdraw(id, reason) {
+  const res = await pool.query(
+    `UPDATE withdraw_requests SET status = 'rejected', reject_reason = $1, resolved_at = NOW()
+     WHERE id = $2 AND status = 'pending' RETURNING *`,
+    [reason, id]
+  );
+  if (res.rows.length === 0) return null;
+
+  const withdraw = res.rows[0];
+  await addCoins(withdraw.user_id, withdraw.coins, 'withdraw_rejected_refund'); // coins wapas kar do
+  return withdraw;
+}
+
+async function getMyWithdrawals(userId) {
+  const res = await pool.query(
+    'SELECT * FROM withdraw_requests WHERE user_id = $1 ORDER BY created_at DESC',
+    [userId]
+  );
+  return res.rows;
+}
+
 module.exports = {
   pool,
   getOrCreateUser,
@@ -395,5 +615,21 @@ module.exports = {
   markBroadcastSeen,
   createSupportTicket,
   getMyTickets,
-  replyToTicket
+  replyToTicket,
+  rateTask,
+  reportTask,
+  adminTaskAction,
+  expireOldTasks,
+  initiateDeposit,
+  getDepositById,
+  submitDepositProof,
+  approveDeposit,
+  rejectDeposit,
+  expireOldDepositRequests,
+  getMyDeposits,
+  createWithdrawRequest,
+  getWithdrawById,
+  approveWithdraw,
+  rejectWithdraw,
+  getMyWithdrawals
 };

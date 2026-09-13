@@ -12,6 +12,7 @@ const ADMIN_ID = process.env.ADMIN_ID;
 const SIGNUP_BONUS = 550;        // pehli baar task banane wale ko free coins
 const COST_PER_MEMBER = 110;     // dusri baar se, per member cost
 const REWARD_PER_JOIN = 100;     // verify karne wale ko milne wala reward
+const COINS_PER_RUPEE = parseInt(process.env.COINS_PER_RUPEE) || 3000; // ₹1 deposit = kitne coins
 
 function isAdmin(userId) {
   return String(userId) === String(ADMIN_ID);
@@ -206,4 +207,106 @@ bot.command('reply', async (ctx) => {
   ).catch(() => {});
 });
 
-module.exports = { bot, checkMandatoryJoin, SIGNUP_BONUS, COST_PER_MEMBER, REWARD_PER_JOIN, getBotUsername, isAdmin };
+// /taskaction <task_id> <approve|remove> — reported/flagged task pe faisla lena
+bot.command('taskaction', async (ctx) => {
+  if (!isAdmin(ctx.from.id)) return;
+
+  const args = ctx.message.text.split(' ');
+  const taskId = parseInt(args[1]);
+  const action = args[2];
+
+  if (!taskId || !['approve', 'remove'].includes(action)) {
+    return ctx.reply('Usage: /taskaction <task_id> <approve|remove>\napprove = task wapas active ho jayega\nremove = task hamesha ke liye hataya jayega, owner ko refund milega');
+  }
+
+  const result = await db.adminTaskAction(taskId, action);
+  if (!result) return ctx.reply('❌ Ye task ID nahi mila');
+
+  if (action === 'approve') {
+    ctx.reply(`✅ Task #${taskId} wapas active ho gaya`);
+  } else {
+    ctx.reply(`🗑️ Task #${taskId} remove ho gaya. Owner ko ${result.refunded} coins refund ho gaye.`);
+  }
+});
+
+// ==================== DEPOSIT APPROVE/REJECT (Inline Buttons) ====================
+
+bot.action(/^dep_approve_(\d+)$/, async (ctx) => {
+  if (!isAdmin(ctx.from.id)) return ctx.answerCbQuery('Aap admin nahi ho');
+
+  const id = ctx.match[1];
+  const result = await db.approveDeposit(id);
+  if (!result) {
+    return ctx.answerCbQuery('⚠️ Ye request already process ho chuki hai', { show_alert: true });
+  }
+
+  await ctx.answerCbQuery('✅ Approved!');
+  const oldCaption = ctx.callbackQuery.message.caption || '';
+  await ctx.editMessageCaption(oldCaption + `\n\n✅ APPROVED — ${result.coins} coins credited`).catch(() => {});
+
+  bot.telegram.sendMessage(
+    result.user_id,
+    `✅ Aapka deposit approve ho gaya!\n🪙 +${result.coins} coins aapke wallet me add ho gaye 🎉`
+  ).catch(() => {});
+});
+
+bot.action(/^dep_reject_(\d+)$/, async (ctx) => {
+  if (!isAdmin(ctx.from.id)) return ctx.answerCbQuery('Aap admin nahi ho');
+
+  const id = ctx.match[1];
+  const result = await db.rejectDeposit(id, 'UTR match nahi hua ya payment verify nahi ho payi');
+  if (!result) {
+    return ctx.answerCbQuery('⚠️ Ye request already process ho chuki hai', { show_alert: true });
+  }
+
+  await ctx.answerCbQuery('❌ Rejected');
+  const oldCaption = ctx.callbackQuery.message.caption || '';
+  await ctx.editMessageCaption(oldCaption + `\n\n❌ REJECTED`).catch(() => {});
+
+  bot.telegram.sendMessage(
+    result.user_id,
+    `❌ Aapka deposit request reject ho gaya.\nWajah: ${result.reject_reason}\n\nAgar aapko lagta hai ye galat hai, to Profile me Support Ticket bhejo.`
+  ).catch(() => {});
+});
+
+// ==================== WITHDRAW APPROVE/REJECT (Inline Buttons) ====================
+
+bot.action(/^wd_approve_(\d+)$/, async (ctx) => {
+  if (!isAdmin(ctx.from.id)) return ctx.answerCbQuery('Aap admin nahi ho');
+
+  const id = ctx.match[1];
+  const result = await db.approveWithdraw(id);
+  if (!result) {
+    return ctx.answerCbQuery('⚠️ Ye request already process ho chuki hai', { show_alert: true });
+  }
+
+  await ctx.answerCbQuery('✅ Approved!');
+  const oldText = ctx.callbackQuery.message.text || '';
+  await ctx.editMessageText(oldText + `\n\n✅ APPROVED — payment bhej diya gaya maan liya jaayega`).catch(() => {});
+
+  bot.telegram.sendMessage(
+    result.user_id,
+    `✅ Aapka withdraw request approve ho gaya!\n💵 ₹${result.net_rupees} aapke UPI (${result.upi_id}) pe bhej diya gaya hai.`
+  ).catch(() => {});
+});
+
+bot.action(/^wd_reject_(\d+)$/, async (ctx) => {
+  if (!isAdmin(ctx.from.id)) return ctx.answerCbQuery('Aap admin nahi ho');
+
+  const id = ctx.match[1];
+  const result = await db.rejectWithdraw(id, 'UPI ID galat hai ya details verify nahi ho payi');
+  if (!result) {
+    return ctx.answerCbQuery('⚠️ Ye request already process ho chuki hai', { show_alert: true });
+  }
+
+  await ctx.answerCbQuery('❌ Rejected — coins refund ho gaye');
+  const oldText = ctx.callbackQuery.message.text || '';
+  await ctx.editMessageText(oldText + `\n\n❌ REJECTED — coins user ko refund kar diye gaye`).catch(() => {});
+
+  bot.telegram.sendMessage(
+    result.user_id,
+    `❌ Aapka withdraw request reject ho gaya.\nWajah: ${result.reject_reason}\n\nAapke ${result.coins} coins wapas credit kar diye gaye hain.`
+  ).catch(() => {});
+});
+
+module.exports = { bot, checkMandatoryJoin, SIGNUP_BONUS, COST_PER_MEMBER, REWARD_PER_JOIN, COINS_PER_RUPEE, getBotUsername, isAdmin };
