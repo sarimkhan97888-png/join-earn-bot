@@ -23,7 +23,7 @@ async function setupDatabase() {
 }
 
 const app = express();
-app.use(express.json({ limit: '8mb' })); // screenshot base64 ke liye zyada size chahiye
+app.use(express.json({ limit: '15mb' })); // screenshot base64 ke liye zyada size chahiye
 app.use('/webapp', express.static(path.join(__dirname, 'webapp')));
 
 // ---------- Telegram WebApp initData verify (security) ----------
