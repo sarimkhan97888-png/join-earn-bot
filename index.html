@@ -1,0 +1,1251 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Join & Earn</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--tg-theme-bg-color, #0f1115);
+    color: var(--tg-theme-text-color, #fff);
+    margin: 0; padding: 14px 14px 90px 14px;
+    min-height: 100vh;
+  }
+
+  /* ---------- 3D CARD STYLE ---------- */
+  .card {
+    background: linear-gradient(145deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 18px;
+    padding: 16px;
+    margin-bottom: 14px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.05);
+    animation: fadeSlideUp 0.35s ease;
+  }
+  @keyframes fadeSlideUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ---------- HEADER ---------- */
+  .header-card {
+    display: flex; align-items: center; gap: 12px;
+    background: linear-gradient(135deg, #3b6cf6, #6f3bf6);
+    border-radius: 20px;
+    padding: 16px;
+    margin-bottom: 14px;
+    box-shadow: 0 10px 25px rgba(80,60,230,0.35);
+    position: relative;
+  }
+  .bell-btn {
+    width: 38px; height: 38px; border-radius: 50%;
+    background: rgba(0,0,0,0.25);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; position: relative; flex-shrink: 0;
+    cursor: pointer;
+  }
+  .bell-btn .red-dot {
+    position: absolute; top: 2px; right: 2px;
+    width: 10px; height: 10px; border-radius: 50%;
+    background: #ff4757; border: 2px solid #1e1147;
+    display: none;
+    animation: pulseGlow 1.2s ease infinite;
+  }
+  .lang-toggle {
+    background: rgba(0,0,0,0.25); border-radius: 20px; padding: 6px 10px;
+    font-size: 11px; font-weight: 700; cursor: pointer; flex-shrink: 0;
+  }
+  .star-row { display: flex; gap: 4px; margin: 8px 0; }
+  .star-row span { font-size: 20px; cursor: pointer; opacity: 0.35; }
+  .star-row span.filled { opacity: 1; }
+  .report-reasons { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .report-reasons button { width: auto; margin: 0; padding: 6px 12px; font-size: 12px; background: rgba(231,76,60,0.2); box-shadow: none; color: #ff8a80; }
+  .avatar {
+    width: 52px; height: 52px; border-radius: 50%;
+    background: rgba(255,255,255,0.25);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; font-weight: bold; color: #fff;
+    border: 2px solid rgba(255,255,255,0.5);
+    overflow: hidden; flex-shrink: 0;
+  }
+  .avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .header-info { flex: 1; }
+  .header-name { font-weight: 700; font-size: 16px; }
+  .header-username { font-size: 12px; opacity: 0.85; }
+  .coin-pill {
+    background: rgba(0,0,0,0.25);
+    border-radius: 30px; padding: 8px 14px;
+    font-weight: 700; font-size: 15px;
+    display: flex; align-items: center; gap: 6px;
+    white-space: nowrap;
+  }
+
+  /* ---------- 3D BUTTONS ---------- */
+  button {
+    background: linear-gradient(145deg, #4f7dfb, #2f5be0);
+    color: #fff; border: none; border-radius: 12px;
+    padding: 12px 16px; font-size: 14px; font-weight: 600;
+    width: 100%; margin-top: 8px; cursor: pointer;
+    box-shadow: 0 5px 0 #1e3fa3, 0 8px 15px rgba(47,91,224,0.35);
+    transition: transform 0.08s ease, box-shadow 0.08s ease;
+  }
+  button:active {
+    transform: translateY(4px);
+    box-shadow: 0 1px 0 #1e3fa3, 0 3px 8px rgba(47,91,224,0.35);
+  }
+  button.secondary {
+    background: linear-gradient(145deg, #2a2f3a, #1b1e26);
+    box-shadow: 0 5px 0 #0c0d10, 0 8px 15px rgba(0,0,0,0.35);
+  }
+  button.secondary:active { box-shadow: 0 1px 0 #0c0d10; }
+  button.success-btn {
+    background: linear-gradient(145deg, #35d07f, #1fa763);
+    box-shadow: 0 5px 0 #12703f, 0 8px 15px rgba(31,167,99,0.35);
+  }
+  button.success-btn:active { box-shadow: 0 1px 0 #12703f; }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  input {
+    width: 100%; padding: 12px; margin-top: 8px; border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.15);
+    background: rgba(255,255,255,0.05); color: #fff; font-size: 14px;
+  }
+  input::placeholder { color: rgba(255,255,255,0.4); }
+
+  h4 { margin: 4px 0 10px 0; font-size: 15px; }
+  p.hint { font-size: 12.5px; opacity: 0.75; line-height: 1.5; margin: 4px 0; }
+
+  .msg { padding: 12px; border-radius: 12px; margin: 10px 0; font-size: 13px; animation: fadeSlideUp 0.3s ease; }
+  .msg.error { background: rgba(231,76,60,0.15); color: #ff8a80; border: 1px solid rgba(231,76,60,0.3); }
+  .msg.success { background: rgba(46,204,113,0.15); color: #6dffb0; border: 1px solid rgba(46,204,113,0.3); }
+
+  .progress-bar { background: rgba(255,255,255,0.1); border-radius: 8px; height: 10px; margin-top: 8px; overflow: hidden; }
+  .progress-fill {
+    background: linear-gradient(90deg, #35d07f, #1fa763);
+    height: 100%; border-radius: 8px;
+    transition: width 0.6s ease;
+  }
+
+  .badge { font-size: 11px; padding: 4px 10px; border-radius: 20px; color: #fff; font-weight: 600; }
+  .badge.active { background: linear-gradient(145deg,#f7b733,#e0910f); }
+  .badge.completed { background: linear-gradient(145deg,#35d07f,#1fa763); }
+
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .stat-box {
+    background: rgba(255,255,255,0.05); border-radius: 14px; padding: 12px;
+    text-align: center; border: 1px solid rgba(255,255,255,0.08);
+  }
+  .stat-box .val { font-size: 20px; font-weight: 700; }
+  .stat-box .lbl { font-size: 11px; opacity: 0.7; margin-top: 2px; }
+
+  /* ---------- BOTTOM NAV ---------- */
+  .bottom-nav {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    display: flex; gap: 6px;
+    background: rgba(15,17,21,0.95);
+    backdrop-filter: blur(10px);
+    border-top: 1px solid rgba(255,255,255,0.08);
+    padding: 10px 10px calc(10px + env(safe-area-inset-bottom));
+    z-index: 100;
+  }
+  .bottom-nav button {
+    flex: 1; margin: 0; background: transparent; box-shadow: none;
+    color: rgba(255,255,255,0.55); font-size: 11px; padding: 8px 2px;
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+  }
+  .bottom-nav button .icon { font-size: 18px; }
+  .bottom-nav button.active {
+    background: linear-gradient(145deg, #4f7dfb, #2f5be0);
+    color: #fff; border-radius: 14px;
+    box-shadow: 0 4px 12px rgba(47,91,224,0.45);
+  }
+  .bottom-nav button:active { transform: scale(0.94); }
+
+  /* ---------- SUCCESS OVERLAY ---------- */
+  #successOverlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+    display: none; align-items: center; justify-content: center; z-index: 999;
+  }
+  .success-box {
+    background: linear-gradient(160deg, #1b1e26, #0f1115);
+    border-radius: 22px; padding: 30px 26px; text-align: center;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    border: 1px solid rgba(255,255,255,0.08);
+    animation: popIn 0.35s cubic-bezier(.34,1.56,.64,1);
+    max-width: 280px;
+  }
+  @keyframes popIn {
+    from { opacity: 0; transform: scale(0.7); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  .check-circle {
+    width: 70px; height: 70px; border-radius: 50%;
+    background: linear-gradient(145deg, #35d07f, #1fa763);
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 16px auto;
+    box-shadow: 0 10px 25px rgba(31,167,99,0.5);
+    animation: pulseGlow 1.4s ease infinite;
+  }
+  @keyframes pulseGlow {
+    0%,100% { box-shadow: 0 10px 25px rgba(31,167,99,0.5); }
+    50% { box-shadow: 0 10px 40px rgba(31,167,99,0.85); }
+  }
+  .check-circle svg { width: 34px; height: 34px; }
+  .success-title { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+  .success-sub { font-size: 13px; opacity: 0.75; line-height: 1.5; }
+  .success-coins { font-size: 24px; font-weight: 800; color: #35d07f; margin: 10px 0; }
+
+  .spinner {
+    width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: #fff; border-radius: 50%; display: inline-block;
+    animation: spin 0.6s linear infinite; margin-right: 6px; vertical-align: middle;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ---------- BROADCAST FULL PAGE ---------- */
+  #broadcastPage {
+    position: fixed; inset: 0; background: var(--tg-theme-bg-color, #0f1115);
+    display: none; flex-direction: column; z-index: 500;
+  }
+  .broadcast-header {
+    display: flex; align-items: center; gap: 12px; padding: 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  .broadcast-header button { width: auto; margin: 0; padding: 8px 14px; box-shadow: none; background: rgba(255,255,255,0.08); }
+  .broadcast-body { flex: 1; overflow-y: auto; padding: 16px; }
+  .broadcast-body img { width: 100%; border-radius: 16px; margin-bottom: 12px; }
+  .comment-item {
+    background: rgba(255,255,255,0.05); border-radius: 12px; padding: 10px 12px; margin-bottom: 8px;
+  }
+  .comment-item .cu { font-size: 12px; font-weight: 700; color: #6f9dff; }
+  .comment-item .ct { font-size: 13px; margin-top: 2px; }
+  .comment-input-row { display: flex; gap: 8px; padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); border-top: 1px solid rgba(255,255,255,0.08); }
+  .comment-input-row input { margin-top: 0; }
+  .comment-input-row button { width: auto; margin-top: 0; padding: 10px 18px; }
+
+  /* ---------- PROFILE EXTRAS: gift + referral ---------- */
+  .list-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 4px; cursor: pointer;
+  }
+  .list-row .left { display: flex; align-items: center; gap: 10px; font-size: 14px; }
+  .divider { height: 1px; background: rgba(255,255,255,0.08); margin: 4px 0; }
+  .ref-history-item {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 13px;
+  }
+  .qr-box { text-align: center; margin: 10px 0; }
+  .qr-box img { width: 180px; height: 180px; border-radius: 14px; border: 3px solid rgba(255,255,255,0.1); }
+  .timer-box {
+    text-align: center; font-size: 28px; font-weight: 800; color: #ff8a80;
+    margin: 10px 0; letter-spacing: 1px;
+  }
+  .badge.rejected { background: linear-gradient(145deg,#e74c3c,#c0392b); }
+  .badge.approved { background: linear-gradient(145deg,#35d07f,#1fa763); }
+  .badge.pending { background: linear-gradient(145deg,#f7b733,#e0910f); }
+  .badge.expired { background: linear-gradient(145deg,#7d8b99,#5a6572); }
+  .package-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px; }
+  .package-box {
+    background: linear-gradient(145deg, rgba(79,125,251,0.15), rgba(47,91,224,0.08));
+    border: 1px solid rgba(79,125,251,0.3);
+    border-radius: 14px; padding: 14px; text-align: center; cursor: pointer;
+    transition: transform 0.1s ease;
+  }
+  .package-box:active { transform: scale(0.95); }
+  .package-box .pkg-coins { font-size: 16px; font-weight: 800; color: #6f9dff; }
+  .package-box .pkg-price { font-size: 13px; opacity: 0.8; margin-top: 4px; }
+</style>
+</head>
+<body>
+
+<div id="blockScreen" style="display:none">
+  <div class="card">
+    <h3 data-i18n="block_title">⚠️ Pehle Join Karo</h3>
+    <p class="hint" data-i18n="block_hint">App use karne ke liye ye dono join karna zaroori hai. Join karne ke baad neeche button dabao.</p>
+    <div id="joinStatus" style="margin:12px 0; font-size:14px"></div>
+    <button onclick="location.reload()" data-i18n="block_check_btn">✅ Maine Join Kar Liya, Check Karo</button>
+  </div>
+</div>
+
+<div id="deviceBlockScreen" style="display:none">
+  <div class="card">
+    <h3 data-i18n="device_block_title">🚫 Device Block</h3>
+    <p class="hint" data-i18n="device_block_hint">Ye device pehle se kisi doosre account ke saath register hai.</p>
+  </div>
+</div>
+
+<div id="mainScreen" style="display:none">
+  <div class="header-card">
+    <div class="avatar" id="avatarBox">👤</div>
+    <div class="header-info">
+      <div class="header-name" id="headerName">User</div>
+      <div class="header-username" id="headerUsername">@username</div>
+    </div>
+    <div class="coin-pill">🪙 <span id="coinCount">0</span></div>
+    <div class="lang-toggle" onclick="toggleLang()" id="langToggleBtn">EN</div>
+    <div class="bell-btn" onclick="openBroadcast()">
+      🔔<span class="red-dot" id="redDot"></span>
+    </div>
+  </div>
+
+  <div id="tab-earn" class="tab-content"></div>
+
+  <div id="tab-addtask" class="tab-content" style="display:none">
+    <div class="card">
+      <h4 data-i18n="step1_title">🛠️ Step 1 — Bot Ko Admin Banao</h4>
+      <p class="hint" data-i18n="step1_hint">Apne group/channel me is bot ko Administrator banao aur "Invite Users" permission ON karo.</p>
+      <p class="hint" data-i18n="step1_placeholder">Fir yahan uska @username daalo:</p>
+      <input id="chatUsername" placeholder="@yourchannel">
+      <button onclick="verifyAdmin()" id="verifyAdminBtn" data-i18n="verify_admin_btn">🔍 Verify Karo</button>
+      <div id="adminMsg"></div>
+    </div>
+
+    <div id="createFormCard" class="card" style="display:none">
+      <h4 data-i18n="step2_title">🎯 Step 2 — Target Set Karo</h4>
+      <p class="hint" data-i18n="step2_hint">Kitne naye members chahiye is task ke through?</p>
+      <input id="targetMembers" type="number" min="5" placeholder="Kam se kam 5 members">
+      <p class="hint" style="margin-top:2px" data-i18n="min_hint">⚠️ Minimum 5 members ka task banana zaroori hai</p>
+      <button onclick="createTask()" class="success-btn" id="createTaskBtn" data-i18n="launch_btn">🚀 Task Launch Karo</button>
+      <div id="createMsg"></div>
+    </div>
+  </div>
+
+  <div id="tab-wallet" class="tab-content" style="display:none">
+
+    <!-- WALLET HOME: 2 option cards -->
+    <div id="walletHome">
+      <div class="card" style="cursor:pointer" onclick="showWalletView('deposit')">
+        <div class="list-row" style="padding:4px">
+          <div class="left" style="font-size:16px">💰 <b>Deposit</b></div>
+          <span>›</span>
+        </div>
+        <p class="hint">Real paise se coins khareedo</p>
+      </div>
+      <div class="card" style="cursor:pointer" onclick="showWalletView('withdraw')">
+        <div class="list-row" style="padding:4px">
+          <div class="left" style="font-size:16px">💸 <b>Withdraw</b></div>
+          <span>›</span>
+        </div>
+        <p class="hint">Coins ko real paison me convert karo (UPI)</p>
+      </div>
+    </div>
+
+    <!-- DEPOSIT VIEW -->
+    <div id="walletDeposit" style="display:none">
+      <button class="secondary" onclick="showWalletView('home')" style="width:auto; padding:8px 14px">← Wapas</button>
+
+      <div id="depositPackages" class="card">
+        <h4>💰 Package Chuno</h4>
+        <div id="packageGrid" class="package-grid"></div>
+      </div>
+
+      <div id="depositQrCard" class="card" style="display:none">
+        <h4 id="selectedPkgTitle"></h4>
+        <div class="qr-box"><img src="/webapp/payment-qr.png"></div>
+        <p class="hint" style="text-align:center">QR scan karke payment karo, fir neeche button dabao</p>
+        <div id="depositStart">
+          <button class="success-btn" onclick="startDeposit()" id="startDepositBtn">💳 Maine Payment Kar Diya</button>
+        </div>
+
+        <div id="depositForm" style="display:none">
+          <div class="timer-box" id="depositTimer">3:00</div>
+          <p class="hint" style="text-align:center">Is time ke andar neeche details submit karo, warna request expire ho jayegi</p>
+          <input id="depName" placeholder="Aapka naam (jis naam se payment kiya)">
+          <input id="depUtr" placeholder="UTR / Transaction ID">
+          <input id="depScreenshot" type="file" accept="image/*" style="padding:8px">
+          <button class="success-btn" onclick="submitDeposit()" id="submitDepositBtn">✅ Submit Karo</button>
+          <div id="depositMsg"></div>
+        </div>
+
+        <div id="depositExpired" style="display:none">
+          <div class="msg error">⏰ Time khatam ho gaya, request expire ho gayi</div>
+          <button onclick="resetDeposit()">🔄 Dobara Try Karo</button>
+        </div>
+      </div>
+
+      <h4>📜 Deposit History</h4>
+      <div id="depositHistory"></div>
+    </div>
+
+    <!-- WITHDRAW VIEW -->
+    <div id="walletWithdraw" style="display:none">
+      <button class="secondary" onclick="showWalletView('home')" style="width:auto; padding:8px 14px">← Wapas</button>
+
+      <div class="card">
+        <h4>💸 Withdraw Karo</h4>
+        <p class="hint" id="withdrawBalanceHint">Aapke paas <b id="withdrawBalance">0</b> coins hain</p>
+        <p class="hint">Minimum <b id="withdrawMinCoins">50000</b> coins withdraw kar sakte ho</p>
+        <input id="wdCoins" type="number" placeholder="Kitne coins withdraw karne hain">
+        <div id="wdPreview" class="msg" style="display:none"></div>
+        <input id="wdUpi" placeholder="Apna UPI ID (jaise name@bank)">
+        <button class="success-btn" onclick="submitWithdraw()" id="submitWithdrawBtn">✅ Withdraw Request Bhejo</button>
+        <div id="withdrawMsg"></div>
+      </div>
+
+      <h4>📜 Withdraw History</h4>
+      <div id="withdrawHistory"></div>
+    </div>
+
+  </div>
+</div>
+
+<div id="bottomNav" class="bottom-nav" style="display:none">
+  <button id="nav-earn" class="active" onclick="switchTab('earn')"><span class="icon">💰</span><span data-i18n="nav_earn">Earn</span></button>
+  <button id="nav-addtask" onclick="switchTab('addtask')"><span class="icon">➕</span><span data-i18n="nav_addtask">Add Task</span></button>
+  <button id="nav-wallet" onclick="switchTab('wallet')"><span class="icon">👛</span>Wallet</button>
+  <button id="nav-profile" onclick="switchTab('profile')"><span class="icon">👤</span><span data-i18n="nav_profile">Profile</span></button>
+</div>
+
+
+<div id="successOverlay">
+  <div class="success-box">
+    <div class="check-circle">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <div class="success-title" id="successTitle">Successful!</div>
+    <div class="success-coins" id="successCoins" style="display:none"></div>
+    <div class="success-sub" id="successSub"></div>
+    <button onclick="closeSuccess()" style="margin-top:16px">Theek Hai</button>
+  </div>
+</div>
+
+<div id="broadcastPage">
+  <div class="broadcast-header">
+    <button onclick="closeBroadcast()">← Wapas</button>
+    <b>📢 Announcement</b>
+  </div>
+  <div class="broadcast-body" id="broadcastBody"></div>
+  <div class="comment-input-row">
+    <input id="commentInput" placeholder="Comment likho...">
+    <button onclick="postComment()">Bhejo</button>
+  </div>
+</div>
+
+<script>
+const tg = window.Telegram.WebApp;
+tg.ready();
+tg.expand();
+
+let verifiedChat = null;
+let myUserId = null;
+let iAmAdmin = false;
+
+// ---------- LANGUAGE (Hindi / English) ----------
+let currentLang = localStorage.getItem('lang') || 'hi';
+
+const L = {
+  nav_earn: { hi: 'Earn', en: 'Earn' },
+  nav_addtask: { hi: 'Add Task', en: 'Add Task' },
+  nav_profile: { hi: 'Profile', en: 'Profile' },
+  earn_empty_title: { hi: '😴 Abhi Kuch Nahi', en: '😴 Nothing Here' },
+  earn_empty_hint: { hi: 'Koi task available nahi hai — thodi der me wapas check karo.', en: 'No tasks available right now — check back soon.' },
+  join_btn: { hi: '🔗 Pehle Join Karo', en: '🔗 Join First' },
+  verify_btn: { hi: '✅ Verify Karke Coins Pao', en: '✅ Verify & Get Coins' },
+  own_task_locked: { hi: '🔒 Apna khud ka banaya task khud complete nahi kar sakte', en: "🔒 You can't complete your own task" },
+  own_task_hint: { hi: 'Ye aapka khud ka banaya task hai', en: 'This is your own created task' },
+  earn_task_hint: { hi: 'Join karke verify karo aur turant 100 coins pao', en: 'Join and verify to instantly earn 100 coins' },
+  step1_title: { hi: '🛠️ Step 1 — Bot Ko Admin Banao', en: '🛠️ Step 1 — Make Bot Admin' },
+  step1_hint: { hi: 'Apne group/channel me is bot ko Administrator banao aur "Invite Users" permission ON karo.', en: 'Make this bot an Administrator in your group/channel and turn ON "Invite Users" permission.' },
+  step1_placeholder: { hi: 'Fir yahan uska @username daalo:', en: 'Then enter its @username here:' },
+  verify_admin_btn: { hi: '🔍 Verify Karo', en: '🔍 Verify' },
+  step2_title: { hi: '🎯 Step 2 — Target Set Karo', en: '🎯 Step 2 — Set Target' },
+  step2_hint: { hi: 'Kitne naye members chahiye is task ke through?', en: 'How many new members do you need?' },
+  min_hint: { hi: '⚠️ Minimum 5 members ka task banana zaroori hai', en: '⚠️ Minimum 5 members required' },
+  launch_btn: { hi: '🚀 Task Launch Karo', en: '🚀 Launch Task' },
+  block_title: { hi: '⚠️ Pehle Join Karo', en: '⚠️ Join First' },
+  block_hint: { hi: 'App use karne ke liye ye dono join karna zaroori hai.', en: 'You must join both of these to use the app.' },
+  block_check_btn: { hi: '✅ Maine Join Kar Liya, Check Karo', en: '✅ I Joined, Check Now' },
+  device_block_title: { hi: '🚫 Device Block', en: '🚫 Device Blocked' },
+  device_block_hint: { hi: 'Ye device pehle se kisi doosre account ke saath register hai.', en: 'This device is already registered with another account.' },
+  profile_coins: { hi: 'Current Coins', en: 'Current Coins' },
+  profile_tasks_complete: { hi: 'Tasks Complete', en: 'Tasks Complete' },
+  profile_total_earned: { hi: 'Total Kamaye', en: 'Total Earned' },
+  profile_tasks_created: { hi: 'Tasks Banaye', en: 'Tasks Created' },
+  gift_title: { hi: '🎁 Gift Code Claim Karo', en: '🎁 Claim Gift Code' },
+  gift_placeholder: { hi: 'Gift code daalo', en: 'Enter gift code' },
+  gift_claim_btn: { hi: 'Claim Karo', en: 'Claim' },
+  ref_title: { hi: '🔗 Refer & Earn', en: '🔗 Refer & Earn' },
+  ref_hint: { hi: 'Har naye referral pe 250 coins milte hain + unki har earning ka 2% commission!', en: 'Get 250 coins per referral + 2% lifetime commission on their earnings!' },
+  ref_share_btn: { hi: '📤 Link Share Karo', en: '📤 Share Link' },
+  ref_total: { hi: 'Total Referrals', en: 'Total Referrals' },
+  ref_commission: { hi: 'Commission Kamaya', en: 'Commission Earned' },
+  ref_history: { hi: '📜 History', en: '📜 History' },
+  ref_empty: { hi: 'Abhi tak koi refer nahi hua.', en: 'No referrals yet.' },
+  support_title: { hi: '🎫 Support Ticket', en: '🎫 Support Ticket' },
+  support_hint: { hi: 'Koi problem hai? Yahan likho, jaldi jawab milega.', en: 'Have an issue? Write here, get quick help.' },
+  support_placeholder: { hi: 'Apni problem likho...', en: 'Describe your issue...' },
+  support_send_btn: { hi: 'Bhejo', en: 'Send' },
+  my_tasks_title: { hi: '📂 Aapke Bane Hue Tasks', en: '📂 Your Created Tasks' },
+  my_tasks_empty: { hi: 'Aapne abhi tak koi task nahi banaya.', en: "You haven't created any task yet." },
+  rate_btn: { hi: 'Rate Karo', en: 'Rate' },
+  report_btn: { hi: '🚩 Report', en: '🚩 Report' }
+};
+
+function t(key) { return (L[key] && L[key][currentLang]) || key; }
+
+function toggleLang() {
+  currentLang = currentLang === 'hi' ? 'en' : 'hi';
+  localStorage.setItem('lang', currentLang);
+  document.getElementById('langToggleBtn').innerText = currentLang === 'hi' ? 'EN' : 'हिं';
+  applyStaticTranslations();
+  loadTasks();
+  const profileVisible = document.getElementById('tab-profile').style.display !== 'none';
+  if (profileVisible) loadProfile();
+}
+
+function applyStaticTranslations() {
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    el.innerText = t(el.getAttribute('data-i18n'));
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    el.placeholder = t(el.getAttribute('data-i18n-placeholder'));
+  });
+}
+
+function apiHeaders() {
+  return {
+    'Content-Type': 'application/json',
+    'X-Telegram-Init-Data': tg.initData
+  };
+}
+
+// ---------- Device Fingerprint (cache clear hone pe bhi zyada tar same rehta hai) ----------
+function getDeviceId() {
+  const raw = [
+    navigator.userAgent, navigator.language,
+    screen.width + 'x' + screen.height, screen.colorDepth,
+    navigator.hardwareConcurrency || '', navigator.platform,
+    tg.platform, new Date().getTimezoneOffset()
+  ].join('|');
+
+  let hash = 0;
+  for (let i = 0; i < raw.length; i++) {
+    hash = ((hash << 5) - hash) + raw.charCodeAt(i);
+    hash |= 0;
+  }
+  return 'fp_' + Math.abs(hash);
+}
+
+function showSuccess(title, sub, coins) {
+  document.getElementById('successTitle').innerText = title;
+  document.getElementById('successSub').innerText = sub || '';
+  const coinsEl = document.getElementById('successCoins');
+  if (coins) {
+    coinsEl.style.display = 'block';
+    coinsEl.innerText = `+${coins} 🪙`;
+  } else {
+    coinsEl.style.display = 'none';
+  }
+  document.getElementById('successOverlay').style.display = 'flex';
+}
+function closeSuccess() {
+  document.getElementById('successOverlay').style.display = 'none';
+}
+
+async function init() {
+  document.getElementById('langToggleBtn').innerText = currentLang === 'hi' ? 'EN' : 'हिं';
+  applyStaticTranslations();
+
+  const deviceId = getDeviceId();
+  const deviceRes = await fetch('/api/device/check', {
+    method: 'POST', headers: apiHeaders(),
+    body: JSON.stringify({ device_id: deviceId })
+  }).then(r => r.json());
+
+  if (!deviceRes.allowed) {
+    document.getElementById('deviceBlockScreen').style.display = 'block';
+    return;
+  }
+
+  const check = await fetch('/api/check-membership', { headers: apiHeaders() }).then(r => r.json());
+  if (!check.allOk) {
+    document.getElementById('blockScreen').style.display = 'block';
+    document.getElementById('joinStatus').innerHTML =
+      `${check.groupOk ? '✅' : '❌'} Group<br>${check.channelOk ? '✅' : '❌'} Channel`;
+    return;
+  }
+
+  document.getElementById('mainScreen').style.display = 'block';
+  document.getElementById('bottomNav').style.display = 'flex';
+
+  const u = tg.initDataUnsafe.user || {};
+  myUserId = u.id;
+  document.getElementById('headerName').innerText = u.first_name || 'User';
+  document.getElementById('headerUsername').innerText = u.username ? '@' + u.username : '';
+  if (u.photo_url) {
+    document.getElementById('avatarBox').innerHTML = `<img src="${u.photo_url}">`;
+  } else {
+    document.getElementById('avatarBox').innerText = (u.first_name || 'U')[0].toUpperCase();
+  }
+
+  await loadUser();
+  loadTasks();
+  checkNotifications();
+}
+
+// ---------- BROADCAST / NOTIFICATIONS ----------
+let currentBroadcastId = null;
+
+async function checkNotifications() {
+  const status = await fetch('/api/notifications/status', { headers: apiHeaders() }).then(r => r.json());
+  document.getElementById('redDot').style.display = status.hasNew ? 'block' : 'none';
+}
+
+async function openBroadcast() {
+  document.getElementById('broadcastPage').style.display = 'flex';
+  const data = await fetch('/api/broadcast/latest', { headers: apiHeaders() }).then(r => r.json());
+  const body = document.getElementById('broadcastBody');
+
+  if (!data.broadcast) {
+    body.innerHTML = '<div class="card"><p class="hint">Abhi koi announcement nahi hai.</p></div>';
+    return;
+  }
+
+  currentBroadcastId = data.broadcast.id;
+  const photoHtml = data.broadcast.photo_file_id
+    ? `<img src="/api/broadcast-photo/${data.broadcast.id}">` : '';
+
+  const commentsHtml = data.comments.map(c => `
+    <div class="comment-item">
+      <div class="cu">${c.username}</div>
+      <div class="ct">${c.comment}</div>
+    </div>
+  `).join('') || '<p class="hint">Sabse pehle comment karo!</p>';
+
+  body.innerHTML = `
+    ${photoHtml}
+    <div class="card">${data.broadcast.message || ''}</div>
+    <h4>💬 Comments</h4>
+    ${commentsHtml}
+  `;
+
+  await fetch('/api/broadcast/mark-seen', {
+    method: 'POST', headers: apiHeaders(),
+    body: JSON.stringify({ broadcast_id: data.broadcast.id })
+  });
+  document.getElementById('redDot').style.display = 'none';
+}
+
+function closeBroadcast() {
+  document.getElementById('broadcastPage').style.display = 'none';
+}
+
+async function postComment() {
+  const input = document.getElementById('commentInput');
+  const comment = input.value.trim();
+  if (!comment || !currentBroadcastId) return;
+
+  await fetch(`/api/broadcast/${currentBroadcastId}/comment`, {
+    method: 'POST', headers: apiHeaders(),
+    body: JSON.stringify({ comment })
+  });
+  input.value = '';
+  openBroadcast(); // refresh comments
+}
+
+function switchTab(tab) {
+  ['earn', 'addtask', 'profile', 'wallet'].forEach(t => {
+    document.getElementById(`tab-${t}`).style.display = (t === tab) ? 'block' : 'none';
+    document.getElementById(`nav-${t}`).classList.toggle('active', t === tab);
+  });
+  if (tab === 'profile') loadProfile();
+  if (tab === 'wallet') { showWalletView('home'); loadDepositPackages(); }
+}
+
+function showWalletView(view) {
+  document.getElementById('walletHome').style.display = view === 'home' ? 'block' : 'none';
+  document.getElementById('walletDeposit').style.display = view === 'deposit' ? 'block' : 'none';
+  document.getElementById('walletWithdraw').style.display = view === 'withdraw' ? 'block' : 'none';
+  if (view === 'deposit') loadDepositHistory();
+  if (view === 'withdraw') loadWithdrawView();
+}
+
+async function loadUser() {
+  const user = await fetch('/api/user', { headers: apiHeaders() }).then(r => r.json());
+  document.getElementById('coinCount').innerText = user.coins;
+  iAmAdmin = user.is_admin;
+}
+
+async function loadTasks() {
+  const tasks = await fetch('/api/tasks', { headers: apiHeaders() }).then(r => r.json());
+  const el = document.getElementById('tab-earn');
+  if (tasks.length === 0) {
+    el.innerHTML = `<div class="card"><h4>${t('earn_empty_title')}</h4><p class="hint">${t('earn_empty_hint')}</p></div>`;
+    return;
+  }
+  el.innerHTML = tasks.map(t2 => {
+    const isOwn = (t2.owner_id == myUserId) && !iAmAdmin;
+    const actionButtons = isOwn
+      ? `<div class="msg error" style="margin-top:10px">${t('own_task_locked')}</div>`
+      : `<button class="secondary" onclick="tg.openTelegramLink('https://t.me/${(t2.chat_username||'').replace('@','')}')">${t('join_btn')}</button>
+         <button class="success-btn" onclick="verifyTask(${t2.id}, this)">${t('verify_btn')}</button>
+         <div class="star-row" id="stars-${t2.id}">
+           ${[1,2,3,4,5].map(n => `<span onclick="rateTaskUI(${t2.id}, ${n})">★</span>`).join('')}
+           <span style="font-size:12px; opacity:0.6; margin-left:6px; align-self:center">${t2.avg_rating > 0 ? `${t2.avg_rating} (${t2.rating_count})` : ''}</span>
+         </div>
+         <button class="secondary" onclick="toggleReportBox(${t2.id})">${t('report_btn')}</button>
+         <div class="report-reasons" id="report-${t2.id}" style="display:none">
+           ${['Spam','Fake','Scam','Other'].map(r => `<button onclick="reportTaskUI(${t2.id}, '${r}')">${r}</button>`).join('')}
+         </div>`;
+
+    return `
+    <div class="card" style="${isOwn ? 'opacity:0.75' : ''}">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px">
+        <b style="font-size:15px">${t2.chat_title || t2.chat_username} ${isOwn ? '👑' : ''}</b>
+        <span class="badge active">⏳ Active</span>
+      </div>
+      <p class="hint">${isOwn ? t('own_task_hint') : t('earn_task_hint')}</p>
+      <div class="progress-bar"><div class="progress-fill" style="width:${(t2.current_count/t2.target_members)*100}%"></div></div>
+      <div style="font-size:12px; opacity:0.7; margin-top:4px">${t2.current_count}/${t2.target_members} members</div>
+      ${actionButtons}
+      <div id="msg-${t2.id}"></div>
+    </div>
+  `;
+  }).join('');
+}
+
+async function rateTaskUI(taskId, rating) {
+  document.querySelectorAll(`#stars-${taskId} span`).forEach((el, i) => {
+    el.classList.toggle('filled', i < rating);
+  });
+  await fetch(`/api/tasks/${taskId}/rate`, {
+    method: 'POST', headers: apiHeaders(),
+    body: JSON.stringify({ rating })
+  });
+}
+
+function toggleReportBox(taskId) {
+  const el = document.getElementById(`report-${taskId}`);
+  el.style.display = el.style.display === 'none' ? 'flex' : 'none';
+}
+
+async function reportTaskUI(taskId, reason) {
+  const res = await fetch(`/api/tasks/${taskId}/report`, {
+    method: 'POST', headers: apiHeaders(),
+    body: JSON.stringify({ reason })
+  }).then(r => r.json());
+
+  const msgEl = document.getElementById(`msg-${taskId}`);
+  if (res.error) {
+    msgEl.innerHTML = `<div class="msg error">❌ ${res.error}</div>`;
+  } else {
+    msgEl.innerHTML = `<div class="msg success">✅ Report bhej diya, dhanyawaad</div>`;
+    document.getElementById(`report-${taskId}`).style.display = 'none';
+  }
+}
+
+async function verifyTask(taskId, btn) {
+  btn.disabled = true;
+  const originalText = btn.innerText;
+  btn.innerHTML = '<span class="spinner"></span> Check ho raha hai...';
+
+  const res = await fetch(`/api/tasks/${taskId}/verify`, { method: 'POST', headers: apiHeaders() }).then(r => r.json());
+  const msgEl = document.getElementById(`msg-${taskId}`);
+  btn.disabled = false;
+  btn.innerText = originalText;
+
+  if (res.error) {
+    msgEl.innerHTML = `<div class="msg error">❌ ${res.error}</div>`;
+  } else {
+    showSuccess('Successful! 🎉', 'Coins aapke wallet me add ho gaye hain', res.coinsEarned);
+    loadUser();
+    loadTasks();
+  }
+}
+
+async function verifyAdmin() {
+  const btn = document.getElementById('verifyAdminBtn');
+  const chatIdentifier = document.getElementById('chatUsername').value.trim();
+  if (!chatIdentifier) return;
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Verify ho raha hai...';
+
+  const res = await fetch('/api/verify-admin', {
+    method: 'POST', headers: apiHeaders(),
+    body: JSON.stringify({ chatIdentifier })
+  }).then(r => r.json());
+
+  btn.disabled = false;
+  btn.innerText = '🔍 Verify Karo';
+
+  const msgEl = document.getElementById('adminMsg');
+  if (res.error) {
+    msgEl.innerHTML = `<div class="msg error">❌ ${res.error}</div>`;
+    document.getElementById('createFormCard').style.display = 'none';
+  } else {
+    msgEl.innerHTML = `<div class="msg success">✅ Verified: <b>${res.title}</b></div>`;
+    verifiedChat = { chat_id: res.chat_id, chat_username: chatIdentifier, chat_title: res.title };
+    document.getElementById('createFormCard').style.display = 'block';
+  }
+}
+
+async function createTask() {
+  const btn = document.getElementById('createTaskBtn');
+  const target = parseInt(document.getElementById('targetMembers').value);
+  const msgEl = document.getElementById('createMsg');
+  if (!verifiedChat) return;
+
+  if (!target || target < 5) {
+    msgEl.innerHTML = `<div class="msg error">❌ Minimum 5 members ka target dalna zaroori hai</div>`;
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Ban raha hai...';
+
+  const res = await fetch('/api/tasks/create', {
+    method: 'POST', headers: apiHeaders(),
+    body: JSON.stringify({ ...verifiedChat, target_members: target })
+  }).then(r => r.json());
+
+  btn.disabled = false;
+  btn.innerText = '🚀 Task Launch Karo';
+
+  if (res.error) {
+    msgEl.innerHTML = `<div class="msg error">❌ ${res.error}</div>`;
+  } else {
+    showSuccess('Task Live Ho Gaya! 🚀', `${res.costPaid} coins kate — ab members aana shuru honge`);
+    loadUser();
+
+    // Form ko clear kar do agli baar ke liye
+    document.getElementById('chatUsername').value = '';
+    document.getElementById('targetMembers').value = '';
+    document.getElementById('adminMsg').innerHTML = '';
+    document.getElementById('createMsg').innerHTML = '';
+    document.getElementById('createFormCard').style.display = 'none';
+    verifiedChat = null;
+  }
+}
+
+async function loadProfile() {
+  const stats = await fetch('/api/profile', { headers: apiHeaders() }).then(r => r.json());
+  const ref = await fetch('/api/referrals', { headers: apiHeaders() }).then(r => r.json());
+  const el = document.getElementById('tab-profile');
+
+  const myTasksHtml = stats.my_tasks.length === 0
+    ? `<div class="card"><p class="hint">${t('my_tasks_empty')}</p></div>`
+    : stats.my_tasks.map(tk => `
+        <div class="card">
+          <div style="display:flex; justify-content:space-between; align-items:center">
+            <b style="font-size:14px">${tk.chat_title || tk.chat_username}</b>
+            <span class="badge ${tk.status}">${tk.status === 'completed' ? '✅ Complete' : '⏳ Active'}</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill" style="width:${(tk.current_count/tk.target_members)*100}%"></div></div>
+          <div style="font-size:12px; opacity:0.7; margin-top:4px">${tk.current_count}/${tk.target_members} members mile</div>
+        </div>
+      `).join('');
+
+  const refHistoryHtml = ref.history.length === 0
+    ? `<p class="hint">${t('ref_empty')}</p>`
+    : ref.history.map(r => `
+        <div class="ref-history-item">
+          <span>@${r.username || 'user'}</span>
+          <b style="color:#35d07f">+${r.commission_earned} 🪙</b>
+        </div>
+      `).join('');
+
+  el.innerHTML = `
+    <div class="card" style="text-align:center">
+      <div class="avatar" style="margin:0 auto 10px auto; width:64px; height:64px; font-size:26px">
+        ${stats.photo_url ? `<img src="${stats.photo_url}">` : (stats.first_name || 'U')[0].toUpperCase()}
+      </div>
+      <div style="font-weight:700; font-size:16px">${stats.first_name || 'User'}</div>
+      <div style="opacity:0.6; font-size:13px">${stats.username ? '@' + stats.username : 'username nahi hai'}</div>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat-box"><div class="val">🪙 ${stats.coins}</div><div class="lbl">${t('profile_coins')}</div></div>
+      <div class="stat-box"><div class="val">✅ ${stats.tasks_completed}</div><div class="lbl">${t('profile_tasks_complete')}</div></div>
+      <div class="stat-box"><div class="val">💰 ${stats.total_earned}</div><div class="lbl">${t('profile_total_earned')}</div></div>
+      <div class="stat-box"><div class="val">📋 ${stats.my_tasks.length}</div><div class="lbl">${t('profile_tasks_created')}</div></div>
+    </div>
+
+    <div class="card">
+      <div class="list-row" onclick="toggleSection('giftSection')">
+        <div class="left">🎁 <span>${t('gift_title')}</span></div>
+        <span>›</span>
+      </div>
+      <div id="giftSection" style="display:none; margin-top:8px">
+        <input id="giftCodeInput" placeholder="${t('gift_placeholder')}">
+        <button class="success-btn" onclick="claimGift()" id="giftClaimBtn">${t('gift_claim_btn')}</button>
+        <div id="giftMsg"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="list-row" onclick="toggleSection('refSection')">
+        <div class="left">🔗 <span>${t('ref_title')}</span></div>
+        <span>›</span>
+      </div>
+      <div id="refSection" style="display:none; margin-top:8px">
+        <p class="hint">${t('ref_hint')}</p>
+        <input id="refLinkBox" value="${ref.link}" readonly>
+        <button onclick="shareRefLink('${ref.link}')">${t('ref_share_btn')}</button>
+        <div class="stat-grid" style="margin-top:12px">
+          <div class="stat-box"><div class="val">👥 ${ref.count}</div><div class="lbl">${t('ref_total')}</div></div>
+          <div class="stat-box"><div class="val">💰 ${ref.totalEarned}</div><div class="lbl">${t('ref_commission')}</div></div>
+        </div>
+        <h4 style="margin-top:14px">${t('ref_history')}</h4>
+        ${refHistoryHtml}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="list-row" onclick="toggleSection('supportSection')">
+        <div class="left">🎫 <span>${t('support_title')}</span></div>
+        <span>›</span>
+      </div>
+      <div id="supportSection" style="display:none; margin-top:8px">
+        <p class="hint">${t('support_hint')}</p>
+        <input id="supportMsgInput" placeholder="${t('support_placeholder')}">
+        <button onclick="createTicket()" id="supportBtn">${t('support_send_btn')}</button>
+        <div id="supportMsg"></div>
+        <div id="ticketHistory" style="margin-top:10px"></div>
+      </div>
+    </div>
+
+    <h4 style="margin-top:16px">${t('my_tasks_title')}</h4>
+    ${myTasksHtml}
+  `;
+
+  loadTickets();
+}
+
+async function loadTickets() {
+  const tickets = await fetch('/api/support/my-tickets', { headers: apiHeaders() }).then(r => r.json());
+  const el = document.getElementById('ticketHistory');
+  if (!el) return;
+  if (tickets.length === 0) {
+    el.innerHTML = '<p class="hint">Koi ticket nahi hai abhi tak.</p>';
+    return;
+  }
+  el.innerHTML = tickets.map(t => `
+    <div class="card" style="margin-bottom:8px">
+      <div style="display:flex; justify-content:space-between; align-items:center">
+        <span style="font-size:12px; opacity:0.7">#${t.id} • ${new Date(t.created_at).toLocaleDateString()}</span>
+        <span class="badge ${t.status === 'replied' ? 'completed' : 'active'}">${t.status === 'replied' ? '✅ Replied' : '⏳ Open'}</span>
+      </div>
+      <div style="font-size:13px; margin-top:6px">${t.message}</div>
+      ${t.admin_reply ? `<div class="msg success" style="margin-top:8px">📩 ${t.admin_reply}</div>` : ''}
+    </div>
+  `).join('');
+}
+
+async function createTicket() {
+  const btn = document.getElementById('supportBtn');
+  const input = document.getElementById('supportMsgInput');
+  const message = input.value.trim();
+  const msgEl = document.getElementById('supportMsg');
+  if (!message) return;
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Bheja ja raha hai...';
+
+  await fetch('/api/support/create', {
+    method: 'POST', headers: apiHeaders(),
+    body: JSON.stringify({ message })
+  });
+
+  btn.disabled = false;
+  btn.innerText = 'Bhejo';
+  input.value = '';
+  msgEl.innerHTML = '<div class="msg success">✅ Ticket bhej diya, jald hi jawab milega</div>';
+  loadTickets();
+}
+
+function toggleSection(id) {
+  const el = document.getElementById(id);
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+function shareRefLink(link) {
+  tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent('Join karo aur coins kamao! 🚀')}`);
+}
+
+async function claimGift() {
+  const btn = document.getElementById('giftClaimBtn');
+  const code = document.getElementById('giftCodeInput').value.trim();
+  const msgEl = document.getElementById('giftMsg');
+  if (!code) return;
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Check ho raha hai...';
+
+  const res = await fetch('/api/gift/claim', {
+    method: 'POST', headers: apiHeaders(),
+    body: JSON.stringify({ code })
+  }).then(r => r.json());
+
+  btn.disabled = false;
+  btn.innerText = 'Claim Karo';
+
+  if (res.error) {
+    msgEl.innerHTML = `<div class="msg error">❌ ${res.error}</div>`;
+  } else {
+    document.getElementById('giftCodeInput').value = '';
+    showSuccess('Gift Claim Ho Gaya! 🎁', 'Coins aapke wallet me add ho gaye', res.amount);
+    loadUser();
+  }
+}
+
+// ---------- DEPOSIT (Packages + Confirm + QR + Timer) ----------
+let depositTimerInterval = null;
+let currentDepositId = null;
+let selectedPackage = null;
+
+async function loadDepositPackages() {
+  const packages = await fetch('/api/deposit/packages', { headers: apiHeaders() }).then(r => r.json());
+  const grid = document.getElementById('packageGrid');
+  grid.innerHTML = packages.map(p => `
+    <div class="package-box" onclick='confirmPackage(${p.amount}, ${p.coins})'>
+      <div class="pkg-coins">🪙 ${p.coins.toLocaleString()}</div>
+      <div class="pkg-price">₹${p.amount}</div>
+    </div>
+  `).join('');
+
+  // Package select screen wapas dikhao, QR card hide karo (jab Deposit view khule)
+  document.getElementById('depositPackages').style.display = 'block';
+  document.getElementById('depositQrCard').style.display = 'none';
+}
+
+function confirmPackage(amount, coins) {
+  tg.showConfirm(
+    `₹${amount} deposit karke ${coins.toLocaleString()} coins lena chahte ho?`,
+    (confirmed) => {
+      if (confirmed) proceedToQr(amount, coins);
+    }
+  );
+}
+
+function proceedToQr(amount, coins) {
+  selectedPackage = { amount, coins };
+  document.getElementById('depositPackages').style.display = 'none';
+  document.getElementById('depositQrCard').style.display = 'block';
+  document.getElementById('selectedPkgTitle').innerText = `₹${amount} → ${coins.toLocaleString()} coins`;
+
+  // Reset form state
+  document.getElementById('depositStart').style.display = 'block';
+  document.getElementById('depositForm').style.display = 'none';
+  document.getElementById('depositExpired').style.display = 'none';
+}
+
+async function startDeposit() {
+  const btn = document.getElementById('startDepositBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Shuru ho raha hai...';
+
+  const deposit = await fetch('/api/deposit/initiate', {
+    method: 'POST', headers: apiHeaders(),
+    body: JSON.stringify({ amount: selectedPackage.amount, coins: selectedPackage.coins })
+  }).then(r => r.json());
+
+  btn.disabled = false;
+  btn.innerText = '💳 Maine Payment Kar Diya';
+
+  if (deposit.error) {
+    alert(deposit.error);
+    return;
+  }
+
+  currentDepositId = deposit.id;
+  document.getElementById('depositStart').style.display = 'none';
+  document.getElementById('depositExpired').style.display = 'none';
+  document.getElementById('depositForm').style.display = 'block';
+
+  startDepositTimer(deposit.expires_at);
+}
+
+function startDepositTimer(expiresAt) {
+  if (depositTimerInterval) clearInterval(depositTimerInterval);
+
+  function tick() {
+    const remaining = Math.max(0, Math.floor((new Date(expiresAt) - new Date()) / 1000));
+    const min = Math.floor(remaining / 60);
+    const sec = remaining % 60;
+    document.getElementById('depositTimer').innerText = `${min}:${sec.toString().padStart(2, '0')}`;
+
+    if (remaining <= 0) {
+      clearInterval(depositTimerInterval);
+      document.getElementById('depositForm').style.display = 'none';
+      document.getElementById('depositExpired').style.display = 'block';
+    }
+  }
+  tick();
+  depositTimerInterval = setInterval(tick, 1000);
+}
+
+function resetDeposit() {
+  document.getElementById('depositQrCard').style.display = 'none';
+  document.getElementById('depositPackages').style.display = 'block';
+  document.getElementById('depName').value = '';
+  document.getElementById('depUtr').value = '';
+  document.getElementById('depScreenshot').value = '';
+}
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function submitDeposit() {
+  const btn = document.getElementById('submitDepositBtn');
+  const msgEl = document.getElementById('depositMsg');
+  const name = document.getElementById('depName').value.trim();
+  const utr = document.getElementById('depUtr').value.trim();
+  const fileInput = document.getElementById('depScreenshot');
+
+  if (!name || !utr || !fileInput.files[0]) {
+    msgEl.innerHTML = '<div class="msg error">❌ Sab fields bharo aur screenshot upload karo</div>';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Bheja ja raha hai...';
+
+  try {
+    const screenshot_base64 = await fileToBase64(fileInput.files[0]);
+    const res = await fetch('/api/deposit/submit-proof', {
+      method: 'POST', headers: apiHeaders(),
+      body: JSON.stringify({ request_id: currentDepositId, name, utr, screenshot_base64 })
+    }).then(r => r.json());
+
+    btn.disabled = false;
+    btn.innerText = '✅ Submit Karo';
+
+    if (res.error) {
+      msgEl.innerHTML = `<div class="msg error">❌ ${res.error}</div>`;
+    } else {
+      if (depositTimerInterval) clearInterval(depositTimerInterval);
+      document.getElementById('depositForm').style.display = 'none';
+      showSuccess('Request Bhej Di! ⏳', 'Admin verify karke coins credit karega, thodi der wait karo');
+      resetDeposit();
+      loadDepositHistory();
+    }
+  } catch (err) {
+    btn.disabled = false;
+    btn.innerText = '✅ Submit Karo';
+    msgEl.innerHTML = '<div class="msg error">❌ Kuch galat ho gaya, dubara try karo</div>';
+  }
+}
+
+async function loadDepositHistory() {
+  const list = await fetch('/api/deposit/my', { headers: apiHeaders() }).then(r => r.json());
+  const el = document.getElementById('depositHistory');
+  if (list.length === 0) {
+    el.innerHTML = '<div class="card"><p class="hint">Koi deposit history nahi hai abhi tak.</p></div>';
+    return;
+  }
+  el.innerHTML = list.map(d => `
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center">
+        <span>₹${d.amount_inr || '-'} → 🪙 ${d.coins_amount || '-'}</span>
+        <span class="badge ${d.status}">${d.status}</span>
+      </div>
+      <div style="font-size:12px; opacity:0.7; margin-top:4px">${new Date(d.created_at).toLocaleString()}</div>
+      ${d.status === 'approved' ? `<div class="msg success" style="margin-top:8px">🪙 +${d.coins_credited} coins mile</div>` : ''}
+      ${d.status === 'rejected' ? `<div class="msg error" style="margin-top:8px">${d.reject_reason || ''}</div>` : ''}
+    </div>
+  `).join('');
+}
+
+// ---------- WITHDRAW ----------
+let withdrawMinCoins = 50000;
+
+async function loadWithdrawView() {
+  const config = await fetch('/api/withdraw/config', { headers: apiHeaders() }).then(r => r.json());
+  withdrawMinCoins = config.minCoins;
+  document.getElementById('withdrawMinCoins').innerText = withdrawMinCoins.toLocaleString();
+
+  const user = await fetch('/api/user', { headers: apiHeaders() }).then(r => r.json());
+  document.getElementById('withdrawBalance').innerText = user.coins.toLocaleString();
+
+  loadWithdrawHistory();
+}
+
+document.addEventListener('input', (e) => {
+  if (e.target && e.target.id === 'wdCoins') updateWithdrawPreview();
+});
+
+function updateWithdrawPreview() {
+  const coins = parseInt(document.getElementById('wdCoins').value) || 0;
+  const preview = document.getElementById('wdPreview');
+  if (coins < withdrawMinCoins) {
+    preview.style.display = 'none';
+    return;
+  }
+  const gross = Math.round((coins / 50000) * 15);
+  const net = Math.floor(coins / 5000);
+  preview.style.display = 'block';
+  preview.className = 'msg success';
+  preview.innerHTML = `Gross: ₹${gross} → Fees ke baad milega: <b>₹${net}</b>`;
+}
+
+async function submitWithdraw() {
+  const btn = document.getElementById('submitWithdrawBtn');
+  const msgEl = document.getElementById('withdrawMsg');
+  const coins = parseInt(document.getElementById('wdCoins').value);
+  const upi = document.getElementById('wdUpi').value.trim();
+
+  if (!coins || coins < withdrawMinCoins) {
+    msgEl.innerHTML = `<div class="msg error">❌ Minimum ${withdrawMinCoins.toLocaleString()} coins withdraw kar sakte ho</div>`;
+    return;
+  }
+  if (!upi || !upi.includes('@')) {
+    msgEl.innerHTML = '<div class="msg error">❌ Sahi UPI ID daalo (jaise name@bank)</div>';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Bheja ja raha hai...';
+
+  const res = await fetch('/api/withdraw/create', {
+    method: 'POST', headers: apiHeaders(),
+    body: JSON.stringify({ coins, upi_id: upi })
+  }).then(r => r.json());
+
+  btn.disabled = false;
+  btn.innerText = '✅ Withdraw Request Bhejo';
+
+  if (res.error) {
+    msgEl.innerHTML = `<div class="msg error">❌ ${res.error}</div>`;
+  } else {
+    showSuccess('Request Bhej Di! ⏳', `₹${res.withdraw.net_rupees} approve hone ke baad aapke UPI pe aa jayega`);
+    document.getElementById('wdCoins').value = '';
+    document.getElementById('wdUpi').value = '';
+    document.getElementById('wdPreview').style.display = 'none';
+    loadWithdrawView();
+    loadUser();
+  }
+}
+
+async function loadWithdrawHistory() {
+  const list = await fetch('/api/withdraw/my', { headers: apiHeaders() }).then(r => r.json());
+  const el = document.getElementById('withdrawHistory');
+  if (list.length === 0) {
+    el.innerHTML = '<div class="card"><p class="hint">Koi withdraw history nahi hai abhi tak.</p></div>';
+    return;
+  }
+  el.innerHTML = list.map(w => `
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center">
+        <span>🪙 ${w.coins.toLocaleString()} → ₹${w.net_rupees}</span>
+        <span class="badge ${w.status}">${w.status}</span>
+      </div>
+      <div style="font-size:12px; opacity:0.7; margin-top:4px">${new Date(w.created_at).toLocaleString()}</div>
+      ${w.status === 'rejected' ? `<div class="msg error" style="margin-top:8px">${w.reject_reason || ''} (coins refund ho gaye)</div>` : ''}
+    </div>
+  `).join('');
+}
+
+init();
+</script>
+</body>
+</html>
