@@ -290,26 +290,45 @@ app.get('/api/broadcast-photo/:id', async (req, res) => {
   }
 });
 
-// ---------- API: support ticket banana ----------
-app.post('/api/support/create', authMiddleware, async (req, res) => {
+// ---------- API: support chat thread dekhna ----------
+app.get('/api/support/thread', authMiddleware, async (req, res) => {
+  const thread = await db.getTicketThread(req.tgUser.id);
+  res.json(thread);
+});
+
+// ---------- API: support chat me message bhejna ----------
+app.post('/api/support/send', authMiddleware, async (req, res) => {
   const message = (req.body.message || '').trim();
   if (!message) return res.status(400).json({ error: 'Message likho' });
 
   const username = req.tgUser.username || req.tgUser.first_name || 'User';
-  const ticket = await db.createSupportTicket(req.tgUser.id, username, message);
+  const ticket = await db.getOrCreateOpenTicket(req.tgUser.id, username);
+  await db.addTicketMessage(ticket.id, 'user', message);
 
+  // Admin ko bhejo — force_reply se admin seedha "Reply" kar sakta hai, koi command nahi chahiye
   bot.telegram.sendMessage(
     process.env.ADMIN_ID,
-    `🎫 Naya Support Ticket #${ticket.id}\nFrom: @${username} (ID: ${req.tgUser.id})\n\n"${message}"\n\nReply karne ke liye: /reply ${ticket.id} <aapka jawab>`
+    `🎫 Ticket #${ticket.id}\n👤 @${username} (ID: ${req.tgUser.id})\n\n${message}\n\n👇 Isi message ko "Reply" karke jawab do`,
+    { reply_markup: { force_reply: true, selective: true } }
   ).catch(() => {});
 
-  res.json({ success: true, ticket });
+  res.json({ success: true });
 });
 
-// ---------- API: apni ticket history dekhna ----------
-app.get('/api/support/my-tickets', authMiddleware, async (req, res) => {
-  const tickets = await db.getMyTickets(req.tgUser.id);
-  res.json(tickets);
+// ---------- API: admin online hai ya nahi ----------
+app.get('/api/support/admin-status', authMiddleware, async (req, res) => {
+  const lastActive = await db.getUserLastActive(process.env.ADMIN_ID);
+  if (!lastActive) return res.json({ online: false, text: 'Offline' });
+
+  const diffMinutes = Math.floor((new Date() - new Date(lastActive)) / 60000);
+  if (diffMinutes <= 5) {
+    return res.json({ online: true, text: '🟢 Online' });
+  }
+  if (diffMinutes < 60) {
+    return res.json({ online: false, text: `⚪ ${diffMinutes}m pehle active tha` });
+  }
+  const hours = Math.floor(diffMinutes / 60);
+  return res.json({ online: false, text: `⚪ ${hours}h pehle active tha` });
 });
 
 // ---------- API: task ko rate karna (1-5 stars) ----------

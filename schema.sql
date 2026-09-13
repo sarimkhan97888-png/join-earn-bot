@@ -121,17 +121,32 @@ CREATE TABLE IF NOT EXISTS broadcast_comments (
     created_at    TIMESTAMP DEFAULT NOW()
 );
 
--- ---- Support Tickets ----
+-- ---- Support Tickets (Chat System) ----
 CREATE TABLE IF NOT EXISTS support_tickets (
     id           SERIAL PRIMARY KEY,
     user_id      BIGINT REFERENCES users(id),
     username     TEXT,
-    message      TEXT NOT NULL,
+    message      TEXT,
     admin_reply  TEXT,
-    status       TEXT DEFAULT 'open',   -- open / replied / closed
+    status       TEXT DEFAULT 'open',   -- open / closed
     created_at   TIMESTAMP DEFAULT NOW(),
-    replied_at   TIMESTAMP
+    replied_at   TIMESTAMP,
+    last_message_at TIMESTAMP DEFAULT NOW()
 );
+ALTER TABLE support_tickets ALTER COLUMN message DROP NOT NULL;
+ALTER TABLE support_tickets ADD COLUMN IF NOT EXISTS last_message_at TIMESTAMP DEFAULT NOW();
+ALTER TABLE support_tickets ALTER COLUMN status SET DEFAULT 'open';
+
+CREATE TABLE IF NOT EXISTS ticket_messages (
+    id          SERIAL PRIMARY KEY,
+    ticket_id   INTEGER REFERENCES support_tickets(id),
+    sender      TEXT NOT NULL,   -- 'user' ya 'admin'
+    message     TEXT NOT NULL,
+    created_at  TIMESTAMP DEFAULT NOW()
+);
+
+-- ---- Admin ki activity track karna (online/offline dikhane ke liye) ----
+ALTER TABLE users ADD COLUMN IF NOT EXISTS last_active_at TIMESTAMP;
 
 -- ---- Task Rating & Reporting ----
 CREATE TABLE IF NOT EXISTS task_ratings (

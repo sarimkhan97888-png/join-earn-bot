@@ -5,6 +5,14 @@ const db = require('./db');
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
+// Admin jab bhi bot se kuch bhi interact kare (message, command, button), uska "last seen" update ho jaye
+bot.use(async (ctx, next) => {
+  if (ctx.from && String(ctx.from.id) === String(process.env.ADMIN_ID)) {
+    db.updateLastActive(ctx.from.id).catch(() => {});
+  }
+  return next();
+});
+
 const REQUIRED_GROUP = process.env.REQUIRED_GROUP;     // mandatory GC username
 const REQUIRED_CHANNEL = process.env.REQUIRED_CHANNEL; // mandatory Channel username
 const ADMIN_ID = process.env.ADMIN_ID;
@@ -185,26 +193,30 @@ bot.on('photo', async (ctx) => {
   ctx.reply('✅ Photo broadcast bhej diya! Sabko Mini App me notification bell pe red dot dikhega.');
 });
 
-// /reply <ticket_id> <message> — support ticket ka jawab dena
-bot.command('reply', async (ctx) => {
-  if (!isAdmin(ctx.from.id)) return;
+// ==================== SUPPORT CHAT (Native Telegram Reply Se) ====================
+// Jab admin kisi support notification message pe "Reply" karega (Telegram ka built-in
+// reply feature use karke, koi command nahi), wahi jawab user ke chat me chala jayega
 
-  const args = ctx.message.text.split(' ');
-  const ticketId = parseInt(args[1]);
-  const replyMessage = args.slice(2).join(' ');
+bot.on('text', async (ctx, next) => {
+  if (isAdmin(ctx.from.id) && ctx.message.reply_to_message) {
+    const repliedText = ctx.message.reply_to_message.text || ctx.message.reply_to_message.caption || '';
+    const match = repliedText.match(/🎫 Ticket #(\d+)/);
 
-  if (!ticketId || !replyMessage) {
-    return ctx.reply('Usage: /reply <ticket_id> <message>\nExample: /reply 3 Aapki problem solve ho gayi hai');
+    if (match) {
+      const ticketId = parseInt(match[1]);
+      const ticket = await db.getTicketById(ticketId);
+      if (ticket) {
+        await db.addTicketMessage(ticketId, 'admin', ctx.message.text);
+        await ctx.reply('✅ Reply bhej diya');
+        bot.telegram.sendMessage(
+          ticket.user_id,
+          `📩 Support se naya reply aaya hai — App kholke check karo!`
+        ).catch(() => {});
+        return; // yahin ruk jao, aage next() call na ho
+      }
+    }
   }
-
-  const ticket = await db.replyToTicket(ticketId, replyMessage);
-  if (!ticket) return ctx.reply('❌ Ye ticket ID nahi mila');
-
-  ctx.reply(`✅ Reply bhej diya ticket #${ticketId} ko`);
-  bot.telegram.sendMessage(
-    ticket.user_id,
-    `📩 Support Reply (Ticket #${ticketId}):\n\n${replyMessage}`
-  ).catch(() => {});
+  return next();
 });
 
 // /taskaction <task_id> <approve|remove> — reported/flagged task pe faisla lena

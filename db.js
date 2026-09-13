@@ -339,31 +339,60 @@ async function markBroadcastSeen(userId, broadcastId) {
   await pool.query('UPDATE users SET last_seen_broadcast_id = $1 WHERE id = $2', [broadcastId, userId]);
 }
 
-// ---------- SUPPORT TICKETS ----------
+// ---------- SUPPORT CHAT ----------
 
-async function createSupportTicket(userId, username, message) {
-  const res = await pool.query(
-    `INSERT INTO support_tickets (user_id, username, message) VALUES ($1, $2, $3) RETURNING *`,
-    [userId, username, message]
-  );
-  return res.rows[0];
-}
-
-async function getMyTickets(userId) {
-  const res = await pool.query(
-    'SELECT * FROM support_tickets WHERE user_id = $1 ORDER BY created_at DESC',
+async function getOrCreateOpenTicket(userId, username) {
+  const existing = await pool.query(
+    `SELECT * FROM support_tickets WHERE user_id = $1 AND status = 'open' ORDER BY created_at DESC LIMIT 1`,
     [userId]
   );
-  return res.rows;
+  if (existing.rows.length > 0) return existing.rows[0];
+
+  const created = await pool.query(
+    `INSERT INTO support_tickets (user_id, username, status) VALUES ($1, $2, 'open') RETURNING *`,
+    [userId, username]
+  );
+  return created.rows[0];
 }
 
-async function replyToTicket(ticketId, replyMessage) {
+async function addTicketMessage(ticketId, sender, message) {
   const res = await pool.query(
-    `UPDATE support_tickets SET admin_reply = $1, status = 'replied', replied_at = NOW()
-     WHERE id = $2 RETURNING *`,
-    [replyMessage, ticketId]
+    `INSERT INTO ticket_messages (ticket_id, sender, message) VALUES ($1, $2, $3) RETURNING *`,
+    [ticketId, sender, message]
   );
+  await pool.query(`UPDATE support_tickets SET last_message_at = NOW() WHERE id = $1`, [ticketId]);
   return res.rows[0];
+}
+
+async function getTicketThread(userId) {
+  const ticketRes = await pool.query(
+    `SELECT * FROM support_tickets WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1`,
+    [userId]
+  );
+  if (ticketRes.rows.length === 0) return { ticket: null, messages: [] };
+
+  const ticket = ticketRes.rows[0];
+  const messagesRes = await pool.query(
+    'SELECT * FROM ticket_messages WHERE ticket_id = $1 ORDER BY created_at ASC',
+    [ticket.id]
+  );
+  return { ticket, messages: messagesRes.rows };
+}
+
+async function getTicketById(ticketId) {
+  const res = await pool.query('SELECT * FROM support_tickets WHERE id = $1', [ticketId]);
+  return res.rows[0];
+}
+
+// ---------- ADMIN ACTIVITY (online/offline ke liye) ----------
+
+async function updateLastActive(userId) {
+  await pool.query('UPDATE users SET last_active_at = NOW() WHERE id = $1', [userId]).catch(() => {});
+}
+
+async function getUserLastActive(userId) {
+  const res = await pool.query('SELECT last_active_at FROM users WHERE id = $1', [userId]);
+  return res.rows[0] ? res.rows[0].last_active_at : null;
 }
 
 // ---------- TASK RATING ----------
@@ -613,9 +642,12 @@ module.exports = {
   getBroadcastComments,
   hasNewBroadcast,
   markBroadcastSeen,
-  createSupportTicket,
-  getMyTickets,
-  replyToTicket,
+  getOrCreateOpenTicket,
+  addTicketMessage,
+  getTicketThread,
+  getTicketById,
+  updateLastActive,
+  getUserLastActive,
   rateTask,
   reportTask,
   adminTaskAction,
