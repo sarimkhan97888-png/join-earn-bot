@@ -210,6 +210,14 @@
     position: fixed; inset: 0; background: var(--tg-theme-bg-color, #0f1115);
     display: none; flex-direction: column; z-index: 500;
   }
+  #supportChatPage {
+    position: fixed; inset: 0; background: var(--tg-theme-bg-color, #0f1115);
+    display: none; flex-direction: column; z-index: 500;
+  }
+  .chat-bubble { max-width: 78%; padding: 10px 14px; border-radius: 16px; margin-bottom: 8px; font-size: 13px; line-height: 1.4; }
+  .chat-bubble.user { background: linear-gradient(145deg, #4f7dfb, #2f5be0); color: #fff; margin-left: auto; border-bottom-right-radius: 4px; }
+  .chat-bubble.admin { background: rgba(255,255,255,0.08); color: #fff; margin-right: auto; border-bottom-left-radius: 4px; }
+  .chat-bubble .time { font-size: 10px; opacity: 0.6; margin-top: 4px; }
   .broadcast-header {
     display: flex; align-items: center; gap: 12px; padding: 16px;
     border-bottom: 1px solid rgba(255,255,255,0.08);
@@ -424,10 +432,33 @@
   </div>
 </div>
 
+<div id="supportChatPage">
+  <div class="broadcast-header">
+    <button onclick="closeSupportChat()">← Wapas</button>
+    <div>
+      <b>🎫 Support Chat</b>
+      <div id="adminStatusText" style="font-size:11px; opacity:0.7">checking...</div>
+    </div>
+  </div>
+  <div class="broadcast-body" id="chatBody"></div>
+  <div class="comment-input-row">
+    <input id="chatInput" placeholder="Apna message likho...">
+    <button onclick="sendChatMessage()">Bhejo</button>
+  </div>
+</div>
+
 <script>
 const tg = window.Telegram.WebApp;
 tg.ready();
 tg.expand();
+
+// ---------- Global Error Catcher (agar kuch bhi break ho to screen pe dikhega) ----------
+window.addEventListener('error', function (e) {
+  const box = document.createElement('div');
+  box.style.cssText = 'position:fixed;bottom:90px;left:10px;right:10px;background:#3a0d0d;border:2px solid #ff4757;border-radius:12px;padding:12px;z-index:9999;font-size:11px;color:#ff8a80;max-height:200px;overflow:auto;';
+  box.innerHTML = `<b>⚠️ Error (screenshot karke bhejo):</b><br>${e.message}<br>Line: ${e.lineno}`;
+  document.body.appendChild(box);
+});
 
 let verifiedChat = null;
 let myUserId = null;
@@ -644,6 +675,68 @@ async function postComment() {
   });
   input.value = '';
   openBroadcast(); // refresh comments
+}
+
+// ---------- SUPPORT CHAT ----------
+let supportPollInterval = null;
+
+function openSupportChat() {
+  document.getElementById('supportChatPage').style.display = 'flex';
+  loadSupportThread();
+  checkAdminStatus();
+
+  if (supportPollInterval) clearInterval(supportPollInterval);
+  supportPollInterval = setInterval(() => {
+    loadSupportThread();
+    checkAdminStatus();
+  }, 6000); // har 6 second me naya message check karo
+}
+
+function closeSupportChat() {
+  document.getElementById('supportChatPage').style.display = 'none';
+  if (supportPollInterval) clearInterval(supportPollInterval);
+}
+
+async function checkAdminStatus() {
+  const status = await fetch('/api/support/admin-status', { headers: apiHeaders() }).then(r => r.json());
+  document.getElementById('adminStatusText').innerText = status.text;
+}
+
+async function loadSupportThread() {
+  const thread = await fetch('/api/support/thread', { headers: apiHeaders() }).then(r => r.json());
+  const body = document.getElementById('chatBody');
+
+  if (thread.messages.length === 0) {
+    body.innerHTML = '<p class="hint" style="text-align:center; margin-top:20px">Koi problem hai? Yahan message likho, jald hi jawab milega 👋</p>';
+    return;
+  }
+
+  // Scroll position yaad rakho taaki refresh pe user ka scroll na tute (agar wo upar padh raha ho)
+  const wasAtBottom = body.scrollTop + body.clientHeight >= body.scrollHeight - 20;
+
+  body.innerHTML = thread.messages.map(m => `
+    <div class="chat-bubble ${m.sender}">
+      ${m.message}
+      <div class="time">${new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+    </div>
+  `).join('');
+
+  if (wasAtBottom || thread.messages.length <= 1) {
+    body.scrollTop = body.scrollHeight;
+  }
+}
+
+async function sendChatMessage() {
+  const input = document.getElementById('chatInput');
+  const message = input.value.trim();
+  if (!message) return;
+
+  input.value = '';
+  await fetch('/api/support/send', {
+    method: 'POST', headers: apiHeaders(),
+    body: JSON.stringify({ message })
+  });
+  loadSupportThread();
 }
 
 function switchTab(tab) {
@@ -894,67 +987,16 @@ async function loadProfile() {
       </div>
     </div>
 
-    <div class="card">
-      <div class="list-row" onclick="toggleSection('supportSection')">
+    <div class="card" style="cursor:pointer" onclick="openSupportChat()">
+      <div class="list-row" style="padding:4px">
         <div class="left">🎫 <span>${t('support_title')}</span></div>
         <span>›</span>
-      </div>
-      <div id="supportSection" style="display:none; margin-top:8px">
-        <p class="hint">${t('support_hint')}</p>
-        <input id="supportMsgInput" placeholder="${t('support_placeholder')}">
-        <button onclick="createTicket()" id="supportBtn">${t('support_send_btn')}</button>
-        <div id="supportMsg"></div>
-        <div id="ticketHistory" style="margin-top:10px"></div>
       </div>
     </div>
 
     <h4 style="margin-top:16px">${t('my_tasks_title')}</h4>
     ${myTasksHtml}
   `;
-
-  loadTickets();
-}
-
-async function loadTickets() {
-  const tickets = await fetch('/api/support/my-tickets', { headers: apiHeaders() }).then(r => r.json());
-  const el = document.getElementById('ticketHistory');
-  if (!el) return;
-  if (tickets.length === 0) {
-    el.innerHTML = '<p class="hint">Koi ticket nahi hai abhi tak.</p>';
-    return;
-  }
-  el.innerHTML = tickets.map(t => `
-    <div class="card" style="margin-bottom:8px">
-      <div style="display:flex; justify-content:space-between; align-items:center">
-        <span style="font-size:12px; opacity:0.7">#${t.id} • ${new Date(t.created_at).toLocaleDateString()}</span>
-        <span class="badge ${t.status === 'replied' ? 'completed' : 'active'}">${t.status === 'replied' ? '✅ Replied' : '⏳ Open'}</span>
-      </div>
-      <div style="font-size:13px; margin-top:6px">${t.message}</div>
-      ${t.admin_reply ? `<div class="msg success" style="margin-top:8px">📩 ${t.admin_reply}</div>` : ''}
-    </div>
-  `).join('');
-}
-
-async function createTicket() {
-  const btn = document.getElementById('supportBtn');
-  const input = document.getElementById('supportMsgInput');
-  const message = input.value.trim();
-  const msgEl = document.getElementById('supportMsg');
-  if (!message) return;
-
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span> Bheja ja raha hai...';
-
-  await fetch('/api/support/create', {
-    method: 'POST', headers: apiHeaders(),
-    body: JSON.stringify({ message })
-  });
-
-  btn.disabled = false;
-  btn.innerText = 'Bhejo';
-  input.value = '';
-  msgEl.innerHTML = '<div class="msg success">✅ Ticket bhej diya, jald hi jawab milega</div>';
-  loadTickets();
 }
 
 function toggleSection(id) {
