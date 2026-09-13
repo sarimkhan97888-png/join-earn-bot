@@ -741,17 +741,22 @@ async function sendChatMessage() {
 
 function switchTab(tab) {
   ['earn', 'addtask', 'profile', 'wallet'].forEach(t => {
-    document.getElementById(`tab-${t}`).style.display = (t === tab) ? 'block' : 'none';
-    document.getElementById(`nav-${t}`).classList.toggle('active', t === tab);
+    const tabEl = document.getElementById(`tab-${t}`);
+    const navEl = document.getElementById(`nav-${t}`);
+    if (tabEl) tabEl.style.display = (t === tab) ? 'block' : 'none';
+    if (navEl) navEl.classList.toggle('active', t === tab);
   });
   if (tab === 'profile') loadProfile();
   if (tab === 'wallet') { showWalletView('home'); loadDepositPackages(); }
 }
 
 function showWalletView(view) {
-  document.getElementById('walletHome').style.display = view === 'home' ? 'block' : 'none';
-  document.getElementById('walletDeposit').style.display = view === 'deposit' ? 'block' : 'none';
-  document.getElementById('walletWithdraw').style.display = view === 'withdraw' ? 'block' : 'none';
+  const homeEl = document.getElementById('walletHome');
+  const depEl = document.getElementById('walletDeposit');
+  const wdEl = document.getElementById('walletWithdraw');
+  if (homeEl) homeEl.style.display = view === 'home' ? 'block' : 'none';
+  if (depEl) depEl.style.display = view === 'deposit' ? 'block' : 'none';
+  if (wdEl) wdEl.style.display = view === 'withdraw' ? 'block' : 'none';
   if (view === 'deposit') loadDepositHistory();
   if (view === 'withdraw') loadWithdrawView();
 }
