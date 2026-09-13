@@ -460,6 +460,15 @@ window.addEventListener('error', function (e) {
   document.body.appendChild(box);
 });
 
+// Async errors (jaise fetch ke andar wale) alag tarike se aate hain, isko bhi pakadte hain
+window.addEventListener('unhandledrejection', function (e) {
+  const box = document.createElement('div');
+  box.style.cssText = 'position:fixed;bottom:90px;left:10px;right:10px;background:#3a0d0d;border:2px solid #ff4757;border-radius:12px;padding:12px;z-index:9999;font-size:11px;color:#ff8a80;max-height:200px;overflow:auto;';
+  const msg = (e.reason && e.reason.message) ? e.reason.message : String(e.reason);
+  box.innerHTML = `<b>⚠️ Async Error (screenshot karke bhejo):</b><br>${msg}`;
+  document.body.appendChild(box);
+});
+
 let verifiedChat = null;
 let myUserId = null;
 let iAmAdmin = false;
@@ -1134,9 +1143,25 @@ function resetDeposit() {
 }
 
 function fileToBase64(file) {
+  // Photo ko chhota (compress) karke bhejte hain, taaki bada photo upload fail na ho
   return new Promise((resolve, reject) => {
+    const img = new Image();
     const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
+
+    reader.onload = (e) => {
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const maxWidth = 1000;
+        const scale = Math.min(1, maxWidth / img.width);
+        canvas.width = img.width * scale;
+        canvas.height = img.height * scale;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL('image/jpeg', 0.7));
+      };
+      img.onerror = reject;
+      img.src = e.target.result;
+    };
     reader.onerror = reject;
     reader.readAsDataURL(file);
   });
