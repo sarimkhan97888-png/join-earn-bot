@@ -65,6 +65,9 @@ function authMiddleware(req, res, next) {
 
 // ---------- API: device lock check (ek device = ek account) ----------
 app.post('/api/device/check', authMiddleware, async (req, res) => {
+  // Admin (tumhare) ke liye ye lock kabhi nahi lagega, taaki tum multiple accounts se test kar sako
+  if (isAdmin(req.tgUser.id)) return res.json({ allowed: true });
+
   const { device_id } = req.body;
   if (!device_id) return res.status(400).json({ error: 'device_id missing' });
 
@@ -74,9 +77,19 @@ app.post('/api/device/check', authMiddleware, async (req, res) => {
 
 // ---------- API: mandatory join check ----------
 app.get('/api/check-membership', authMiddleware, async (req, res) => {
-  console.log('📋 Checking membership for user:', req.tgUser.id);
   const check = await checkMandatoryJoin(req.tgUser.id);
-  console.log('📋 Membership result:', JSON.stringify(check));
+
+  if (check.allOk) {
+    // Ab hi confirm karo ki referral valid hai — isse pehle count/bonus nahi milta
+    const result = await db.tryCreditReferralBonus(req.tgUser.id);
+    if (result) {
+      bot.telegram.sendMessage(
+        result.referrerId,
+        `🎉 Aapke referral link se ek naya user join hua! +250 coins mil gaye.`
+      ).catch(() => {});
+    }
+  }
+
   res.json(check);
 });
 
@@ -342,6 +355,13 @@ app.post('/api/tasks/:id/rate', authMiddleware, async (req, res) => {
 });
 
 // ---------- API: task report karna ----------
+// ---------- API: task owner khud apna task deactivate kare (20% fee kaat ke refund) ----------
+app.post('/api/tasks/:id/deactivate', authMiddleware, async (req, res) => {
+  const result = await db.deactivateTaskByOwner(req.params.id, req.tgUser.id);
+  if (result.error) return res.status(400).json({ error: result.error });
+  res.json(result);
+});
+
 app.post('/api/tasks/:id/report', authMiddleware, async (req, res) => {
   const reason = (req.body.reason || 'Other').trim();
   const result = await db.reportTask(req.params.id, req.tgUser.id, reason);

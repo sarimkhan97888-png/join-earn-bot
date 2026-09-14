@@ -71,13 +71,16 @@ CREATE TABLE IF NOT EXISTS withdrawals (
 -- ---- Referral System ----
 ALTER TABLE users ADD COLUMN IF NOT EXISTS referred_by BIGINT REFERENCES users(id);
 ALTER TABLE users ADD COLUMN IF NOT EXISTS last_seen_broadcast_id INTEGER DEFAULT 0;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS referral_bonus_given BOOLEAN DEFAULT FALSE;
 
 CREATE TABLE IF NOT EXISTS referrals (
     id           SERIAL PRIMARY KEY,
     referrer_id  BIGINT REFERENCES users(id),
     referred_id  BIGINT REFERENCES users(id) UNIQUE,
+    confirmed_at TIMESTAMP,   -- sirf tabhi set hota hai jab referred user app start karke join karta hai
     created_at   TIMESTAMP DEFAULT NOW()
 );
+ALTER TABLE referrals ADD COLUMN IF NOT EXISTS confirmed_at TIMESTAMP;
 
 CREATE TABLE IF NOT EXISTS referral_commissions (
     id           SERIAL PRIMARY KEY,

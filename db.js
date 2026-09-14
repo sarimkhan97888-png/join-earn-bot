@@ -190,16 +190,25 @@ const REFERRAL_SIGNUP_BONUS = 250;
 const REFERRAL_COMMISSION_RATE = 0.02; // 2%
 
 async function setReferrer(referredId, referrerId) {
+  // Sirf relationship save karo — coins abhi nahi denge, jab tak wo mandatory channels join na kare
   await pool.query('UPDATE users SET referred_by = $1 WHERE id = $2', [referrerId, referredId]);
+}
+
+async function tryCreditReferralBonus(userId) {
+  // Ye tabhi call hota hai jab user ne mandatory Group+Channel join kar liya ho (check-membership pass)
+  const user = await getUser(userId);
+  if (!user || !user.referred_by || user.referral_bonus_given) return null;
+
+  const referrerId = user.referred_by;
   await pool.query(
     `INSERT INTO referrals (referrer_id, referred_id) VALUES ($1, $2)
      ON CONFLICT (referred_id) DO NOTHING`,
-    [referrerId, referredId]
+    [referrerId, userId]
   );
-}
-
-async function creditReferralSignupBonus(referrerId) {
   await addCoins(referrerId, REFERRAL_SIGNUP_BONUS, 'referral_signup_bonus');
+  await pool.query('UPDATE users SET referral_bonus_given = TRUE WHERE id = $1', [userId]);
+
+  return { referrerId };
 }
 
 async function creditReferralCommission(referredUserId, baseAmount) {
@@ -431,8 +440,26 @@ async function reportTask(taskId, userId, reason) {
   return { alreadyReported: false, reportCount, flagged };
 }
 
-async function adminTaskAction(taskId, action) {
+// Task owner khud apna task band kar sake — bache hue coins ka 80% wapas (20% fee)
+const OWNER_DEACTIVATE_FEE_PERCENT = 20;
+
+async function deactivateTaskByOwner(taskId, userId) {
   const task = await getTaskById(taskId);
+  if (!task) return { error: 'Task nahi mila' };
+  if (task.owner_id != userId) return { error: 'Ye aapka task nahi hai' };
+  if (task.status !== 'active') return { error: 'Ye task already active nahi hai' };
+
+  const remaining = task.target_members - task.current_count;
+  const fullValue = remaining * task.unit_cost;
+  const refund = Math.floor(fullValue * (100 - OWNER_DEACTIVATE_FEE_PERCENT) / 100);
+
+  await pool.query(`UPDATE tasks SET status = 'removed' WHERE id = $1`, [taskId]);
+  if (refund > 0) await addCoins(userId, refund, 'task_deactivated_refund');
+
+  return { success: true, refund };
+}
+
+async function adminTaskAction(taskId, action) {  const task = await getTaskById(taskId);
   if (!task) return null;
 
   if (action === 'approve') {
@@ -630,7 +657,7 @@ module.exports = {
   checkAndRegisterDevice,
   getProfileStats,
   setReferrer,
-  creditReferralSignupBonus,
+  tryCreditReferralBonus,
   creditReferralCommission,
   getReferralData,
   createGiftCode,
@@ -651,6 +678,7 @@ module.exports = {
   rateTask,
   reportTask,
   adminTaskAction,
+  deactivateTaskByOwner,
   expireOldTasks,
   initiateDeposit,
   getDepositById,
