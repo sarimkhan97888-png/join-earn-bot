@@ -76,20 +76,32 @@ bot.start(async (ctx) => {
 
   if (!check.allOk) {
     return ctx.reply(
-      `👋 Welcome!\n\nApp use karne ke liye pehle ye dono join karo:\n\n` +
-      `${check.groupOk ? '✅' : '❌'} Group: @${REQUIRED_GROUP}\n` +
-      `${check.channelOk ? '✅' : '❌'} Channel: @${REQUIRED_CHANNEL}\n\n` +
-      `Join karne ke baad neeche button dabao.`,
-      Markup.inlineKeyboard([
-        [Markup.button.url('📢 Join Group', `https://t.me/${REQUIRED_GROUP}`)],
-        [Markup.button.url('📢 Join Channel', `https://t.me/${REQUIRED_CHANNEL}`)],
-        [Markup.button.callback('✅ Maine Join Kar Liya', 'recheck_join')]
-      ])
+      `👋 <b>Welcome to Join & Earn! 🎉</b>\n\n` +
+      `🪙 <b>Free coins kamane ke liye pehle ye 2 channels join karo:</b>\n\n` +
+      `${check.groupOk ? '✅' : '❌'} <b>Group:</b> @${REQUIRED_GROUP}\n` +
+      `${check.channelOk ? '✅' : '❌'} <b>Channel:</b> @${REQUIRED_CHANNEL}\n\n` +
+      `👇 Niche buttons se join karo, fir "Maine Join Kar Liya" dabao:`,
+      {
+        parse_mode: 'HTML',
+        ...Markup.inlineKeyboard([
+          [Markup.button.url('📢 Join Group', `https://t.me/${REQUIRED_GROUP}`)],
+          [Markup.button.url('📢 Join Channel', `https://t.me/${REQUIRED_CHANNEL}`)],
+          [Markup.button.callback('✅ Maine Join Kar Liya', 'recheck_join')]
+        ])
+      }
     );
   }
 
   return ctx.reply(
-    '🎉 Welcome! Neeche-left corner me jo Menu button (☰ icon) hai, usse app open karo aur coins kamana shuru karo.'
+    `🎉 <b>Welcome back, ${user.first_name}! 🎉</b>\n\n` +
+    `🪙 <b>Free coins kamana shuru karo!</b>\n\n` +
+    `👉 Neeche-left corner mein <b>Menu button (☰ icon)</b> dabake <b>Mini App open karo</b> aur tasks complete karke coins jeeto.\n\n` +
+    `💡 <b>Tips:</b>\n` +
+    `• Har verified join pe <b>100 coins</b> milte hain\n` +
+    `• Referral se <b>250 coins + 2% lifetime commission</b>\n` +
+    `• Apna task banao aur members pao\n\n` +
+    `🚀 <b>Abhi shuru karo!</b>`,
+    { parse_mode: 'HTML' }
   );
 });
 
