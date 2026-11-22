@@ -15,65 +15,62 @@
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;background:var(--bg);color:var(--txt);font-family:'Plus Jakarta Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased;overscroll-behavior:none}
 .mono{font-family:'JetBrains Mono',monospace}
-#aurora{position:fixed;inset:-20%;z-index:-1;pointer-events:none;background:radial-gradient(40% 35% at 20% 15%,rgba(99,102,241,.14),transparent 70%),radial-gradient(35% 30% at 85% 30%,rgba(56,189,248,.08),transparent 70%),radial-gradient(40% 35% at 50% 95%,rgba(139,92,246,.12),transparent 70%);animation:drift 18s ease-in-out infinite alternate}
-@keyframes drift{from{transform:translate3d(-2%,-1%,0) scale(1)}to{transform:translate3d(3%,2%,0) scale(1.08)}}
-.glass{background:var(--card);border:1px solid var(--line);border-radius:18px;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+#aurora{position:fixed;inset:-10%;z-index:-1;pointer-events:none;background:radial-gradient(40% 35% at 20% 15%,rgba(99,102,241,.14),transparent 70%),radial-gradient(35% 30% at 85% 30%,rgba(56,189,248,.08),transparent 70%),radial-gradient(40% 35% at 50% 95%,rgba(139,92,246,.12),transparent 70%)}
+.glass{background:var(--card);border:1px solid var(--line);border-radius:18px}
 .pad{padding:16px}
 .mut{color:var(--mut)}
-.tab{display:none;animation:fade .35s ease both}.tab.on{display:block}
-@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
-.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;border:0;border-radius:14px;padding:14px 16px;font:700 15px 'Plus Jakarta Sans',sans-serif;color:#fff;cursor:pointer;text-decoration:none;transition:transform .15s,opacity .2s}
+.tab{display:none}.tab.on{display:block;animation:fade .22s ease both}
+@keyframes fade{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;border:0;border-radius:14px;padding:14px 16px;font:700 15px 'Plus Jakarta Sans',sans-serif;color:#fff;cursor:pointer;text-decoration:none;transition:transform .12s,opacity .15s}
 .btn:active{transform:scale(.97)}.btn[disabled]{opacity:.5;pointer-events:none}
-.btn-p{background:var(--grad);box-shadow:0 8px 24px rgba(99,102,241,.35)}
+.btn-p{background:var(--grad);box-shadow:0 8px 24px rgba(99,102,241,.3)}
 .btn-g{background:rgba(255,255,255,.06);border:1px solid var(--line)}
 .btn-d{background:rgba(244,63,94,.12);border:1px solid rgba(244,63,94,.35);color:#FDA4AF}
 .btn-s{width:auto;padding:9px 14px;font-size:13px;border-radius:11px}
-.inp{width:100%;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:12px;padding:13px 14px;color:var(--txt);font:500 15px 'Plus Jakarta Sans',sans-serif;outline:none;transition:border .2s,box-shadow .2s}
-.inp:focus{border-color:var(--ind);box-shadow:0 0 0 3px rgba(99,102,241,.2)}
+.inp{width:100%;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:12px;padding:13px 14px;color:var(--txt);font:500 15px 'Plus Jakarta Sans',sans-serif;outline:none;transition:border .15s}
+.inp:focus{border-color:var(--ind)}
 select.inp{appearance:none}
 textarea.inp{resize:none;min-height:88px;line-height:1.5}
 .chip{padding:8px 13px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.04);font:600 13px 'Plus Jakarta Sans';color:var(--mut);cursor:pointer;white-space:nowrap}
-.chip.on{background:var(--grad);color:#fff;border-color:transparent;box-shadow:0 4px 16px rgba(99,102,241,.35)}
+.chip.on{background:var(--grad);color:#fff;border-color:transparent}
 .pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font:700 10px 'Plus Jakarta Sans';letter-spacing:.06em}
 .pill-pro{background:rgba(139,92,246,.18);color:#C4B5FD;border:1px solid rgba(139,92,246,.4)}
 .pill-ok{background:rgba(16,185,129,.14);color:#6EE7B7;border:1px solid rgba(16,185,129,.35)}
 .pill-bad{background:rgba(244,63,94,.12);color:#FDA4AF;border:1px solid rgba(244,63,94,.3)}
 .pill-warn{background:rgba(245,158,11,.14);color:#FCD34D;border:1px solid rgba(245,158,11,.35)}
 .dot{width:10px;height:10px;border-radius:50%;position:relative;background:var(--mut)}
-.dot.on{background:var(--em)}.dot.on::after{content:'';position:absolute;inset:-5px;border-radius:50%;border:2px solid var(--em);animation:ring 1.6s ease-out infinite}
-@keyframes ring{from{transform:scale(.6);opacity:.9}to{transform:scale(1.8);opacity:0}}
-.sw{width:58px;height:32px;border-radius:999px;background:rgba(255,255,255,.12);position:relative;border:0;cursor:pointer;transition:background .25s;flex:none}
-.sw::after{content:'';position:absolute;top:3px;left:3px;width:26px;height:26px;border-radius:50%;background:#fff;transition:transform .25s cubic-bezier(.3,1.4,.5,1)}
-.sw.on{background:var(--em);box-shadow:0 0 18px rgba(16,185,129,.45)}.sw.on::after{transform:translateX(26px)}
+.dot.on{background:var(--em)}
+.sw{width:58px;height:32px;border-radius:999px;background:rgba(255,255,255,.12);position:relative;border:0;cursor:pointer;transition:background .2s;flex:none}
+.sw::after{content:'';position:absolute;top:3px;left:3px;width:26px;height:26px;border-radius:50%;background:#fff;transition:transform .2s}
+.sw.on{background:var(--em)}.sw.on::after{transform:translateX(26px)}
 .seg{display:flex;background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:14px;padding:4px;gap:4px}
 .seg button{flex:1;border:0;background:transparent;color:var(--mut);padding:10px 8px;border-radius:10px;font:700 13px 'Plus Jakarta Sans';cursor:pointer;display:flex;gap:6px;align-items:center;justify-content:center}
-.seg button.on{background:var(--grad);color:#fff;box-shadow:0 4px 14px rgba(99,102,241,.35)}
-#nav{position:fixed;left:50%;bottom:calc(14px + env(safe-area-inset-bottom));transform:translateX(-50%);width:min(92vw,26rem);display:flex;padding:7px;gap:4px;border-radius:22px;background:rgba(15,22,35,.82);border:1px solid var(--line);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);box-shadow:0 14px 40px rgba(0,0,0,.5);z-index:30}
-#nav button{flex:1;border:0;background:transparent;color:var(--mut);padding:9px 0 7px;border-radius:16px;display:flex;flex-direction:column;align-items:center;gap:3px;font:700 10.5px 'Plus Jakarta Sans';cursor:pointer;transition:all .25s}
-#nav button.on{color:#fff;background:var(--grad);box-shadow:0 6px 18px rgba(99,102,241,.4)}
-.bd{position:fixed;inset:0;background:rgba(2,6,14,.62);backdrop-filter:blur(4px);opacity:0;pointer-events:none;transition:opacity .25s;z-index:40}.bd.on{opacity:1;pointer-events:auto}
-.sheet{position:fixed;left:0;right:0;bottom:0;margin:0 auto;max-width:28rem;max-height:90vh;overflow:auto;transform:translateY(105%);transition:transform .38s cubic-bezier(.2,.9,.25,1);z-index:50;background:rgba(15,22,35,.97);border:1px solid var(--line);border-bottom:0;border-radius:26px 26px 0 0;padding:10px 18px calc(22px + env(safe-area-inset-bottom))}.sheet.on{transform:none}
+.seg button.on{background:var(--grad);color:#fff}
+#nav{position:fixed;left:50%;bottom:calc(14px + env(safe-area-inset-bottom));transform:translateX(-50%);width:min(92vw,26rem);display:flex;padding:7px;gap:4px;border-radius:22px;background:rgba(15,22,35,.94);border:1px solid var(--line);box-shadow:0 14px 40px rgba(0,0,0,.5);z-index:30}
+#nav button{flex:1;border:0;background:transparent;color:var(--mut);padding:9px 0 7px;border-radius:16px;display:flex;flex-direction:column;align-items:center;gap:3px;font:700 10.5px 'Plus Jakarta Sans';cursor:pointer}
+#nav button.on{color:#fff;background:var(--grad)}
+.bd{position:fixed;inset:0;background:rgba(2,6,14,.68);opacity:0;pointer-events:none;transition:opacity .2s;z-index:40}.bd.on{opacity:1;pointer-events:auto}
+.sheet{position:fixed;left:0;right:0;bottom:0;margin:0 auto;max-width:28rem;max-height:90vh;overflow:auto;transform:translateY(105%);transition:transform .28s cubic-bezier(.2,.9,.25,1);z-index:50;background:#0F1623;border:1px solid var(--line);border-bottom:0;border-radius:26px 26px 0 0;padding:10px 18px calc(24px + env(safe-area-inset-bottom))}.sheet.on{transform:none}
 .grab{width:42px;height:4px;border-radius:9px;background:rgba(255,255,255,.18);margin:0 auto 14px}
-.price-card{position:relative;padding:18px;border-radius:20px;background:var(--card);border:1px solid var(--line);cursor:pointer;transition:transform .2s}
+.price-card{position:relative;padding:18px;border-radius:20px;background:var(--card);border:1px solid var(--line);cursor:pointer;transition:transform .12s}
 .price-card:active{transform:scale(.985)}
-.price-card.pro{border:1.5px solid transparent;background:linear-gradient(var(--card),var(--card)) padding-box,var(--grad) border-box;box-shadow:0 12px 40px rgba(99,102,241,.25)}
-.badge{position:absolute;top:-11px;right:16px;padding:5px 11px;border-radius:999px;font:800 10px 'Plus Jakarta Sans';letter-spacing:.06em;color:#fff;background:var(--grad);box-shadow:0 4px 14px rgba(99,102,241,.5)}
-.badge.save{right:auto;left:16px;background:linear-gradient(135deg,#10B981,#059669);box-shadow:0 4px 14px rgba(16,185,129,.4)}
-.shine{position:relative;overflow:hidden}.shine::after{content:'';position:absolute;top:0;left:-60%;width:40%;height:100%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.35),transparent);animation:shine 2.8s ease-in-out infinite}
-@keyframes shine{0%{left:-60%}60%,100%{left:130%}}
+.price-card.pro{border:1.5px solid rgba(139,92,246,.55);box-shadow:0 12px 36px rgba(99,102,241,.2)}
+.badge{position:absolute;top:-11px;right:16px;padding:5px 11px;border-radius:999px;font:800 10px 'Plus Jakarta Sans';letter-spacing:.06em;color:#fff;background:var(--grad)}
+.badge.save{right:auto;left:16px;background:linear-gradient(135deg,#10B981,#059669)}
 .feat{display:flex;gap:9px;align-items:center;font-size:13px;color:#CBD5E1;margin:7px 0}
 .feat svg{color:var(--em);flex:none}.feat.no{color:#64748B;text-decoration:line-through}.feat.no svg{color:#64748B}
-.qr{background:#fff;border-radius:16px;padding:10px;width:176px;height:176px;margin:0 auto}.qr img{width:100%;height:100%;display:block}
-.spin{width:44px;height:44px;border-radius:50%;border:4px solid rgba(255,255,255,.12);border-top-color:var(--ind);animation:rot .8s linear infinite;margin:0 auto}
+.qr{background:#fff;border-radius:16px;padding:10px;width:176px;height:176px;margin:0 auto;display:grid;place-items:center}.qr img{width:100%;height:100%;display:block;border-radius:8px}
 @keyframes rot{to{transform:rotate(360deg)}}
-.okc{width:78px;height:78px;border-radius:50%;background:var(--grad);display:grid;place-items:center;margin:0 auto;animation:pop .6s cubic-bezier(.3,1.6,.5,1) both;box-shadow:0 0 50px rgba(99,102,241,.6)}
-@keyframes pop{from{transform:scale(0)}to{transform:scale(1)}}
+.ghost-loader{position:relative;width:84px;height:84px;margin:0 auto;display:grid;place-items:center}
+.ghost-loader::after{content:'';position:absolute;inset:4px;border-radius:50%;border:2.5px solid transparent;border-top-color:#8B5CF6;border-right-color:#38BDF8;animation:rot 1s linear infinite}
+.ghost-float{position:relative;z-index:2;width:52px;height:52px;border-radius:18px;background:var(--grad);display:grid;place-items:center;box-shadow:0 8px 24px rgba(99,102,241,.45)}
+.okc{width:76px;height:76px;border-radius:50%;background:var(--grad);display:grid;place-items:center;margin:0 auto;box-shadow:0 0 40px rgba(99,102,241,.5)}
 .cf{position:fixed;top:-12px;width:9px;height:14px;border-radius:2px;z-index:60;pointer-events:none;animation:fall linear forwards}
 @keyframes fall{to{transform:translateY(105vh) rotate(720deg);opacity:.9}}
-#toast{position:fixed;top:calc(14px + env(safe-area-inset-top));left:50%;transform:translate(-50%,-140%);background:rgba(15,22,35,.95);border:1px solid var(--line);padding:11px 16px;border-radius:14px;font:600 13px 'Plus Jakarta Sans';z-index:80;transition:transform .35s cubic-bezier(.2,.9,.25,1);max-width:90vw;text-align:center}#toast.on{transform:translate(-50%,0)}
+#toast{position:fixed;top:calc(14px + env(safe-area-inset-top));left:50%;transform:translate(-50%,-140%);background:#0F1623;border:1px solid var(--line);padding:11px 16px;border-radius:14px;font:600 13px 'Plus Jakarta Sans';z-index:80;transition:transform .25s ease;max-width:90vw;text-align:center}#toast.on{transform:translate(-50%,0)}
 .faq{border-bottom:1px solid var(--line)}.faq:last-child{border:0}
 .faq button{width:100%;display:flex;justify-content:space-between;gap:10px;background:none;border:0;color:var(--txt);padding:14px 0;font:600 14px 'Plus Jakarta Sans';text-align:left;cursor:pointer}
-.faq .a{max-height:0;overflow:hidden;color:var(--mut);font-size:13px;line-height:1.6;transition:max-height .3s ease}.faq.on .a{max-height:160px;padding-bottom:14px}.faq.on svg{transform:rotate(180deg)}.faq svg{transition:transform .25s;flex:none}
+.faq .a{max-height:0;overflow:hidden;color:var(--mut);font-size:13px;line-height:1.6;transition:max-height .25s ease}.faq.on .a{max-height:160px;padding-bottom:14px}.faq.on svg{transform:rotate(180deg)}.faq svg{transition:transform .2s;flex:none}
 table.mx{width:100%;border-collapse:collapse;font-size:12.5px}table.mx td,table.mx th{padding:10px 4px;text-align:center;border-bottom:1px solid var(--line)}table.mx td:first-child,table.mx th:first-child{text-align:left;color:#CBD5E1}table.mx tr:last-child td{border:0}
 .lbl{font:700 11px 'Plus Jakarta Sans';letter-spacing:.08em;color:var(--mut);text-transform:uppercase;margin:0 0 8px}
 .err{color:#FDA4AF;font-size:13px;margin-top:10px;line-height:1.5}
@@ -88,17 +85,36 @@ table.mx{width:100%;border-collapse:collapse;font-size:12.5px}table.mx td,table.
   <section id="tab-ghost" class="tab"></section>
   <section id="tab-plans" class="tab"></section>
   <section id="tab-profile" class="tab"></section>
-  <section id="boot" class="glass pad" style="text-align:center;margin-top:30vh"><div class="spin"></div><p class="mut" style="margin-top:16px;font-size:14px">Loading your Ghost...</p></section>
+  <section id="boot" class="glass pad" style="text-align:center;margin-top:26vh;padding:28px 18px">
+    <div class="ghost-loader">
+      <div class="ghost-float">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2a7 7 0 0 0-7 7v12l3-2 2 2 2-2 2 2 2-2 3 2V9a7 7 0 0 0-7-7z"/>
+          <circle cx="9.5" cy="10" r="1.2" fill="#fff"/>
+          <circle cx="14.5" cy="10" r="1.2" fill="#fff"/>
+        </svg>
+      </div>
+    </div>
+    <h2 style="font-weight:800;font-size:17px;margin:16px 0 4px">Profitix Ghost</h2>
+    <p class="mut" style="margin:0;font-size:13px">Waking up your Ghost...</p>
+  </section>
 </main>
 <nav id="nav" class="hide"></nav>
 <div id="bd" class="bd"></div>
 <div id="sheet" class="sheet"><div class="grab"></div><div id="sheetBody"></div></div>
 
 <script>
-/* ===================== Telegram + helpers ===================== */
 const tg = window.Telegram && window.Telegram.WebApp;
 const INIT = (tg && tg.initData) || '';
-if (tg) { tg.ready(); tg.expand(); try { tg.setHeaderColor('#070B14'); tg.setBackgroundColor('#070B14'); tg.disableVerticalSwipes && tg.disableVerticalSwipes(); } catch (e) {} }
+if (tg) {
+  tg.ready();
+  tg.expand();
+  try {
+    tg.setHeaderColor('#070B14');
+    tg.setBackgroundColor('#070B14');
+    tg.disableVerticalSwipes && tg.disableVerticalSwipes();
+  } catch (e) {}
+}
 const H = {
   light: () => { try { tg.HapticFeedback.impactOccurred('light'); } catch (e) {} },
   sel: () => { try { tg.HapticFeedback.selectionChanged(); } catch (e) {} },
@@ -107,6 +123,16 @@ const H = {
 };
 const $ = (s, r = document) => r.querySelector(s);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+const FALLBACK_PLANS = [
+  { key: 'trial', tier: 'trial', period: 'day', name: '1-Day Starter Trial', inr: 2, usdt: null, days: 1, badge: '' },
+  { key: 'starter_monthly', tier: 'starter', period: 'month', name: 'Starter Monthly', inr: 49, usdt: 1, days: 30, badge: '' },
+  { key: 'starter_yearly', tier: 'starter', period: 'year', name: 'Starter Yearly', inr: 399, usdt: 8, days: 365, badge: 'SAVE 32%' },
+  { key: 'pro_monthly', tier: 'pro', period: 'month', name: 'Pro Monthly', inr: 199, usdt: 3, days: 30, badge: '' },
+  { key: 'pro_yearly', tier: 'pro', period: 'year', name: 'Pro Yearly', inr: 1499, usdt: 20, days: 365, badge: 'MOST POPULAR | SAVE 37%' }
+];
+const DEFAULT_USDT_WALLET = '0x8f61C470a4fC19f79685BB60F8c6e3676BCf886B';
+
 const ICONS = {
   home: '<path d="M3 11l9-8 9 8v9a2 2 0 0 1-2 2h-4v-6H9v6H5a2 2 0 0 1-2-2z"/>',
   ghost: '<path d="M12 2a7 7 0 0 0-7 7v12l3-2 2 2 2-2 2 2 2-2 3 2V9a7 7 0 0 0-7-7z"/><circle cx="9.5" cy="10" r="1"/><circle cx="14.5" cy="10" r="1"/>',
@@ -118,23 +144,55 @@ const ICONS = {
   plus: '<path d="M12 5v14M5 12h14"/>', trash: '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',
   chev: '<path d="M6 9l6 6 6-6"/>', bolt: '<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>',
   tg: '<path d="M21 4L3 11l6 2 2 6 3-4 5 4z"/>', wa: '<path d="M21 12a9 9 0 1 1-4-7.5L21 4l-1.5 4A9 9 0 0 1 21 12z"/>',
-  hook: '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
-  star: '<path d="M12 3l2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.2 6.4 20.2l1.1-6.2L3 9.6l6.2-.9z"/>'
+  hook: '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>'
 };
 const ic = (n, c = 'w-5 h-5') => `<svg class="${c}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICONS[n]}</svg>`;
-function toast(m) { const t = $('#toast'); t.textContent = m; t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on'), 2800); }
-async function api(path, body) {
+function ghostLoaderHtml(text) {
+  return `<div class="ghost-loader"><div class="ghost-float">${ic('ghost', 'w-7 h-7')}</div></div><p class="mut" style="margin:14px 0 0;font-size:13.5px">${esc(text || 'Loading...')}</p>`;
+}
+function toast(m) {
+  const t = $('#toast');
+  t.textContent = m;
+  t.classList.add('on');
+  clearTimeout(toast.t);
+  toast.t = setTimeout(() => t.classList.remove('on'), 2800);
+}
+async function api(path, body, timeoutMs = 12000) {
   const o = { headers: { 'X-Telegram-Init-Data': INIT } };
-  if (body !== undefined) { o.method = 'POST'; o.headers['Content-Type'] = 'application/json'; o.body = JSON.stringify(body); }
-  let r; try { r = await fetch(path, o); } catch (e) { return { status: 'error', error: 'Network error. Check your connection.', _ok: false }; }
-  let j = {}; try { j = await r.json(); } catch (e) {}
-  j._ok = r.ok; return j;
+  if (body !== undefined) {
+    o.method = 'POST';
+    o.headers['Content-Type'] = 'application/json';
+    o.body = JSON.stringify(body);
+  }
+  const ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+  const timer = ctrl ? setTimeout(() => ctrl.abort(), timeoutMs) : null;
+  if (ctrl) o.signal = ctrl.signal;
+  let r;
+  try {
+    r = await fetch(path, o);
+  } catch (e) {
+    if (timer) clearTimeout(timer);
+    return { status: 'error', error: e && e.name === 'AbortError' ? 'Server took too long. Try again.' : 'Network error. Check your connection.', _ok: false };
+  }
+  if (timer) clearTimeout(timer);
+  let j = {};
+  try { j = await r.json(); } catch (e) {}
+  j._ok = r.ok;
+  return j;
 }
 function copy(text, label) {
+  if (!text) return toast('Nothing to copy');
   const done = () => { H.ok(); toast((label || 'Copied') + ' copied'); };
   if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done).catch(() => fb());
   else fb();
-  function fb() { const a = document.createElement('textarea'); a.value = text; document.body.appendChild(a); a.select(); try { document.execCommand('copy'); done(); } catch (e) { toast('Copy failed'); } a.remove(); }
+  function fb() {
+    const a = document.createElement('textarea');
+    a.value = text;
+    document.body.appendChild(a);
+    a.select();
+    try { document.execCommand('copy'); done(); } catch (e) { toast('Copy failed'); }
+    a.remove();
+  }
 }
 const fmtDate = iso => iso ? new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : '-';
 const TIER = { trial: '1-DAY TRIAL', starter: 'STARTER', pro: 'PRO', none: 'FREE' };
@@ -144,10 +202,11 @@ const mb = {
   hide() { if (!tg) return; if (this.fn) tg.MainButton.offClick(this.fn); this.fn = null; tg.MainButton.hide(); }
 };
 
-/* ===================== State ===================== */
 let S = null;
-const U = { tab: 'home', platform: 'telegram', billing: 'monthly', draft: null, dirty: false, history: null, faq: -1,
-  wiz: { step: 'phone', cc: '+91', phone: '', code: '', pw: '', full: '', err: '', busy: false, resend: 0 } };
+const U = {
+  tab: 'home', platform: 'telegram', billing: 'monthly', draft: null, dirty: false, history: null, faq: -1,
+  wiz: { step: 'phone', cc: '+91', phone: '', code: '', pw: '', full: '', err: '', busy: false, resend: 0 }
+};
 let P = null, endTs = 0, wizTimer = null;
 const COUNTRIES = [['🇮🇳 India', '+91'], ['🇺🇸 USA / Canada', '+1'], ['🇬🇧 UK', '+44'], ['🇦🇪 UAE', '+971'], ['🇸🇦 Saudi Arabia', '+966'], ['🇵🇰 Pakistan', '+92'], ['🇧🇩 Bangladesh', '+880'], ['🇳🇵 Nepal', '+977'], ['🇱🇰 Sri Lanka', '+94'], ['🇮🇩 Indonesia', '+62'], ['🇲🇾 Malaysia', '+60'], ['🇸🇬 Singapore', '+65'], ['🇳🇬 Nigeria', '+234'], ['🇿🇦 South Africa', '+27'], ['🇧🇷 Brazil', '+55'], ['🇷🇺 Russia', '+7'], ['🇹🇷 Turkey', '+90'], ['🇩🇪 Germany', '+49'], ['🇫🇷 France', '+33'], ['🇦🇺 Australia', '+61']];
 const TEMPLATES = {
@@ -163,13 +222,16 @@ const FAQ = [
   ['How do I stop or remove it?', 'Use the master switch on Home to pause instantly, or press Disconnect in the Ghost tab to log the session out completely.']
 ];
 
-async function loadState(keepTab) {
+async function loadState() {
   const r = await api('/api/state');
   if (!r._ok) { showFatal(r.error || 'Could not load your account.'); return false; }
-  S = r; endTs = Date.now() + (S.status.seconds_left || 0) * 1000;
+  S = r;
+  if (!Array.isArray(S.plans) || !S.plans.length) S.plans = FALLBACK_PLANS;
+  endTs = Date.now() + ((S.status && S.status.seconds_left) || 0) * 1000;
   if (!U.dirty) U.draft = null;
-  $('#boot').classList.add('hide'); $('#nav').classList.remove('hide');
-  if (!keepTab) renderAll(); else renderAll();
+  $('#boot').classList.add('hide');
+  $('#nav').classList.remove('hide');
+  renderAll();
   return true;
 }
 function showFatal(msg) {
@@ -178,23 +240,26 @@ function showFatal(msg) {
   $('#boot').classList.remove('hide');
 }
 
-/* ===================== Navigation ===================== */
 const TABS = [['home', 'Home'], ['ghost', 'Ghost'], ['plans', 'Plans'], ['profile', 'Profile']];
 function renderNav() {
-  $('#nav').innerHTML = TABS.map(([k, l]) => `<button class="${U.tab === k ? 'on' : ''}" data-act="go" data-t="${k}">${ic(k === 'plans' ? 'plans' : k, 'w-5 h-5')}<span>${l}</span></button>`).join('');
+  $('#nav').innerHTML = TABS.map(([k, l]) => `<button class="${U.tab === k ? 'on' : ''}" data-act="go" data-t="${k}">${ic(k, 'w-5 h-5')}<span>${l}</span></button>`).join('');
 }
 function go(t) {
-  U.tab = t; document.querySelectorAll('.tab').forEach(e => e.classList.toggle('on', e.id === 'tab-' + t));
-  renderNav(); renderTab(t); window.scrollTo({ top: 0 });
-  if (t === 'ghost' && U.dirty) mb.set('Save Auto-Reply', saveSettings); else if (!P) mb.hide();
+  U.tab = t;
+  document.querySelectorAll('.tab').forEach(e => e.classList.toggle('on', e.id === 'tab-' + t));
+  renderNav();
+  renderTab(t);
+  window.scrollTo({ top: 0 });
+  if (t === 'ghost' && U.dirty) mb.set('Save Auto-Reply', saveSettings);
+  else if (!P) mb.hide();
   if (t === 'profile' && U.history === null) loadHistory();
 }
 function renderAll() { renderNav(); renderTab(U.tab); }
 function renderTab(t) { ({ home: renderHome, ghost: renderGhost, plans: renderPlans, profile: renderProfile })[t](); }
 
-/* ===================== HOME ===================== */
 function cdText() {
-  const ms = endTs - Date.now(); if (S.status.status !== 'active' || ms <= 0) return '--';
+  const ms = endTs - Date.now();
+  if (!S || !S.status || S.status.status !== 'active' || ms <= 0) return '--';
   const s = Math.floor(ms / 1000), d = Math.floor(s / 86400), h = Math.floor(s % 86400 / 3600), m = Math.floor(s % 3600 / 60), x = s % 60, p = n => String(n).padStart(2, '0');
   return d > 0 ? `${d}d ${p(h)}h ${p(m)}m` : `${p(h)}:${p(m)}:${p(x)}`;
 }
@@ -205,7 +270,7 @@ function renderHome() {
   const a = S.account;
   $('#tab-home').innerHTML = `
   <div class="flex items-center justify-between mb-4"><div><p class="mut" style="font-size:13px;margin:0">Welcome back</p><h1 style="font-size:22px;font-weight:800;margin:2px 0 0">${esc(S.user.first_name || 'Ghost User')} 👻</h1></div><span class="pill ${active ? 'pill-ok' : 'pill-bad'}">${esc(TIER[active ? st.plan : 'none'])}</span></div>
-  <div class="glass pad" style="${on ? 'box-shadow:0 0 40px rgba(16,185,129,.12);border-color:rgba(16,185,129,.25)' : ''}">
+  <div class="glass pad" style="${on ? 'box-shadow:0 0 36px rgba(16,185,129,.12);border-color:rgba(16,185,129,.25)' : ''}">
     <div class="flex items-center justify-between gap-3">
       <div class="flex items-center gap-3"><div class="dot ${on ? 'on' : ''}"></div><div><div class="mono" style="font-size:13px;font-weight:700;color:${on ? 'var(--em)' : '#FCA5A5'}">${label}</div><div class="mut" style="font-size:12.5px;margin-top:3px">${esc(sub)}</div></div></div>
       <button class="sw ${S.settings.is_active && active ? 'on' : ''}" data-act="master" aria-label="Master switch"></button>
@@ -219,27 +284,41 @@ function renderHome() {
     <div class="glass pad"><p class="lbl">Replies Sent</p><div class="mono" style="font-size:26px;font-weight:700">${Number(st.replies_sent).toLocaleString()}</div></div>
     <div class="glass pad"><p class="lbl">Plan Time Left</p><div class="mono cd" style="font-size:${active ? 20 : 26}px;font-weight:700;padding-top:${active ? 4 : 0}px;color:${active ? 'var(--cyan)' : '#64748B'}">${cdText()}</div></div>
   </div>
-  ${S.trial_eligible ? `<div class="price-card pro shine mt-4" data-act="pay" data-k="trial" style="padding:18px"><div class="flex items-center gap-3"><div style="width:46px;height:46px;border-radius:14px;background:var(--grad);display:grid;place-items:center;flex:none">${ic('bolt', 'w-6 h-6')}</div><div style="flex:1"><div style="font-weight:800;font-size:16px">Unlock 24h Starter Ghost for ₹2</div><div class="mut" style="font-size:12.5px;margin-top:3px">Telegram auto-reply · one-time trial · UPI</div></div>${ic('chev', 'w-5 h-5').replace('<svg', '<svg style="transform:rotate(-90deg)"')}</div></div>` : ''}
+  ${S.trial_eligible !== false ? `<div class="price-card pro mt-4" data-act="pay" data-k="trial" style="padding:18px"><div class="flex items-center gap-3"><div style="width:46px;height:46px;border-radius:14px;background:var(--grad);display:grid;place-items:center;flex:none">${ic('bolt', 'w-6 h-6')}</div><div style="flex:1"><div style="font-weight:800;font-size:16px">Unlock 24h Starter Ghost for ₹2</div><div class="mut" style="font-size:12.5px;margin-top:3px">Telegram auto-reply · one-time trial · UPI</div></div>${ic('chev', 'w-5 h-5').replace('<svg', '<svg style="transform:rotate(-90deg)"')}</div></div>` : ''}
   ${active ? '' : `<button class="btn btn-g mt-3" data-act="go" data-t="plans">${ic('plans')} View Plans</button>`}`;
 }
-setInterval(() => { document.querySelectorAll('.cd').forEach(e => e.textContent = cdText()); if (S && S.status.status === 'active' && endTs < Date.now() - 1500 && !setInterval.r) { setInterval.r = 1; loadState(true).then(() => setInterval.r = 0); } }, 1000);
+setInterval(() => {
+  document.querySelectorAll('.cd').forEach(e => { e.textContent = cdText(); });
+  if (S && S.status && S.status.status === 'active' && endTs < Date.now() - 1500 && !setInterval.r) {
+    setInterval.r = 1;
+    loadState().then(() => { setInterval.r = 0; });
+  }
+}, 1000);
 async function toggleMaster() {
   if (S.status.status !== 'active') { H.err(); toast('Activate a plan to turn Ghost on'); return go('plans'); }
   const next = !S.settings.is_active; S.settings.is_active = next; H.sel(); renderHome();
   const r = await api('/api/settings', { is_active: next });
-  if (!r._ok) { S.settings.is_active = !next; toast(r.error || 'Could not update'); } else { S.settings = r.settings; S.monitoring = r.monitoring; if (U.draft) U.draft = null; }
+  if (!r._ok) { S.settings.is_active = !next; toast(r.error || 'Could not update'); }
+  else { S.settings = r.settings; S.monitoring = r.monitoring; if (U.draft) U.draft = null; }
   renderHome();
 }
 
-/* ===================== GHOST ===================== */
-function ensureDraft() { if (!U.draft) { const s = S.settings; U.draft = { template: s.template, default_reply: s.default_reply, keyword_rules: JSON.parse(JSON.stringify(s.keyword_rules || [])), cooldown_seconds: s.cooldown_seconds }; } return U.draft; }
-function markDirty() { if (!U.dirty) { U.dirty = true; if (U.tab === 'ghost' && !P) mb.set('Save Auto-Reply', saveSettings); const b = $('#saveBtn'); if (b) b.disabled = false; } }
+function ensureDraft() {
+  if (!U.draft) {
+    const s = S.settings;
+    U.draft = { template: s.template, default_reply: s.default_reply, keyword_rules: JSON.parse(JSON.stringify(s.keyword_rules || [])), cooldown_seconds: s.cooldown_seconds };
+  }
+  return U.draft;
+}
+function markDirty() {
+  if (!U.dirty) { U.dirty = true; if (U.tab === 'ghost' && !P) mb.set('Save Auto-Reply', saveSettings); const b = $('#saveBtn'); if (b) b.disabled = false; }
+}
 function renderGhost() {
   const pro = S.features.whatsapp, d = ensureDraft(), w = U.wiz, active = S.status.status === 'active';
   const pt = (k, l, i, lock) => `<button class="${U.platform === k ? 'on' : ''}" data-act="platform" data-p="${k}">${ic(i, 'w-4 h-4')}${l}${lock ? '<span class="pill pill-pro" style="padding:2px 6px">PRO</span>' : ''}</button>`;
   let body = '';
   if (U.platform !== 'telegram') {
-    body = `<div class="glass pad" style="text-align:center"><div class="okc" style="width:56px;height:56px;animation:none">${ic(U.platform === 'whatsapp' ? 'wa' : 'hook', 'w-6 h-6')}</div><h3 style="font-weight:800;margin:14px 0 6px">${U.platform === 'whatsapp' ? 'WhatsApp Bridge' : 'Custom Webhooks'} is unlocked</h3><p class="mut" style="font-size:13.5px;line-height:1.6;margin:0">Your Pro plan includes this module. Setup is being rolled out to your dashboard, you will get a message from the bot as soon as it is live.</p></div>`;
+    body = `<div class="glass pad" style="text-align:center"><div class="okc" style="width:56px;height:56px">${ic(U.platform === 'whatsapp' ? 'wa' : 'hook', 'w-6 h-6')}</div><h3 style="font-weight:800;margin:14px 0 6px">${U.platform === 'whatsapp' ? 'WhatsApp Bridge' : 'Custom Webhooks'} is unlocked</h3><p class="mut" style="font-size:13.5px;line-height:1.6;margin:0">Your Pro plan includes this module. Setup is being rolled out to your dashboard, you will get a message from the bot as soon as it is live.</p></div>`;
   } else {
     let wiz = '';
     if (S.account) {
@@ -305,106 +384,176 @@ async function verify2fa() {
 async function afterConnect(r) {
   const w = U.wiz;
   if (r._ok && r.status === '2fa_required') { w.step = '2fa'; w.pw = ''; H.light(); return renderGhost(); }
-  if (r._ok && r.status === 'connected') { clearInterval(wizTimer); Object.assign(w, { step: 'phone', code: '', pw: '', err: '', phone: '' }); H.ok(); toast('Telegram connected 🎉'); await loadState(true); return; }
+  if (r._ok && r.status === 'connected') { clearInterval(wizTimer); Object.assign(w, { step: 'phone', code: '', pw: '', err: '', phone: '' }); H.ok(); toast('Telegram connected 🎉'); await loadState(); return; }
   w.err = r.error || 'Verification failed.'; H.err();
   if (r.code === 'code_expired') { w.step = 'code'; } if (r.code === 'trial_account_used') { Object.assign(w, { step: 'phone' }); }
   renderGhost();
 }
 
-/* ===================== PLANS ===================== */
-const planBy = k => S.plans.find(p => p.key === k);
+const planBy = k => {
+  const list = (S && Array.isArray(S.plans) && S.plans.length) ? S.plans : FALLBACK_PLANS;
+  return list.find(p => p.key === k) || FALLBACK_PLANS.find(p => p.key === k) || FALLBACK_PLANS[0];
+};
 function renderPlans() {
   const y = U.billing === 'yearly', st = planBy('starter_' + (y ? 'yearly' : 'monthly')), pr = planBy('pro_' + (y ? 'yearly' : 'monthly'));
   const f = (t, ok = true) => `<div class="feat ${ok ? '' : 'no'}">${ic(ok ? 'check' : 'x', 'w-4 h-4')}<span>${t}</span></div>`;
   const price = (p) => `<div class="flex items-end gap-1 mt-2"><span style="font-size:34px;font-weight:800;line-height:1">₹${p.inr.toLocaleString('en-IN')}</span><span class="mut" style="font-size:13px;padding-bottom:4px">/${y ? 'yr' : 'mo'}</span></div><div class="mut mono" style="font-size:12px;margin-top:4px">or $${p.usdt} USDT (BEP20)</div>`;
   $('#tab-plans').innerHTML = `
-  <div class="flex items-center justify-between mb-3"><h1 style="font-size:22px;font-weight:800;margin:0">Plans</h1><span class="pill pill-ok shine">Save up to 37%</span></div>
+  <div class="flex items-center justify-between mb-3"><h1 style="font-size:22px;font-weight:800;margin:0">Plans</h1><span class="pill pill-ok">Save up to 37%</span></div>
   <div class="seg mb-5"><button class="${y ? '' : 'on'}" data-act="bill" data-b="monthly">Monthly</button><button class="${y ? 'on' : ''}" data-act="bill" data-b="yearly">Yearly</button></div>
-  ${S.trial_eligible ? `<div class="price-card mb-5" data-act="pay" data-k="trial"><div class="flex items-center justify-between"><div><div style="font-weight:800;font-size:16px">₹2 1-Day Starter Trial</div><div class="mut" style="font-size:12.5px;margin-top:3px">24 hours · Telegram only · UPI</div></div><div style="font-size:28px;font-weight:800">₹2</div></div><button class="btn btn-g mt-3">Try for ₹2</button></div>` : ''}
-  <div class="price-card mb-6" data-act="pay" data-k="${st.key}">${y ? `<span class="badge save">${st.badge}</span>` : ''}<div style="font-weight:800;font-size:17px">Starter</div><div class="mut" style="font-size:12.5px">Telegram only</div>${price(st)}<div class="mt-3">${f('24/7 Telegram auto-reply')}${f('Keyword rules (up to 10)')}${f('Smart per-contact cooldown')}${f('WhatsApp Bridge', false)}${f('Custom Webhooks', false)}</div><button class="btn btn-g mt-3">Choose Starter</button></div>
-  <div class="price-card pro mb-5" data-act="pay" data-k="${pr.key}"><span class="badge">MOST POPULAR</span>${y ? `<span class="badge save">${pr.badge.split('|')[1].trim()}</span>` : ''}<div style="font-weight:800;font-size:17px;margin-top:4px">Pro All-In-One</div><div class="mut" style="font-size:12.5px">Telegram + WhatsApp + Webhooks</div>${price(pr)}<div class="mt-3">${f('Everything in Starter')}${f('WhatsApp Bridge')}${f('Custom Webhooks')}${f('Priority speed')}${f('Unlimited keyword rules')}</div><button class="btn btn-p mt-3 shine">Go Pro</button></div>
+  ${S.trial_eligible !== false ? `<div class="price-card mb-5" data-act="pay" data-k="trial"><div class="flex items-center justify-between"><div><div style="font-weight:800;font-size:16px">₹2 1-Day Starter Trial</div><div class="mut" style="font-size:12.5px;margin-top:3px">24 hours · Telegram only · UPI</div></div><div style="font-size:28px;font-weight:800">₹2</div></div><button type="button" class="btn btn-g mt-3" data-act="pay" data-k="trial">Try for ₹2</button></div>` : ''}
+  <div class="price-card mb-6" data-act="pay" data-k="${st.key}">${y ? `<span class="badge save">${st.badge}</span>` : ''}<div style="font-weight:800;font-size:17px">Starter</div><div class="mut" style="font-size:12.5px">Telegram only</div>${price(st)}<div class="mt-3">${f('24/7 Telegram auto-reply')}${f('Keyword rules (up to 10)')}${f('Smart per-contact cooldown')}${f('WhatsApp Bridge', false)}${f('Custom Webhooks', false)}</div><button type="button" class="btn btn-g mt-3" data-act="pay" data-k="${st.key}">Choose Starter</button></div>
+  <div class="price-card pro mb-5" data-act="pay" data-k="${pr.key}"><span class="badge">MOST POPULAR</span>${y ? `<span class="badge save">${pr.badge.split('|')[1].trim()}</span>` : ''}<div style="font-weight:800;font-size:17px;margin-top:4px">Pro All-In-One</div><div class="mut" style="font-size:12.5px">Telegram + WhatsApp + Webhooks</div>${price(pr)}<div class="mt-3">${f('Everything in Starter')}${f('WhatsApp Bridge')}${f('Custom Webhooks')}${f('Priority speed')}${f('Unlimited keyword rules')}</div><button type="button" class="btn btn-p mt-3" data-act="pay" data-k="${pr.key}">Go Pro</button></div>
   <div class="glass pad mt-6"><p class="lbl">Compare features</p><table class="mx"><tr><th></th><th>Starter</th><th style="color:#C4B5FD">Pro</th></tr>
   ${[['Telegram auto-reply', '✓', '✓'], ['Keyword rules', '10', '∞'], ['Smart cooldown', '✓', '✓'], ['WhatsApp Bridge', '—', '✓'], ['Custom Webhooks', '—', '✓'], ['Priority speed', '—', '✓']].map(r => `<tr><td>${r[0]}</td><td ${r[1] === '—' ? 'class="mut"' : ''}>${r[1]}</td><td style="color:var(--em);font-weight:700">${r[2]}</td></tr>`).join('')}</table></div>
   <p class="mut" style="font-size:12px;text-align:center;margin-top:14px">Renewing adds time on top of your remaining days.</p>`;
 }
 
-/* ===================== PAYMENT SHEET ===================== */
-function openSheet(html) { $('#sheetBody').innerHTML = html; $('#bd').classList.add('on'); $('#sheet').classList.add('on'); }
-function closeSheet() { $('#bd').classList.remove('on'); $('#sheet').classList.remove('on'); if (P) { P = null; if (U.tab === 'ghost' && U.dirty) mb.set('Save Auto-Reply', saveSettings); else mb.hide(); } }
+function qrFallbackSrc(text) {
+  const enc = encodeURIComponent(text || 'Profitix Ghost');
+  return `https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=4&data=${enc}`;
+}
+function openSheet(html) {
+  $('#sheetBody').innerHTML = html;
+  $('#bd').classList.add('on');
+  $('#sheet').classList.add('on');
+}
+function closeSheet() {
+  $('#bd').classList.remove('on');
+  $('#sheet').classList.remove('on');
+  if (P) { P = null; if (U.tab === 'ghost' && U.dirty) mb.set('Save Auto-Reply', saveSettings); else mb.hide(); }
+}
 function openUpgrade() {
-  openSheet(`<div style="text-align:center;padding:6px 0 4px"><div class="okc" style="animation:none;width:62px;height:62px">${ic('lock', 'w-7 h-7')}</div><h3 style="font-size:20px;font-weight:800;margin:16px 0 6px">Upgrade to Pro</h3><p class="mut" style="font-size:14px;line-height:1.6;margin:0 0 18px">WhatsApp Bridge and Custom Webhooks are part of the Pro All-In-One plan, along with priority speed and unlimited rules.</p><button class="btn btn-p" data-act="toplans">See Pro plans</button><button class="btn btn-g mt-2" data-act="closesheet">Maybe later</button></div>`);
+  openSheet(`<div style="text-align:center;padding:6px 0 4px"><div class="okc" style="width:62px;height:62px">${ic('lock', 'w-7 h-7')}</div><h3 style="font-size:20px;font-weight:800;margin:16px 0 6px">Upgrade to Pro</h3><p class="mut" style="font-size:14px;line-height:1.6;margin:0 0 18px">WhatsApp Bridge and Custom Webhooks are part of the Pro All-In-One plan, along with priority speed and unlimited rules.</p><button class="btn btn-p" data-act="toplans">See Pro plans</button><button class="btn btn-g mt-2" data-act="closesheet">Maybe later</button></div>`);
 }
 async function openPay(key) {
-  const plan = planBy(key); if (!plan) return; H.light();
-  P = { plan, method: 'upi', info: {}, utr: '', tx: '', busy: false, err: '', done: null };
-  renderPay(); mb.set('Verify Payment', doVerify);
+  const plan = planBy(key);
+  H.light();
+  const upiLink = `upi://pay?pa=profitix@upi&pn=${encodeURIComponent('Profitix Ghost')}&am=${plan.inr}&cu=INR`;
+  P = {
+    plan,
+    method: 'upi',
+    info: {
+      upi: { upi_id: 'profitix@upi', deep_link: upiLink, qr_svg: qrFallbackSrc(upiLink) },
+      usdt: { wallet: DEFAULT_USDT_WALLET, qr_svg: qrFallbackSrc(DEFAULT_USDT_WALLET) }
+    },
+    utr: '', tx: '', busy: false, err: '', done: null
+  };
+  renderPay();
+  mb.set('Verify Payment', doVerify);
   await loadPayInfo();
 }
 async function loadPayInfo() {
-  const m = P.method; if (P.info[m]) return renderPay();
-  const r = await api(`/api/payment/info?plan_key=${P.plan.key}&method=${m}`);
-  if (!P) return; if (r._ok) P.info[m] = r; else P.err = r.error || 'Could not load payment details.'; renderPay();
+  if (!P) return;
+  const m = P.method;
+  const r = await api(`/api/payment/info?plan_key=${encodeURIComponent(P.plan.key)}&method=${encodeURIComponent(m)}`, undefined, 8000);
+  if (!P) return;
+  if (r._ok) {
+    P.info[m] = Object.assign({}, P.info[m] || {}, r);
+    if (!P.info[m].qr_svg) {
+      P.info[m].qr_svg = qrFallbackSrc(m === 'upi' ? (P.info[m].deep_link || P.info[m].upi_id) : P.info[m].wallet);
+    }
+    P.err = '';
+  } else if (r.error) {
+    P.err = r.error;
+  }
+  renderPay();
 }
 function renderPay() {
-  if (!P) return; const p = P.plan, m = P.method, i = P.info[m];
-  if (P.busy) { $('#sheetBody').innerHTML = `<div style="text-align:center;padding:40px 0"><div class="spin"></div><h3 style="font-weight:800;margin:20px 0 6px">Verifying payment...</h3><p class="mut" style="font-size:13px">${m === 'upi' ? 'Checking your bank credit alert.' : 'Confirming on BNB Smart Chain.'} This can take up to 30 seconds.</p></div>`; return; }
-  if (P.done) { $('#sheetBody').innerHTML = `<div style="text-align:center;padding:24px 0 8px"><div class="okc">${ic('check', 'w-10 h-10').replace('<svg', '<svg stroke-width="3"')}</div><h3 style="font-size:22px;font-weight:800;margin:20px 0 6px">Payment verified! 🎉</h3><p class="mut" style="font-size:14px;margin:0 0 4px">${esc(p.name)} is now active</p><p style="font-size:13px;margin:0 0 20px;color:var(--cyan)" class="mono">Valid until ${esc(fmtDate(P.done))}</p><button class="btn btn-p" data-act="paydone">${S.account ? 'Back to Home' : 'Connect Telegram now'}</button></div>`; return; }
+  if (!P) return;
+  const p = P.plan, m = P.method, i = P.info[m] || {};
+  if (P.busy) {
+    $('#sheetBody').innerHTML = `<div style="text-align:center;padding:34px 0">${ghostLoaderHtml(m === 'upi' ? 'Checking your bank credit alert...' : 'Confirming on BNB Smart Chain...')}<p class="mut" style="font-size:12.5px;margin-top:6px">This can take up to 30 seconds.</p></div>`;
+    return;
+  }
+  if (P.done) {
+    $('#sheetBody').innerHTML = `<div style="text-align:center;padding:24px 0 8px"><div class="okc">${ic('check', 'w-10 h-10').replace('<svg', '<svg stroke-width="3"')}</div><h3 style="font-size:22px;font-weight:800;margin:20px 0 6px">Payment verified! 🎉</h3><p class="mut" style="font-size:14px;margin:0 0 4px">${esc(p.name)} is now active</p><p style="font-size:13px;margin:0 0 20px;color:var(--cyan)" class="mono">Valid until ${esc(fmtDate(P.done))}</p><button class="btn btn-p" data-act="paydone">${S && S.account ? 'Back to Home' : 'Connect Telegram now'}</button></div>`;
+    return;
+  }
   const usdtOk = p.usdt != null, amt = m === 'upi' ? '₹' + p.inr.toLocaleString('en-IN') : p.usdt + ' USDT';
+  const qrSrc = i.qr_svg || qrFallbackSrc(m === 'upi' ? (i.deep_link || i.upi_id || '') : (i.wallet || DEFAULT_USDT_WALLET));
   let body = '';
-  if (!i) body = `<div style="padding:40px 0;text-align:center"><div class="spin"></div></div>`;
-  else if (m === 'upi') body = `<a class="btn btn-p" href="${esc(i.deep_link)}">Open UPI App · ${amt}</a>
-    <div class="mut" style="text-align:center;font-size:12px;margin:14px 0 10px">or scan with any UPI app</div><div class="qr"><img alt="UPI QR" src="${esc(i.qr_svg)}"></div>
-    <div class="flex items-center gap-2 mt-4" style="padding:11px 12px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid var(--line)"><div style="flex:1;min-width:0"><div class="lbl" style="margin:0 0 2px">UPI ID</div><div class="mono" style="font-size:13.5px;overflow:hidden;text-overflow:ellipsis">${esc(i.upi_id)}</div></div><button class="btn btn-g btn-s" data-act="copy" data-v="${esc(i.upi_id)}" data-l="UPI ID">${ic('copy', 'w-4 h-4')} Copy</button></div>
-    <p class="lbl" style="margin-top:16px">After paying, enter the 12-digit UTR</p><input id="utr" class="inp mono" inputmode="numeric" maxlength="12" placeholder="123456789012" value="${esc(P.utr)}">`;
-  else body = `<div class="qr"><img alt="USDT QR" src="${esc(i.qr_svg)}"></div>
-    <div class="flex items-center justify-between mt-4" style="padding:12px;border-radius:12px;background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.25)"><span class="mut" style="font-size:13px">Send exactly</span><span class="mono" style="font-weight:700;color:var(--cyan);font-size:16px">${p.usdt} USDT</span></div>
-    <div class="mut" style="font-size:12px;margin:8px 0 0">Network: <b style="color:#E2E8F0">BEP20 (BNB Smart Chain)</b>. Other networks will be lost.</div>
-    <div class="flex items-center gap-2 mt-3" style="padding:11px 12px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid var(--line)"><div style="flex:1;min-width:0"><div class="lbl" style="margin:0 0 2px">Wallet address</div><div class="mono" style="font-size:11px;word-break:break-all">${esc(i.wallet)}</div></div><button class="btn btn-g btn-s" data-act="copy" data-v="${esc(i.wallet)}" data-l="Address">${ic('copy', 'w-4 h-4')} Copy</button></div>
-    <p class="lbl" style="margin-top:16px">After sending, paste the TxHash</p><input id="txh" class="inp mono" placeholder="0x..." style="font-size:12px" value="${esc(P.tx)}">`;
+  if (m === 'upi') {
+    const upiId = i.upi_id || 'profitix@upi';
+    const deep = i.deep_link || `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent('Profitix Ghost')}&am=${p.inr}&cu=INR`;
+    body = `<a class="btn btn-p" href="${esc(deep)}">Open UPI App · ${amt}</a>
+      <div class="mut" style="text-align:center;font-size:12px;margin:14px 0 10px">or scan with any UPI app</div>
+      <div class="qr"><img alt="UPI QR" src="${esc(qrSrc)}" onerror="this.src='${esc(qrFallbackSrc(deep))}'"></div>
+      <div class="flex items-center gap-2 mt-4" style="padding:11px 12px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid var(--line)"><div style="flex:1;min-width:0"><div class="lbl" style="margin:0 0 2px">UPI ID</div><div class="mono" style="font-size:13.5px;overflow:hidden;text-overflow:ellipsis">${esc(upiId)}</div></div><button type="button" class="btn btn-g btn-s" data-act="copy" data-v="${esc(upiId)}" data-l="UPI ID">${ic('copy', 'w-4 h-4')} Copy</button></div>
+      <p class="lbl" style="margin-top:16px">After paying, enter the 12-digit UTR</p>
+      <input id="utr" class="inp mono" inputmode="numeric" maxlength="12" placeholder="123456789012" value="${esc(P.utr)}">`;
+  } else {
+    const wallet = i.wallet || DEFAULT_USDT_WALLET;
+    body = `<div class="qr"><img alt="USDT QR" src="${esc(qrSrc)}" onerror="this.src='${esc(qrFallbackSrc(wallet))}'"></div>
+      <div class="flex items-center justify-between mt-4" style="padding:12px;border-radius:12px;background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.25)"><span class="mut" style="font-size:13px">Send exactly</span><span class="mono" style="font-weight:700;color:var(--cyan);font-size:16px">${p.usdt} USDT</span></div>
+      <div class="mut" style="font-size:12px;margin:8px 0 0">Network: <b style="color:#E2E8F0">BEP20 (BNB Smart Chain)</b>. Other networks will be lost.</div>
+      <div class="flex items-center gap-2 mt-3" style="padding:11px 12px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid var(--line)"><div style="flex:1;min-width:0"><div class="lbl" style="margin:0 0 2px">Wallet address</div><div class="mono" style="font-size:11px;word-break:break-all">${esc(wallet)}</div></div><button type="button" class="btn btn-g btn-s" data-act="copy" data-v="${esc(wallet)}" data-l="Address">${ic('copy', 'w-4 h-4')} Copy</button></div>
+      <p class="lbl" style="margin-top:16px">After sending, paste the TxHash</p>
+      <input id="txh" class="inp mono" placeholder="0x..." style="font-size:12px" value="${esc(P.tx)}">`;
+  }
   $('#sheetBody').innerHTML = `<div class="flex items-center justify-between mb-3"><div><div style="font-weight:800;font-size:19px">${esc(p.name)}</div><div class="mut" style="font-size:12.5px">${p.days === 1 ? '24 hours' : p.days + ' days'} access</div></div><div style="font-size:24px;font-weight:800">${amt}</div></div>
-  <div class="seg mb-4"><button class="${m === 'upi' ? 'on' : ''}" data-act="method" data-m="upi">UPI</button>${usdtOk ? `<button class="${m === 'usdt' ? 'on' : ''}" data-act="method" data-m="usdt">USDT BEP20</button>` : ''}</div>
+  <div class="seg mb-4"><button type="button" class="${m === 'upi' ? 'on' : ''}" data-act="method" data-m="upi">UPI</button>${usdtOk ? `<button type="button" class="${m === 'usdt' ? 'on' : ''}" data-act="method" data-m="usdt">USDT BEP20</button>` : ''}</div>
   ${body}${P.err ? `<div class="err">${esc(P.err)}</div>` : ''}
-  <button class="btn btn-p mt-4" data-act="verify" ${i ? '' : 'disabled'}>Verify Payment</button><button class="btn btn-g mt-2" data-act="closesheet">Cancel</button>`;
+  <button type="button" class="btn btn-p mt-4" data-act="verify">Verify Payment</button><button type="button" class="btn btn-g mt-2" data-act="closesheet">Cancel</button>`;
 }
 async function doVerify() {
-  if (!P || P.busy || P.done) return; const m = P.method; let url, body;
-  if (m === 'upi') { const utr = (P.utr || '').replace(/\D/g, ''); if (utr.length !== 12) { P.err = 'Enter the 12-digit UTR from your payment app.'; H.err(); return renderPay(); } url = '/api/payment/verify-upi'; body = { plan_key: P.plan.key, utr }; }
-  else { const tx = (P.tx || '').trim(); if (!/^0x[0-9a-fA-F]{64}$/.test(tx)) { P.err = 'Enter a valid transaction hash (0x + 64 characters).'; H.err(); return renderPay(); } url = '/api/payment/verify-usdt'; body = { plan_key: P.plan.key, tx_hash: tx }; }
-  P.busy = true; P.err = ''; renderPay(); if (tg) tg.MainButton.showProgress && tg.MainButton.showProgress();
-  const r = await api(url, body); if (tg) tg.MainButton.hideProgress && tg.MainButton.hideProgress();
-  if (!P) return; P.busy = false;
-  if (r._ok && r.status === 'ok') { P.done = r.expires_at; H.ok(); mb.hide(); U.history = null; renderPay(); confetti(); loadState(true); }
+  if (!P || P.busy || P.done) return;
+  const m = P.method; let url, body;
+  if (m === 'upi') {
+    const elUtr = $('#utr');
+    const rawUtr = elUtr ? elUtr.value : P.utr;
+    const utr = (rawUtr || '').replace(/\D/g, '');
+    P.utr = utr;
+    if (utr.length !== 12) { P.err = 'Enter the 12-digit UTR from your payment app.'; H.err(); return renderPay(); }
+    url = '/api/payment/verify-upi'; body = { plan_key: P.plan.key, utr };
+  } else {
+    const elTx = $('#txh');
+    const tx = ((elTx ? elTx.value : P.tx) || '').trim();
+    P.tx = tx;
+    if (!/^0x[0-9a-fA-F]{64}$/.test(tx)) { P.err = 'Enter a valid transaction hash (0x + 64 characters).'; H.err(); return renderPay(); }
+    url = '/api/payment/verify-usdt'; body = { plan_key: P.plan.key, tx_hash: tx };
+  }
+  P.busy = true; P.err = ''; renderPay();
+  if (tg) tg.MainButton.showProgress && tg.MainButton.showProgress();
+  const r = await api(url, body, 35000);
+  if (tg) tg.MainButton.hideProgress && tg.MainButton.hideProgress();
+  if (!P) return;
+  P.busy = false;
+  if (r._ok && r.status === 'ok') { P.done = r.expires_at; H.ok(); mb.hide(); U.history = null; renderPay(); confetti(); loadState(); }
   else { P.err = r.error || 'Verification failed.'; H.err(); renderPay(); }
 }
 function confetti() {
   const cols = ['#6366F1', '#8B5CF6', '#38BDF8', '#10B981', '#F59E0B', '#F8FAFC'];
-  for (let n = 0; n < 60; n++) { const e = document.createElement('i'); e.className = 'cf'; e.style.left = Math.random() * 100 + 'vw'; e.style.background = cols[n % cols.length]; e.style.animationDuration = 1.6 + Math.random() * 1.6 + 's'; e.style.animationDelay = Math.random() * .5 + 's'; document.body.appendChild(e); setTimeout(() => e.remove(), 4000); }
+  for (let n = 0; n < 50; n++) {
+    const e = document.createElement('i'); e.className = 'cf'; e.style.left = Math.random() * 100 + 'vw';
+    e.style.background = cols[n % cols.length]; e.style.animationDuration = 1.6 + Math.random() * 1.4 + 's';
+    e.style.animationDelay = Math.random() * .4 + 's'; document.body.appendChild(e);
+    setTimeout(() => e.remove(), 3800);
+  }
 }
 
-/* ===================== PROFILE ===================== */
 async function loadHistory() { const r = await api('/api/payments'); U.history = r._ok ? r.payments : []; if (U.tab === 'profile') renderProfile(); }
 function renderProfile() {
   const u = S.user, st = S.status, active = st.status === 'active';
   const av = u.photo_url ? `<img src="${esc(u.photo_url)}" style="width:100%;height:100%;border-radius:50%;object-fit:cover" referrerpolicy="no-referrer" onerror="this.remove()">` : '';
-  const hist = U.history === null ? '<div style="text-align:center;padding:18px"><div class="spin" style="width:28px;height:28px;border-width:3px"></div></div>' : U.history.length === 0 ? '<p class="mut" style="font-size:13px;margin:6px 0 0">No payments yet.</p>' : U.history.map(h => { const p = planBy(h.plan_key); const cls = h.status === 'success' ? 'pill-ok' : h.status === 'rejected' ? 'pill-bad' : 'pill-warn'; return `<div class="flex items-center justify-between" style="padding:12px 0;border-bottom:1px solid var(--line)"><div><div style="font-weight:700;font-size:14px">${esc(p ? p.name : h.plan_key)}</div><div class="mut" style="font-size:11.5px;margin-top:2px">${esc(h.method.toUpperCase())} · ${esc(fmtDate(h.created_at))}</div></div><div style="text-align:right"><div class="mono" style="font-weight:700;font-size:14px">${h.currency === 'INR' ? '₹' + Number(h.amount).toLocaleString('en-IN') : Number(h.amount) + ' USDT'}</div><span class="pill ${cls}" style="margin-top:3px">${esc(h.status.toUpperCase())}</span></div></div>`; }).join('');
+  const hist = U.history === null ? `<div style="text-align:center;padding:18px">${ghostLoaderHtml('Loading history...')}</div>` : U.history.length === 0 ? '<p class="mut" style="font-size:13px;margin:6px 0 0">No payments yet.</p>' : U.history.map(h => { const p = planBy(h.plan_key); const cls = h.status === 'success' ? 'pill-ok' : h.status === 'rejected' ? 'pill-bad' : 'pill-warn'; return `<div class="flex items-center justify-between" style="padding:12px 0;border-bottom:1px solid var(--line)"><div><div style="font-weight:700;font-size:14px">${esc(p ? p.name : h.plan_key)}</div><div class="mut" style="font-size:11.5px;margin-top:2px">${esc(h.method.toUpperCase())} · ${esc(fmtDate(h.created_at))}</div></div><div style="text-align:right"><div class="mono" style="font-weight:700;font-size:14px">${h.currency === 'INR' ? '₹' + Number(h.amount).toLocaleString('en-IN') : Number(h.amount) + ' USDT'}</div><span class="pill ${cls}" style="margin-top:3px">${esc(h.status.toUpperCase())}</span></div></div>`; }).join('');
   $('#tab-profile').innerHTML = `
-  <div class="glass pad" style="text-align:center"><div style="width:76px;height:76px;border-radius:50%;background:var(--grad);display:grid;place-items:center;margin:0 auto;font-size:30px;font-weight:800;box-shadow:0 0 36px rgba(99,102,241,.4);overflow:hidden;position:relative"><span style="position:absolute">${esc((u.first_name || 'G')[0].toUpperCase())}</span>${av ? `<div style="position:absolute;inset:0">${av}</div>` : ''}</div>
+  <div class="glass pad" style="text-align:center"><div style="width:76px;height:76px;border-radius:50%;background:var(--grad);display:grid;place-items:center;margin:0 auto;font-size:30px;font-weight:800;overflow:hidden;position:relative"><span style="position:absolute">${esc((u.first_name || 'G')[0].toUpperCase())}</span>${av ? `<div style="position:absolute;inset:0">${av}</div>` : ''}</div>
     <h2 style="font-size:20px;font-weight:800;margin:12px 0 2px">${esc(u.first_name || 'Ghost User')}</h2><div class="mut mono" style="font-size:12px">ID ${u.id}${u.username ? ' · @' + esc(u.username) : ''}</div>
     <div class="flex items-center justify-center gap-2 mt-3"><span class="pill ${active ? 'pill-ok' : 'pill-bad'}">${esc(TIER[active ? st.plan : 'none'])}</span><span class="mut" style="font-size:12.5px">${active ? 'Expires ' + esc(fmtDate(st.expires_at)) : st.status === 'expired' ? 'Expired ' + esc(fmtDate(st.expires_at)) : 'No active plan'}</span></div></div>
   <div class="glass pad mt-3"><p class="lbl">Payment history</p>${hist}</div>
-  <div class="glass pad mt-3"><p class="lbl">FAQ</p>${FAQ.map((f, n) => `<div class="faq ${U.faq === n ? 'on' : ''}"><button data-act="faq" data-n="${n}"><span>${esc(f[0])}</span>${ic('chev', 'w-4 h-4')}</button><div class="a">${esc(f[1])}</div></div>`).join('')}</div>
-  <button class="btn btn-p mt-3" data-act="support">Contact Support</button>`;
+  <div class="glass pad mt-3"><p class="lbl">FAQ</p>${FAQ.map((f, n) => `<div class="faq ${U.faq === n ? 'on' : ''}"><button type="button" data-act="faq" data-n="${n}"><span>${esc(f[0])}</span>${ic('chev', 'w-4 h-4')}</button><div class="a">${esc(f[1])}</div></div>`).join('')}</div>
+  <button type="button" class="btn btn-p mt-3" data-act="support">Contact Support</button>`;
 }
 
-/* ===================== Events ===================== */
 const ACTIONS = {
   go: el => { H.sel(); go(el.dataset.t); },
-  retry: () => { $('#boot').innerHTML = '<div class="spin"></div>'; loadState(); },
+  retry: () => { $('#boot').innerHTML = ghostLoaderHtml('Reconnecting your Ghost...'); loadState(); },
   master: toggleMaster,
   platform: el => { const p = el.dataset.p; H.sel(); if (p !== 'telegram' && !S.features.whatsapp) return openUpgrade(); U.platform = p; renderGhost(); },
   toplans: () => { closeSheet(); go('plans'); },
   closesheet: closeSheet,
-  paydone: () => { closeSheet(); go(S.account ? 'home' : 'ghost'); },
+  paydone: () => { closeSheet(); go(S && S.account ? 'home' : 'ghost'); },
   tpl: el => { const d = ensureDraft(), k = el.dataset.k; d.template = k; if (TEMPLATES[k]) d.default_reply = TEMPLATES[k]; H.sel(); markDirty(); renderGhost(); },
   cool: el => { ensureDraft().cooldown_seconds = +el.dataset.c; H.sel(); markDirty(); renderGhost(); },
   addrule: () => { const d = ensureDraft(); if (d.keyword_rules.length >= S.max_rules) { H.err(); toast(S.features.whatsapp ? 'Rule limit reached' : `Starter allows ${S.max_rules} rules. Upgrade to Pro for unlimited.`); return; } d.keyword_rules.push({ keyword: '', reply: '' }); H.light(); markDirty(); renderGhost(); },
@@ -414,19 +563,27 @@ const ACTIONS = {
   resend: () => sendCode(true),
   verifycode: verifyCode, verify2fa: verify2fa,
   editphone: () => { clearInterval(wizTimer); Object.assign(U.wiz, { step: 'phone', err: '', code: '' }); renderGhost(); },
-  disconnect: () => { const run = async () => { const r = await api('/api/telegram/disconnect', {}); if (r._ok) { H.ok(); toast('Account disconnected'); await loadState(true); } else toast(r.error || 'Failed'); }; if (tg && tg.showConfirm) tg.showConfirm('Disconnect this Telegram account? Auto-reply will stop.', ok => ok && run()); else if (confirm('Disconnect this account?')) run(); },
+  disconnect: () => { const run = async () => { const r = await api('/api/telegram/disconnect', {}); if (r._ok) { H.ok(); toast('Account disconnected'); await loadState(); } else toast(r.error || 'Failed'); }; if (tg && tg.showConfirm) tg.showConfirm('Disconnect this Telegram account? Auto-reply will stop.', ok => ok && run()); else if (confirm('Disconnect this account?')) run(); },
   bill: el => { U.billing = el.dataset.b; H.sel(); renderPlans(); },
   pay: el => openPay(el.dataset.k),
   method: el => { if (!P) return; P.method = el.dataset.m; P.err = ''; H.sel(); renderPay(); loadPayInfo(); },
   verify: doVerify,
   copy: el => copy(el.dataset.v, el.dataset.l),
   faq: el => { const n = +el.dataset.n; U.faq = U.faq === n ? -1 : n; H.light(); renderProfile(); },
-  support: () => { const url = 'https://t.me/' + S.support; if (tg && tg.openTelegramLink) tg.openTelegramLink(url); else window.open(url, '_blank'); }
+  support: () => { const url = 'https://t.me/' + ((S && S.support) || 'support'); if (tg && tg.openTelegramLink) tg.openTelegramLink(url); else window.open(url, '_blank'); }
 };
-document.addEventListener('click', e => { const el = e.target.closest('[data-act]'); if (!el) return; if (el.tagName === 'A') { H.light(); return; } const f = ACTIONS[el.dataset.act]; if (f) f(el); });
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-act]');
+  if (!el) return;
+  if (el.tagName === 'A') { H.light(); return; }
+  e.stopPropagation();
+  const f = ACTIONS[el.dataset.act];
+  if (f) f(el);
+});
 document.addEventListener('input', e => {
   const t = e.target;
-  if (t.id === 'ph') U.wiz.phone = t.value; else if (t.id === 'cd') { U.wiz.code = t.value.replace(/\D/g, ''); t.value = U.wiz.code; if (U.wiz.code.length === 5 && !U.wiz.busy) verifyCode(); }
+  if (t.id === 'ph') U.wiz.phone = t.value;
+  else if (t.id === 'cd') { U.wiz.code = t.value.replace(/\D/g, ''); t.value = U.wiz.code; if (U.wiz.code.length === 5 && !U.wiz.busy) verifyCode(); }
   else if (t.id === 'pw') U.wiz.pw = t.value;
   else if (t.id === 'dr') { ensureDraft().default_reply = t.value; ensureDraft().template = 'custom'; markDirty(); }
   else if (t.dataset && t.dataset.rk !== undefined) { ensureDraft().keyword_rules[+t.dataset.rk].keyword = t.value; markDirty(); }
@@ -437,10 +594,10 @@ document.addEventListener('input', e => {
 document.addEventListener('change', e => { if (e.target.id === 'cc') U.wiz.cc = e.target.value; });
 $('#bd').addEventListener('click', closeSheet);
 
-/* ===================== Boot ===================== */
 (async function () {
   if (!INIT) return showFatal('');
-  const q = new URLSearchParams(location.search).get('tab'); if (['home', 'ghost', 'plans', 'profile'].includes(q)) U.tab = q;
+  const q = new URLSearchParams(location.search).get('tab');
+  if (['home', 'ghost', 'plans', 'profile'].includes(q)) U.tab = q;
   if (await loadState()) go(U.tab);
 })();
 </script>
