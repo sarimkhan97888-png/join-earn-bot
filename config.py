@@ -1,6 +1,6 @@
 """
 Profitix Ghost - central configuration.
-All secrets come from environment variables (Hugging Face Space secrets).
+All secrets come from environment variables (Render / Kaggle Secrets).
 """
 import logging
 import os
@@ -26,13 +26,20 @@ def _env_int(name: str, default: int = 0) -> int:
         return default
 
 
+def _env_bool(name: str, default: bool = True) -> bool:
+    val = _env(name, "")
+    if not val:
+        return default
+    return val.lower() in ("1", "true", "yes", "on")
+
+
 # ---------------------------------------------------------------- logging
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s | %(levelname)-7s | %(name)s | %(message)s",
 )
 
-# ---------------------------------------------------------------- core
+# ---------------------------------------------------------------- core & split mode
 BOT_TOKEN = _env("BOT_TOKEN")
 API_ID = _env_int("API_ID", 0)
 API_HASH = _env("API_HASH")
@@ -41,6 +48,9 @@ WEBAPP_URL = _env("WEBAPP_URL").rstrip("/")
 PORT = _env_int("PORT", 7860)
 ADMIN_ID = _env_int("ADMIN_ID", 0)
 SUPPORT_USERNAME = _env("SUPPORT_USERNAME", "support").lstrip("@")
+
+# Set ENABLE_WORKER=false on Render (512MB) when Kaggle (30GB) runs worker.py
+ENABLE_WORKER = _env_bool("ENABLE_WORKER", True)
 
 # ---------------------------------------------------------------- UPI / Gmail
 UPI_ID = _env("UPI_ID")
@@ -64,6 +74,7 @@ USDT_MAX_TX_AGE_HOURS = _env_int("USDT_MAX_TX_AGE_HOURS", 72)
 # ---------------------------------------------------------------- runtime tuning
 REPLY_CONCURRENCY = 10            # asyncio.Semaphore(10) for outgoing auto-replies
 CLEANUP_INTERVAL_SECONDS = 600    # RAM cleanup scheduler: every 10 minutes
+DB_SYNC_INTERVAL_SECONDS = 20     # Sync newly connected/paid users from Neon DB every 20s
 OTP_CACHE_TTL_SECONDS = 600       # pending Telegram login state lifetime
 DEFAULT_COOLDOWN_SECONDS = 600    # reply once per sender every 10 minutes
 REPLY_DELAY_MIN = 2

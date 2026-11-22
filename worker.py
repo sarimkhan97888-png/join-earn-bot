@@ -1,14 +1,15 @@
 """
 Profitix Ghost - 24/7 Telethon auto-reply worker + RAM cleanup scheduler.
 
-* One live TelegramClient per active subscriber (held in RAM only while the plan is valid).
+* Runs either embedded in app.py (ENABLE_WORKER=true) or standalone on Kaggle 30GB RAM (`python worker.py`).
+* Syncs newly connected / renewed / disconnected users from Neon PostgreSQL every 20 seconds.
 * Outgoing replies are throttled by asyncio.Semaphore(10) so bursts never spike CPU/RAM.
-* Only the counter users.total_replies_sent is written; no message text is stored.
 * Every 10 minutes expired clients are disconnected + unloaded and the user is notified.
 """
 import asyncio
 import logging
 import random
+import signal
 import time
 from collections import defaultdict
 from datetime import datetime
@@ -33,11 +34,12 @@ log = logging.getLogger("worker")
 DEAD_SESSION_ERRORS = (
     AuthKeyUnregisteredError, SessionRevokedError, UserDeactivatedError, UserDeactivatedBanError,
 )
-SETTINGS_TTL = 20.0
+SETTINGS_TTL = 15.0
 
 _clients: Dict[int, TelegramClient] = {}
 _handlers: Dict[int, Callable] = {}
 _self_ids: Dict[int, int] = {}
+_session_fingerprints: Dict[int, str] = {}
 _expiry: Dict[int, float] = {}
 _settings_cache: Dict[int, Tuple[float, dict]] = {}
 _last_reply: Dict[Tuple[int, int], float] = {}
@@ -193,11 +195,13 @@ async def start_user_client(user_id: int, client: Optional[TelegramClient] = Non
     async with _user_locks[user_id]:
         await _stop_locked(user_id)
         owned_here = client is None
+        session_str = ""
         if client is None:
             row = await db.get_tg_session(user_id)
             if not row:
                 return False
-            client = new_client(row["session_string"])
+            session_str = row["session_string"]
+            client = new_client(session_str)
             try:
                 await client.connect()
                 if not await client.is_user_authorized():
@@ -212,6 +216,8 @@ async def start_user_client(user_id: int, client: Optional[TelegramClient] = Non
                 log.exception("Could not start client for user %s", user_id)
                 await _safe_disconnect(client)
                 return False
+        else:
+            session_str = client.session.save()
 
         epoch = await _expiry_epoch(user_id)
         if not epoch:
@@ -233,6 +239,7 @@ async def start_user_client(user_id: int, client: Optional[TelegramClient] = Non
         _clients[user_id] = client
         _handlers[user_id] = handler
         _self_ids[user_id] = me.id
+        _session_fingerprints[user_id] = session_str[:48]
         _expiry[user_id] = epoch
         invalidate_settings(user_id)
         log.info("Worker started for user %s (%s)", user_id, "restored" if owned_here else "fresh login")
@@ -243,6 +250,7 @@ async def _stop_locked(user_id: int, log_out: bool = False) -> None:
     client = _clients.pop(user_id, None)
     handler = _handlers.pop(user_id, None)
     _self_ids.pop(user_id, None)
+    _session_fingerprints.pop(user_id, None)
     _expiry.pop(user_id, None)
     _settings_cache.pop(user_id, None)
     for key in [k for k in _last_reply if k[0] == user_id]:
@@ -285,8 +293,46 @@ async def restore_all() -> None:
                 ok += 1
         except Exception:
             log.exception("Restore failed for user %s", row["user_id"])
-        await asyncio.sleep(0.5)  # gentle stagger to avoid connect bursts
+        await asyncio.sleep(0.4)  # gentle stagger to avoid connect bursts
     log.info("Worker restore complete: %s/%s clients online", ok, len(sessions))
+
+
+# ------------------------------------------------------------------ Neon DB sync loop (for split Render + Kaggle mode)
+async def sync_from_db_once() -> None:
+    """Picks up newly connected/renewed users and unloads disconnected ones."""
+    sessions = await db.list_active_sessions()
+    active_ids = set()
+
+    for row in sessions:
+        uid = row["user_id"]
+        active_ids.add(uid)
+        fp = (row["session_string"] or "")[:48]
+        exp_ts = row["plan_expires_at"].timestamp()
+
+        if uid not in _clients or not _clients[uid].is_connected():
+            await start_user_client(uid)
+            await asyncio.sleep(0.3)
+        elif _session_fingerprints.get(uid) != fp:
+            # User reconnected a different Telegram account
+            await start_user_client(uid)
+        else:
+            # Refresh expiry in case user renewed plan on Render
+            _expiry[uid] = exp_ts
+
+    # Stop any client whose session was deleted or expired
+    for uid in list(_clients):
+        if uid not in active_ids:
+            await stop_user_client(uid)
+
+
+async def db_sync_loop() -> None:
+    await asyncio.sleep(10)
+    while True:
+        try:
+            await sync_from_db_once()
+        except Exception:
+            log.exception("DB sync cycle failed")
+        await asyncio.sleep(config.DB_SYNC_INTERVAL_SECONDS)
 
 
 # ------------------------------------------------------------------ RAM auto-cleanup (every 10 min)
@@ -345,3 +391,50 @@ async def shutdown() -> None:
             await stop_user_client(uid)
         except Exception:
             pass
+
+
+# ------------------------------------------------------------------ Standalone Worker Entrypoint (Kaggle 30GB RAM)
+async def run_standalone() -> None:
+    import bot as bot_module
+
+    if not config.API_ID or not config.API_HASH:
+        raise RuntimeError("API_ID and API_HASH are required to run worker.py")
+
+    for attempt in range(1, 7):
+        try:
+            await db.init_db()
+            break
+        except Exception:
+            if attempt == 6:
+                raise
+            log.warning("Neon DB waking up (attempt %s/6), retrying...", attempt)
+            await asyncio.sleep(3 * attempt)
+
+    set_notifier(bot_module.notify_expired)
+    await restore_all()
+
+    stop_event = asyncio.Event()
+    loop = asyncio.get_running_loop()
+    for sig in (signal.SIGINT, signal.SIGTERM):
+        try:
+            loop.add_signal_handler(sig, stop_event.set)
+        except NotImplementedError:
+            pass
+
+    sync_task = asyncio.create_task(db_sync_loop())
+    clean_task = asyncio.create_task(cleanup_loop())
+    log.info("Standalone 30GB Worker is LIVE and syncing with Neon DB every %ss", config.DB_SYNC_INTERVAL_SECONDS)
+
+    try:
+        await stop_event.wait()
+    finally:
+        sync_task.cancel()
+        clean_task.cancel()
+        await asyncio.gather(sync_task, clean_task, return_exceptions=True)
+        await shutdown()
+        await bot_module.close_bot()
+        await db.close_db()
+
+
+if __name__ == "__main__":
+    asyncio.run(run_standalone())

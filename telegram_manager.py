@@ -3,7 +3,8 @@ Profitix Ghost - Telegram OTP login manager.
 
 Pending logins live in an in-memory TTL cache keyed by f"{user_id}:{phone}" so the
 (client, phone_code_hash) pair never drops between send-code -> verify-code -> verify-2fa.
-After a successful login the live client is handed over to the 24/7 worker.
+If ENABLE_WORKER=true, the live client is handed over directly; if ENABLE_WORKER=false
+(split mode on Render), the session is saved to Neon PostgreSQL for the Kaggle worker.
 """
 import asyncio
 import logging
@@ -216,7 +217,13 @@ async def _finalize(user_id: int, phone: str, pending: Pending) -> dict:
     await db.save_tg_session(user_id, client.session.save(), me.id, name, username, phone)
     _pending.pop(_key(user_id, phone), None)
 
-    started = await worker.start_user_client(user_id, client)
+    if config.ENABLE_WORKER:
+        started = await worker.start_user_client(user_id, client)
+    else:
+        # Split mode (Render gateway + Kaggle worker): release local socket so Kaggle picks it up within 20s
+        await _safe_disconnect(client)
+        started = True
+
     return {
         "status": "connected",
         "monitoring": started,
@@ -225,7 +232,18 @@ async def _finalize(user_id: int, phone: str, pending: Pending) -> dict:
 
 
 async def disconnect_account(user_id: int) -> None:
-    await worker.stop_user_client(user_id, log_out=True)
+    if config.ENABLE_WORKER:
+        await worker.stop_user_client(user_id, log_out=True)
+    else:
+        # Log out cleanly via temporary client in split mode
+        row = await db.get_tg_session(user_id)
+        if row:
+            client = worker.new_client(row["session_string"])
+            try:
+                await client.connect()
+                await client.log_out()
+            except Exception:
+                await _safe_disconnect(client)
     await db.delete_tg_session(user_id)
     async with _user_locks[user_id]:
         await _drop_user_pending(user_id)

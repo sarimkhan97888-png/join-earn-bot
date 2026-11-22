@@ -1,7 +1,6 @@
 """
-Profitix Ghost - single-process entrypoint for Hugging Face Spaces (Docker, port 7860).
-FastAPI + Uvicorn host the Mini App/API while the aiogram bot, the Telethon worker and the
-cleanup scheduler run as background asyncio tasks inside the same container.
+Profitix Ghost - FastAPI + Bot entrypoint.
+Supports single-process mode (ENABLE_WORKER=true) and split Render+Kaggle mode (ENABLE_WORKER=false).
 """
 import asyncio
 import hashlib
@@ -83,22 +82,29 @@ async def lifespan(_: FastAPI):
         log.warning("Missing environment variables: %s", ", ".join(missing))
     await _init_db_with_retry()
 
-    worker.set_notifier(bot_module.notify_expired)
     tasks: List[asyncio.Task] = []
     if config.BOT_TOKEN:
         tasks.append(asyncio.create_task(_supervise("bot", bot_module.run_polling)))
-    if config.API_ID and config.API_HASH:
-        tasks.append(asyncio.create_task(_supervise("worker-restore", worker.restore_all)))
-    tasks.append(asyncio.create_task(_supervise("cleanup", worker.cleanup_loop)))
+
+    if config.ENABLE_WORKER:
+        worker.set_notifier(bot_module.notify_expired)
+        if config.API_ID and config.API_HASH:
+            tasks.append(asyncio.create_task(_supervise("worker-restore", worker.restore_all)))
+        tasks.append(asyncio.create_task(_supervise("cleanup", worker.cleanup_loop)))
+        log.info("Embedded Telethon worker ENABLED")
+    else:
+        log.info("Split mode active (ENABLE_WORKER=false): Telethon worker delegated to external 30GB worker")
+
     tasks.append(asyncio.create_task(_supervise("otp-gc", telegram_manager.gc_loop)))
-    log.info("Profitix Ghost is up on port %s", config.PORT)
+    log.info("Profitix Ghost web gateway is up on port %s", config.PORT)
     try:
         yield
     finally:
         for task in tasks:
             task.cancel()
         await asyncio.gather(*tasks, return_exceptions=True)
-        await worker.shutdown()
+        if config.ENABLE_WORKER:
+            await worker.shutdown()
         await telegram_manager.shutdown()
         await bot_module.close_bot()
         await db.close_db()
@@ -197,7 +203,11 @@ class UsdtVerifyIn(BaseModel):
 # ------------------------------------------------------------------ public routes
 @app.api_route("/health", methods=["GET", "HEAD"])
 async def health():
-    return {"status": "ok", "active_workers": worker.active_count()}
+    return {
+        "status": "ok",
+        "mode": "embedded" if config.ENABLE_WORKER else "gateway",
+        "active_workers": worker.active_count(),
+    }
 
 
 @app.get("/", include_in_schema=False)
@@ -218,6 +228,7 @@ async def api_state(user: dict = Depends(current_user)):
     if active and status["plan"] in ("starter", "pro"):
         eligible = False
     tier = status["plan"] if active else None
+    running = (worker.is_running(uid) if config.ENABLE_WORKER else bool(active and account)) and bool(settings["is_active"])
     return {
         "status_ok": True,
         "user": {
@@ -229,7 +240,7 @@ async def api_state(user: dict = Depends(current_user)):
         "status": status,
         "settings": settings,
         "account": account,
-        "monitoring": worker.is_running(uid) and bool(settings["is_active"]),
+        "monitoring": running,
         "plans": config.public_plans(),
         "features": {f: config.tier_has(tier, f) for f in ("telegram", "whatsapp", "webhooks")},
         "max_rules": MAX_RULES_PRO if config.tier_has(tier, "unlimited_rules") else config.MAX_RULES_LIMITED,
@@ -270,8 +281,14 @@ async def api_settings(body: SettingsIn, user: dict = Depends(current_user)):
             for r in body.keyword_rules if r.keyword.strip() and r.reply.strip()
         ]
     settings = await db.save_settings(uid, **fields)
-    worker.invalidate_settings(uid)
-    return {"status": "ok", "settings": settings, "monitoring": worker.is_running(uid) and bool(settings["is_active"])}
+    if config.ENABLE_WORKER:
+        worker.invalidate_settings(uid)
+        running = worker.is_running(uid) and bool(settings["is_active"])
+    else:
+        st = await db.get_status(uid)
+        acc = await telegram_manager.get_account(uid)
+        running = bool(st["status"] == "active" and acc and settings["is_active"])
+    return {"status": "ok", "settings": settings, "monitoring": running}
 
 
 # ------------------------------------------------------------------ Telegram connection
@@ -313,7 +330,8 @@ async def _guarded_verify(uid: int, run: Callable[[], Awaitable[payment.PaymentR
         result = await run()
     if not result.ok:
         return _err(400, result.message, result.code)
-    await worker.ensure_running(uid)  # resume the worker instantly after payment
+    if config.ENABLE_WORKER:
+        await worker.ensure_running(uid)  # resume immediately in single-process mode
     status = await db.get_status(uid)
     return {"status": "ok", "message": result.message, "plan_key": result.plan_key,
             "expires_at": result.expires_at, "plan_status": status}
