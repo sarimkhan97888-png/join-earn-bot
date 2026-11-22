@@ -29,7 +29,7 @@
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;background:var(--bg);color:var(--txt);font-family:'Plus Jakarta Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased;overscroll-behavior:none}
 .mono{font-family:'JetBrains Mono',monospace}
-#aurora{position:fixed;inset:-10%;z-index:-1;pointer-events:none;background:radial-gradient(45% 35% at 20% 12%,rgba(0,229,168,.11),transparent 70%),radial-gradient(40% 30% at 85% 28%,rgba(0,180,216,.09),transparent 70%),radial-gradient(45% 35% at 50% 95%,rgba(16,185,129,.08),transparent 70%)}
+#aurora{position:fixed;inset:-10%;z-index:-1;pointer-events:none;background:radial-gradient(45% 35% at 20% 12%,rgba(0,229,168,.12),transparent 70%),radial-gradient(40% 30% at 85% 28%,rgba(0,180,216,.1),transparent 70%),radial-gradient(45% 35% at 50% 95%,rgba(16,185,129,.08),transparent 70%)}
 .glass{background:var(--card);border:1px solid var(--line);border-radius:18px}
 .pad{padding:16px}
 .mut{color:var(--mut)}
@@ -53,22 +53,43 @@ textarea.inp{resize:none;min-height:88px;line-height:1.5}
 .pill-bad{background:rgba(244,63,94,.12);color:#FDA4AF;border:1px solid rgba(244,63,94,.3)}
 .pill-warn{background:rgba(245,158,11,.14);color:#FCD34D;border:1px solid rgba(245,158,11,.35)}
 .dot{width:10px;height:10px;border-radius:50%;position:relative;background:var(--mut)}
-.dot.on{background:var(--acc)}
+.dot.on{background:var(--acc);box-shadow:0 0 12px var(--acc)}
 .sw{width:58px;height:32px;border-radius:999px;background:rgba(255,255,255,.12);position:relative;border:0;cursor:pointer;transition:background .2s;flex:none}
 .sw::after{content:'';position:absolute;top:3px;left:3px;width:26px;height:26px;border-radius:50%;background:#fff;transition:transform .2s}
 .sw.on{background:var(--acc)}.sw.on::after{transform:translateX(26px)}
 .seg{display:flex;background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:14px;padding:4px;gap:4px}
 .seg button{flex:1;border:0;background:transparent;color:var(--mut);padding:10px 8px;border-radius:10px;font:700 13px 'Plus Jakarta Sans';cursor:pointer;display:flex;gap:6px;align-items:center;justify-content:center}
 .seg button.on{background:var(--grad);color:var(--acc-txt)}
-#nav{position:fixed;left:50%;bottom:calc(14px + env(safe-area-inset-bottom));transform:translateX(-50%);width:min(92vw,26rem);display:flex;padding:7px;gap:4px;border-radius:22px;background:rgba(11,17,26,.95);border:1px solid var(--line);box-shadow:0 14px 40px rgba(0,0,0,.6);z-index:30}
+#nav{position:fixed;left:50%;bottom:calc(14px + env(safe-area-inset-bottom));transform:translateX(-50%);width:min(92vw,26rem);display:flex;padding:7px;gap:4px;border-radius:22px;background:rgba(11,17,26,.96);border:1px solid var(--line);box-shadow:0 14px 40px rgba(0,0,0,.6);z-index:30}
 #nav button{flex:1;border:0;background:transparent;color:var(--mut);padding:9px 0 7px;border-radius:16px;display:flex;flex-direction:column;align-items:center;gap:3px;font:700 10.5px 'Plus Jakarta Sans';cursor:pointer}
 #nav button.on{color:var(--acc-txt);background:var(--grad)}
 
+/* Pending Payment Top Pill Banner */
+#pendingBanner{
+  position:sticky;
+  top:calc(8px + env(safe-area-inset-top));
+  z-index:35;
+  margin-bottom:14px;
+  padding:11px 14px;
+  border-radius:16px;
+  background:linear-gradient(135deg,rgba(245,158,11,.18),rgba(0,229,168,.14));
+  border:1px solid rgba(245,158,11,.45);
+  box-shadow:0 10px 28px rgba(0,0,0,.45);
+  display:none;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  cursor:pointer;
+}
+#pendingBanner.show{display:flex !important}
+@keyframes pulseDot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.8)}}
+.p-dot{width:9px;height:9px;border-radius:50%;background:#F59E0B;animation:pulseDot 1.2s infinite;flex:none}
+
 /* Bulletproof Modal Overlay */
-#payModal{position:fixed;inset:0;z-index:9999;display:none;align-items:flex-end;justify-content:center;background:rgba(2,5,10,.78)}
+#payModal{position:fixed;inset:0;z-index:9999;display:none;align-items:flex-end;justify-content:center;background:rgba(2,5,10,.82)}
 #payModal.open{display:flex !important}
-#payBox{width:100%;max-width:28rem;max-height:92vh;overflow-y:auto;background:#0B111A;border:1px solid rgba(0,229,168,.28);border-bottom:0;border-radius:26px 26px 0 0;padding:12px 18px calc(26px + env(safe-area-inset-bottom));box-shadow:0 -12px 48px rgba(0,0,0,.75);animation:slideUp .24s ease-out}
-@keyframes slideUp{from{transform:translateY(40px);opacity:.4}to{transform:none;opacity:1}}
+#payBox{width:100%;max-width:28rem;max-height:92vh;overflow-y:auto;background:#0B111A;border:1px solid rgba(0,229,168,.3);border-bottom:0;border-radius:26px 26px 0 0;padding:12px 18px calc(26px + env(safe-area-inset-bottom));box-shadow:0 -12px 48px rgba(0,0,0,.78);animation:slideUp .22s ease-out}
+@keyframes slideUp{from{transform:translateY(36px);opacity:.4}to{transform:none;opacity:1}}
 .grab{width:42px;height:4px;border-radius:9px;background:rgba(255,255,255,.22);margin:0 auto 14px}
 
 .price-card{position:relative;padding:18px;border-radius:20px;background:var(--card);border:1px solid var(--line);cursor:pointer;transition:transform .12s}
@@ -80,9 +101,10 @@ textarea.inp{resize:none;min-height:88px;line-height:1.5}
 .feat svg{color:var(--acc);flex:none}.feat.no{color:#64748B;text-decoration:line-through}.feat.no svg{color:#64748B}
 .qr{background:#fff;border-radius:16px;padding:10px;width:176px;height:176px;margin:0 auto;display:grid;place-items:center}.qr img{width:100%;height:100%;display:block;border-radius:8px}
 @keyframes rot{to{transform:rotate(360deg)}}
-.ghost-loader{position:relative;width:84px;height:84px;margin:0 auto;display:grid;place-items:center}
-.ghost-loader::after{content:'';position:absolute;inset:4px;border-radius:50%;border:2.5px solid transparent;border-top-color:#00E5A8;border-right-color:#00B4D8;animation:rot 1s linear infinite}
-.ghost-float{position:relative;z-index:2;width:52px;height:52px;border-radius:18px;background:var(--grad);color:var(--acc-txt);display:grid;place-items:center;box-shadow:0 8px 24px rgba(0,229,168,.35)}
+@keyframes floatGhost{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.ghost-loader{position:relative;width:88px;height:88px;margin:0 auto;display:grid;place-items:center}
+.ghost-loader::after{content:'';position:absolute;inset:2px;border-radius:50%;border:2.5px solid transparent;border-top-color:#00E5A8;border-right-color:#00B4D8;animation:rot 1s linear infinite}
+.ghost-float{position:relative;z-index:2;width:56px;height:56px;border-radius:20px;background:var(--grad);color:var(--acc-txt);display:grid;place-items:center;box-shadow:0 10px 30px rgba(0,229,168,.38);animation:floatGhost 2.2s ease-in-out infinite}
 .okc{width:76px;height:76px;border-radius:50%;background:var(--grad);color:var(--acc-txt);display:grid;place-items:center;margin:0 auto;box-shadow:0 0 40px rgba(0,229,168,.4)}
 .cf{position:fixed;top:-12px;width:9px;height:14px;border-radius:2px;z-index:10000;pointer-events:none;animation:fall linear forwards}
 @keyframes fall{to{transform:translateY(105vh) rotate(720deg);opacity:.9}}
@@ -94,34 +116,61 @@ table.mx{width:100%;border-collapse:collapse;font-size:12.5px}table.mx td,table.
 .lbl{font:700 11px 'Plus Jakarta Sans';letter-spacing:.08em;color:var(--mut);text-transform:uppercase;margin:0 0 8px}
 .err{color:#FDA4AF;font-size:13px;margin-top:10px;line-height:1.5}
 .hide{display:none!important}
+.hero-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:999px;background:rgba(0,229,168,.12);border:1px solid rgba(0,229,168,.3);color:var(--acc);font:700 11px 'Plus Jakarta Sans';letter-spacing:.05em}
+.feature-pill{display:flex;align-items:center;gap:10px;padding:11px 13px;border-radius:14px;background:rgba(255,255,255,.03);border:1px solid var(--line);text-align:left}
 </style>
 </head>
 <body>
 <div id="aurora"></div>
 <div id="toast"></div>
-<main id="app" class="mx-auto px-4 pt-5" style="max-width:28rem;padding-bottom:130px;padding-top:calc(20px + env(safe-area-inset-top))">
+<main id="app" class="mx-auto px-4 pt-4" style="max-width:28rem;padding-bottom:130px;padding-top:calc(16px + env(safe-area-inset-top))">
+  <!-- Pending Payment Return Banner -->
+  <div id="pendingBanner" onclick="resumePendingPay()">
+    <div class="flex items-center gap-2.5" style="min-width:0">
+      <span class="p-dot"></span>
+      <div style="min-width:0">
+        <div style="font-weight:800;font-size:12.5px;color:#FDE68A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Pending Payment · <span id="pbPlan">Plan</span></div>
+        <div style="font-size:11px;color:#CBD5E1">Tap to open QR & submit UTR</div>
+      </div>
+    </div>
+    <div class="mono" id="pbTimer" style="font-weight:800;font-size:13px;color:var(--acc);background:rgba(0,0,0,.35);padding:5px 9px;border-radius:10px;flex:none">05:00</div>
+  </div>
+
   <section id="tab-home" class="tab on"></section>
   <section id="tab-ghost" class="tab"></section>
   <section id="tab-plans" class="tab"></section>
   <section id="tab-profile" class="tab"></section>
-  <section id="boot" class="glass pad" style="text-align:center;margin-top:26vh;padding:28px 18px">
+
+  <!-- Premium First Login / Boot Screen -->
+  <section id="boot" class="glass pad" style="text-align:center;margin-top:8vh;padding:28px 20px;border-color:rgba(0,229,168,.24);box-shadow:0 20px 50px rgba(0,0,0,.55)">
+    <div class="hero-badge mb-4"><span>●</span> 24/7 AI AUTO-RESPONDER</div>
     <div class="ghost-loader">
       <div class="ghost-float">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
           <path d="M12 2a7 7 0 0 0-7 7v12l3-2 2 2 2-2 2 2 2-2 3 2V9a7 7 0 0 0-7-7z"/>
           <circle cx="9.5" cy="10" r="1.2" fill="currentColor"/>
           <circle cx="14.5" cy="10" r="1.2" fill="currentColor"/>
         </svg>
       </div>
     </div>
-    <h2 style="font-weight:800;font-size:17px;margin:16px 0 4px">Profitix Ghost</h2>
-    <p class="mut" style="margin:0;font-size:13px">Waking up your Ghost...</p>
+    <h1 style="font-weight:800;font-size:23px;margin:18px 0 6px;letter-spacing:-.02em">Profitix <span style="color:var(--acc)">Ghost</span></h1>
+    <p class="mut" style="margin:0 0 20px;font-size:13.5px;line-height:1.55">Connecting to your private automation cloud...</p>
+    <div class="space-y-2.5 mb-2">
+      <div class="feature-pill">
+        <span style="color:var(--acc);font-weight:800">⚡</span>
+        <div><div style="font-weight:700;font-size:13px">Instant Offline Replies</div><div class="mut" style="font-size:11.5px">Replies automatically even when your phone is off</div></div>
+      </div>
+      <div class="feature-pill">
+        <span style="color:var(--acc);font-weight:800">🛡️</span>
+        <div><div style="font-weight:700;font-size:13px">Per-User Smart Cooldown</div><div class="mut" style="font-size:11.5px">Separate timer for every sender — zero spam</div></div>
+      </div>
+    </div>
   </section>
 </main>
 <nav id="nav" class="hide"></nav>
-<div id="payModal" onclick="if(event.target===this)closeSheet()">
+<div id="payModal" onclick="if(event.target===this)minimizeOrCloseSheet()">
   <div id="payBox">
-    <div class="grab" onclick="closeSheet()"></div>
+    <div class="grab" onclick="minimizeOrCloseSheet()"></div>
     <div id="sheetBody"></div>
   </div>
 </div>
@@ -156,6 +205,23 @@ const FALLBACK_PLANS = [
 ];
 const DEFAULT_USDT_WALLET = '0x8f61C470a4fC19f79685BB60F8c6e3676BCf886B';
 
+function defaultGuestState() {
+  const u = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) || {};
+  return {
+    offline_demo: true,
+    user: { id: u.id || 0, first_name: u.first_name || 'Ghost User', username: u.username || '', photo_url: u.photo_url || '' },
+    status: { status: 'none', plan: 'none', replies_sent: 0, seconds_left: 0, expires_at: null },
+    settings: { is_active: false, template: 'busy', default_reply: "Hi! I'm busy right now and will reply soon.", keyword_rules: [], cooldown_seconds: 300 },
+    account: null,
+    trial_eligible: true,
+    features: { whatsapp: false },
+    max_rules: 10,
+    allowed_cooldowns: [300, 900, 3600],
+    plans: FALLBACK_PLANS,
+    support: 'Profitix00'
+  };
+}
+
 const ICONS = {
   home: '<path d="M3 11l9-8 9 8v9a2 2 0 0 1-2 2h-4v-6H9v6H5a2 2 0 0 1-2-2z"/>',
   ghost: '<path d="M12 2a7 7 0 0 0-7 7v12l3-2 2 2 2-2 2 2 2-2 3 2V9a7 7 0 0 0-7-7z"/><circle cx="9.5" cy="10" r="1"/><circle cx="14.5" cy="10" r="1"/>',
@@ -167,7 +233,8 @@ const ICONS = {
   plus: '<path d="M12 5v14M5 12h14"/>', trash: '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',
   chev: '<path d="M6 9l6 6 6-6"/>', bolt: '<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>',
   tg: '<path d="M21 4L3 11l6 2 2 6 3-4 5 4z"/>', wa: '<path d="M21 12a9 9 0 1 1-4-7.5L21 4l-1.5 4A9 9 0 0 1 21 12z"/>',
-  hook: '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>'
+  hook: '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
+  clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'
 };
 const ic = (n, c = 'w-5 h-5') => `<svg class="${c}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICONS[n]}</svg>`;
 function ghostLoaderHtml(text) {
@@ -195,7 +262,7 @@ async function api(path, body, timeoutMs = 12000) {
     r = await fetch(path, o);
   } catch (e) {
     if (timer) clearTimeout(timer);
-    return { status: 'error', error: e && e.name === 'AbortError' ? 'Server took too long. Try again.' : 'Network error. Check your connection.', _ok: false };
+    return { status: 'error', error: e && e.name === 'AbortError' ? 'Server waking up, please retry.' : 'Network error. Check your connection.', _ok: false };
   }
   if (timer) clearTimeout(timer);
   let j = {};
@@ -230,7 +297,7 @@ const U = {
   tab: 'home', platform: 'telegram', billing: 'monthly', draft: null, dirty: false, history: null, faq: -1,
   wiz: { step: 'phone', cc: '+91', phone: '', code: '', pw: '', full: '', err: '', busy: false, resend: 0 }
 };
-let P = null, endTs = 0, wizTimer = null;
+let P = null, pendingPay = null, endTs = 0, wizTimer = null;
 const COUNTRIES = [['🇮🇳 India', '+91'], ['🇺🇸 USA / Canada', '+1'], ['🇬🇧 UK', '+44'], ['🇦🇪 UAE', '+971'], ['🇸🇦 Saudi Arabia', '+966'], ['🇵🇰 Pakistan', '+92'], ['🇧🇩 Bangladesh', '+880'], ['🇳🇵 Nepal', '+977'], ['🇱🇰 Sri Lanka', '+94'], ['🇮🇩 Indonesia', '+62'], ['🇲🇾 Malaysia', '+60'], ['🇸🇬 Singapore', '+65'], ['🇳🇬 Nigeria', '+234'], ['🇿🇦 South Africa', '+27'], ['🇧🇷 Brazil', '+55'], ['🇷🇺 Russia', '+7'], ['🇹🇷 Turkey', '+90'], ['🇩🇪 Germany', '+49'], ['🇫🇷 France', '+33'], ['🇦🇺 Australia', '+61']];
 const TEMPLATES = {
   busy: "Hi! I'm busy / away from my phone right now and will get back to you as soon as I can. 🙏",
@@ -241,14 +308,29 @@ const FAQ = [
   ['Which code do I enter when connecting?', 'Telegram sends a 5-digit code to your official Telegram app chat (the chat named "Telegram"), not by SMS. Open that chat and type the code here.'],
   ['How does the ₹2 trial work?', 'You get 24 hours of Telegram auto-reply for ₹2 via UPI. It can be claimed once per Telegram user, once per payer UPI ID and once per connected Telegram account.'],
   ['My payment is not detected', 'Bank alerts can take 1-2 minutes. Make sure you paid the exact plan amount, typed the correct 12-digit UTR, and for USDT used the BEP20 (BNB Smart Chain) network with the exact amount.'],
-  ['Will Ghost spam my contacts?', 'No. It replies once per contact within your cooldown (5m / 15m / 1h), and ignores groups, channels, bots and your own messages.'],
+  ['Will Ghost spam my contacts?', 'No. Cooldown works separately for each sender (per-user timer). If User A gets a reply, User A waits 5m/15m/1h, while User B still gets an instant reply!'],
   ['How do I stop or remove it?', 'Use the master switch on Home to pause instantly, or press Disconnect in the Ghost tab to log the session out completely.']
 ];
 
-async function loadState() {
-  const r = await api('/api/state');
-  if (!r._ok) { showFatal(r.error || 'Could not load your account.'); return false; }
+async function loadState(isRetry = false) {
+  let r = await api('/api/state', undefined, 9000);
+  if (!r._ok && !isRetry) {
+    // Auto-retry once in case Render cold-started
+    await new Promise(res => setTimeout(res, 1200));
+    r = await api('/api/state', undefined, 10000);
+  }
+  if (!r._ok) {
+    // Instead of blocking user on a broken error wall, load clean app shell with sync banner
+    S = defaultGuestState();
+    S._syncError = r.error || 'Server waking up — tap Sync to refresh';
+    endTs = 0;
+    $('#boot').classList.add('hide');
+    $('#nav').classList.remove('hide');
+    renderAll();
+    return true;
+  }
   S = r;
+  S._syncError = '';
   if (!Array.isArray(S.plans) || !S.plans.length) S.plans = FALLBACK_PLANS;
   endTs = Date.now() + ((S.status && S.status.seconds_left) || 0) * 1000;
   if (!U.dirty) U.draft = null;
@@ -257,14 +339,34 @@ async function loadState() {
   renderAll();
   return true;
 }
-function showFatal(msg) {
-  const inTg = !!INIT;
-  $('#boot').innerHTML = `<div style="font-size:42px">👻</div><h2 style="font-weight:800;font-size:19px;margin:10px 0 6px">${inTg ? 'Something went wrong' : 'Open inside Telegram'}</h2><p class="mut" style="font-size:14px;line-height:1.6">${esc(inTg ? msg : 'Profitix Ghost is a Telegram Mini App. Open it from the bot using the Open Ghost button.')}</p>${inTg ? '<button class="btn btn-p" style="margin-top:18px" onclick="retryBoot()">Try again</button>' : ''}`;
+
+function showTelegramLoginScreen() {
+  $('#boot').innerHTML = `
+    <div class="hero-badge mb-4"><span>●</span> TELEGRAM MINI APP</div>
+    <div class="ghost-loader">
+      <div class="ghost-float">${ic('ghost', 'w-8 h-8')}</div>
+    </div>
+    <h1 style="font-weight:800;font-size:24px;margin:18px 0 6px;letter-spacing:-.02em">Profitix <span style="color:var(--acc)">Ghost</span></h1>
+    <p class="mut" style="font-size:13.5px;line-height:1.6;margin:0 0 18px">Your 24/7 offline Telegram auto-reply & smart lead responder. Please launch this app inside Telegram to sign in automatically.</p>
+    <div class="space-y-2.5 mb-5">
+      <div class="feature-pill">
+        <span style="color:var(--acc);font-weight:800">1</span>
+        <div><div style="font-weight:700;font-size:13px">One-Tap Telegram Login</div><div class="mut" style="font-size:11.5px">No separate password — secured by your Telegram ID</div></div>
+      </div>
+      <div class="feature-pill">
+        <span style="color:var(--acc);font-weight:800">2</span>
+        <div><div style="font-weight:700;font-size:13px">Per-User Cooldown Protection</div><div class="mut" style="font-size:11.5px">Individual timer per contact so every new chat gets a reply</div></div>
+      </div>
+    </div>
+    <a class="btn btn-p" href="https://t.me/Profitix00" target="_blank">Open in Telegram</a>`;
   $('#boot').classList.remove('hide');
 }
+
 function retryBoot() {
-  $('#boot').innerHTML = ghostLoaderHtml('Reconnecting your Ghost...');
-  loadState();
+  toast('Syncing account...');
+  loadState(true).then(() => {
+    if (S && !S._syncError) toast('Synced ✓');
+  });
 }
 
 const TABS = [['home', 'Home'], ['ghost', 'Ghost'], ['plans', 'Plans'], ['profile', 'Profile']];
@@ -282,7 +384,7 @@ function go(t) {
   else if (!P) mb.hide();
   if (t === 'profile' && U.history === null) loadHistory();
 }
-function renderAll() { renderNav(); renderTab(U.tab); }
+function renderAll() { renderNav(); renderTab(U.tab); updatePendingBanner(); }
 function renderTab(t) { ({ home: renderHome, ghost: renderGhost, plans: renderPlans, profile: renderProfile })[t](); }
 
 function cdText() {
@@ -291,12 +393,34 @@ function cdText() {
   const s = Math.floor(ms / 1000), d = Math.floor(s / 86400), h = Math.floor(s % 86400 / 3600), m = Math.floor(s % 3600 / 60), x = s % 60, p = n => String(n).padStart(2, '0');
   return d > 0 ? `${d}d ${p(h)}h ${p(m)}m` : `${p(h)}:${p(m)}:${p(x)}`;
 }
+function fmt5Min(msLeft) {
+  const s = Math.max(0, Math.floor(msLeft / 1000));
+  const m = Math.floor(s / 60);
+  const sec = s % 60;
+  return `${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+}
+function updatePendingBanner() {
+  const b = $('#pendingBanner');
+  if (!b) return;
+  if (!pendingPay || pendingPay.expiresAt <= Date.now()) {
+    pendingPay = null;
+    b.classList.remove('show');
+    return;
+  }
+  $('#pbPlan').textContent = `${pendingPay.plan.name} (₹${pendingPay.plan.inr})`;
+  $('#pbTimer').textContent = fmt5Min(pendingPay.expiresAt - Date.now());
+  if (!P) b.classList.add('show');
+  else b.classList.remove('show');
+}
+
 function renderHome() {
   const st = S.status, active = st.status === 'active', on = active && S.settings.is_active && S.account;
   const label = on ? 'ONLINE & MONITORING' : 'PAUSED / EXPIRED';
   const sub = !active ? (st.status === 'expired' ? 'Your plan has expired. Resume in one tap.' : 'No active plan yet.') : !S.account ? 'Connect your Telegram account to go live.' : !S.settings.is_active ? 'Auto-reply is switched off.' : 'Replying to your chats 24/7.';
   const a = S.account;
+  const syncBar = S._syncError ? `<div class="glass pad mb-3 flex items-center justify-between gap-2" style="border-color:rgba(245,158,11,.4);background:rgba(245,158,11,.08)"><div style="font-size:12px;color:#FDE68A">${esc(S._syncError)}</div><button class="btn btn-g btn-s" onclick="retryBoot()">Retry Sync</button></div>` : '';
   $('#tab-home').innerHTML = `
+  ${syncBar}
   <div class="flex items-center justify-between mb-4"><div><p class="mut" style="font-size:13px;margin:0">Welcome back</p><h1 style="font-size:22px;font-weight:800;margin:2px 0 0">${esc(S.user.first_name || 'Ghost User')} 👻</h1></div><span class="pill ${active ? 'pill-ok' : 'pill-bad'}">${esc(TIER[active ? st.plan : 'none'])}</span></div>
   <div class="glass pad" style="${on ? 'box-shadow:0 0 36px rgba(0,229,168,.12);border-color:rgba(0,229,168,.28)' : ''}">
     <div class="flex items-center justify-between gap-3">
@@ -312,16 +436,37 @@ function renderHome() {
     <div class="glass pad"><p class="lbl">Replies Sent</p><div class="mono" style="font-size:26px;font-weight:700">${Number(st.replies_sent).toLocaleString()}</div></div>
     <div class="glass pad"><p class="lbl">Plan Time Left</p><div class="mono cd" style="font-size:${active ? 20 : 26}px;font-weight:700;padding-top:${active ? 4 : 0}px;color:${active ? 'var(--acc)' : '#64748B'}">${cdText()}</div></div>
   </div>
-  ${S.trial_eligible !== false ? `<div class="price-card pro mt-4" onclick="openPay('trial')" style="padding:18px"><div class="flex items-center gap-3"><div style="width:46px;height:46px;border-radius:14px;background:var(--grad);color:var(--acc-txt);display:grid;place-items:center;flex:none">${ic('bolt', 'w-6 h-6')}</div><div style="flex:1"><div style="font-weight:800;font-size:16px">Unlock 24h Starter Ghost for ₹2</div><div class="mut" style="font-size:12.5px;margin-top:3px">Telegram auto-reply · one-time trial · UPI</div></div>${ic('chev', 'w-5 h-5').replace('<svg', '<svg style="transform:rotate(-90deg)"')}</div></div>` : ''}
+  ${S.trial_eligible !== false ? `<div class="price-card pro mt-4" onclick="confirmGenerateQR('trial')" style="padding:18px"><div class="flex items-center gap-3"><div style="width:46px;height:46px;border-radius:14px;background:var(--grad);color:var(--acc-txt);display:grid;place-items:center;flex:none">${ic('bolt', 'w-6 h-6')}</div><div style="flex:1"><div style="font-weight:800;font-size:16px">Unlock 24h Starter Ghost for ₹2</div><div class="mut" style="font-size:12.5px;margin-top:3px">Telegram auto-reply · one-time trial · UPI</div></div>${ic('chev', 'w-5 h-5').replace('<svg', '<svg style="transform:rotate(-90deg)"')}</div></div>` : ''}
   ${active ? '' : `<button class="btn btn-g mt-3" onclick="go('plans')">${ic('plans')} View Plans</button>`}`;
 }
+
 setInterval(() => {
   document.querySelectorAll('.cd').forEach(e => { e.textContent = cdText(); });
   if (S && S.status && S.status.status === 'active' && endTs < Date.now() - 1500 && !setInterval.r) {
     setInterval.r = 1;
     loadState().then(() => { setInterval.r = 0; });
   }
+  // 5-Minute QR Payment Countdown
+  if (pendingPay) {
+    const left = pendingPay.expiresAt - Date.now();
+    if (left <= 0) {
+      pendingPay = null;
+      updatePendingBanner();
+      if (P && !P.busy && !P.done) {
+        P = null;
+        mb.hide();
+        closeModalOnly();
+        H.err();
+        toast('QR expired after 5 minutes. Generate a new one to pay.');
+      }
+    } else {
+      updatePendingBanner();
+      const qt = $('#qrTimerText');
+      if (qt) qt.textContent = fmt5Min(left);
+    }
+  }
 }, 1000);
+
 async function toggleMaster() {
   if (S.status.status !== 'active') { H.err(); toast('Activate a plan to turn Ghost on'); return go('plans'); }
   const next = !S.settings.is_active; S.settings.is_active = next; H.sel(); renderHome();
@@ -415,13 +560,21 @@ function renderGhost() {
       wiz = `<div class="glass pad"><div class="flex gap-2 mb-4">${dots}</div>${inner}${w.err ? `<div class="err">${esc(w.err)}</div>` : ''}</div>`;
     }
     const max = S.max_rules;
+    const coolLabel = d.cooldown_seconds === 300 ? '5 minutes' : d.cooldown_seconds === 900 ? '15 minutes' : '1 hour';
     body = wiz + `
     <div class="glass pad mt-3"><p class="lbl">Quick templates</p><div class="flex gap-2" style="overflow-x:auto;padding-bottom:2px">${[['busy', 'Busy / AFK'], ['hours', 'Business Hours'], ['sleep', 'Sleeping'], ['custom', 'Custom']].map(([k, l]) => `<button class="chip ${d.template === k ? 'on' : ''}" onclick="setTpl('${k}')">${l}</button>`).join('')}</div>
       <p class="lbl" style="margin-top:16px">Default reply</p><textarea id="dr" class="inp" maxlength="1000" placeholder="What should Ghost reply?">${esc(d.default_reply)}</textarea></div>
     <div class="glass pad mt-3"><div class="flex items-center justify-between"><p class="lbl" style="margin:0">Keyword rules</p><span class="mut mono" style="font-size:11px">${d.keyword_rules.length}/${S.features.whatsapp ? '∞' : max}</span></div>
       <div id="rules">${d.keyword_rules.map((r, i) => ruleHtml(r, i)).join('') || '<p class="mut" style="font-size:13px;margin:12px 0 0">No rules yet. Add one to reply differently when a message contains a word.</p>'}</div>
       <button class="btn btn-g mt-3" onclick="addRule()">${ic('plus')} Add rule</button></div>
-    <div class="glass pad mt-3"><p class="lbl">Per-contact cooldown</p><div class="seg">${S.allowed_cooldowns.map(c => `<button class="${d.cooldown_seconds === c ? 'on' : ''}" onclick="setCool(${c})">${c === 300 ? '5m' : c === 900 ? '15m' : '1h'}</button>`).join('')}</div><p class="mut" style="font-size:12px;margin:10px 0 0">Ghost replies once per contact in this window, so nobody gets spammed.</p></div>
+    <div class="glass pad mt-3">
+      <div class="flex items-center justify-between mb-2">
+        <p class="lbl" style="margin:0">Per-User Anti-Spam Cooldown</p>
+        <span class="pill pill-ok">INDIVIDUAL TIMER</span>
+      </div>
+      <div class="seg">${S.allowed_cooldowns.map(c => `<button class="${d.cooldown_seconds === c ? 'on' : ''}" onclick="setCool(${c})">${c === 300 ? '5m' : c === 900 ? '15m' : '1h'}</button>`).join('')}</div>
+      <p class="mut" style="font-size:12px;margin:10px 0 0;line-height:1.5">Separate <b>${coolLabel}</b> timer for <b>each individual user</b>. Replying to User A will <b>never</b> block instant replies to User B or User C.</p>
+    </div>
     <button id="saveBtn" class="btn btn-p mt-3" onclick="saveSettings()" ${U.dirty ? '' : 'disabled'}>Save Auto-Reply</button>`;
   }
   $('#tab-ghost').innerHTML = `<h1 style="font-size:22px;font-weight:800;margin:0 0 14px">Automation Studio</h1><div class="seg mb-3">${pt('telegram', 'Telegram', 'tg', false)}${pt('whatsapp', 'WhatsApp', 'wa', !pro)}${pt('webhooks', 'Webhooks', 'hook', !pro)}</div>${body}`;
@@ -486,11 +639,11 @@ function renderPlans() {
   $('#tab-plans').innerHTML = `
   <div class="flex items-center justify-between mb-3"><h1 style="font-size:22px;font-weight:800;margin:0">Plans</h1><span class="pill pill-ok">Save up to 37%</span></div>
   <div class="seg mb-5"><button class="${y ? '' : 'on'}" onclick="setBill('monthly')">Monthly</button><button class="${y ? 'on' : ''}" onclick="setBill('yearly')">Yearly</button></div>
-  ${S.trial_eligible !== false ? `<div class="price-card mb-5" onclick="openPay('trial')"><div class="flex items-center justify-between"><div><div style="font-weight:800;font-size:16px">₹2 1-Day Starter Trial</div><div class="mut" style="font-size:12.5px;margin-top:3px">24 hours · Telegram only · UPI</div></div><div style="font-size:28px;font-weight:800;color:var(--acc)">₹2</div></div><button type="button" class="btn btn-g mt-3">Try for ₹2</button></div>` : ''}
-  <div class="price-card mb-6" onclick="openPay('${st.key}')">${y ? `<span class="badge save">${st.badge}</span>` : ''}<div style="font-weight:800;font-size:17px">Starter</div><div class="mut" style="font-size:12.5px">Telegram only</div>${price(st)}<div class="mt-3">${f('24/7 Telegram auto-reply')}${f('Keyword rules (up to 10)')}${f('Smart per-contact cooldown')}${f('WhatsApp Bridge', false)}${f('Custom Webhooks', false)}</div><button type="button" class="btn btn-g mt-3">Choose Starter</button></div>
-  <div class="price-card pro mb-5" onclick="openPay('${pr.key}')"><span class="badge">MOST POPULAR</span>${y ? `<span class="badge save">${pr.badge.split('|')[1].trim()}</span>` : ''}<div style="font-weight:800;font-size:17px;margin-top:4px">Pro All-In-One</div><div class="mut" style="font-size:12.5px">Telegram + WhatsApp + Webhooks</div>${price(pr)}<div class="mt-3">${f('Everything in Starter')}${f('WhatsApp Bridge')}${f('Custom Webhooks')}${f('Priority speed')}${f('Unlimited keyword rules')}</div><button type="button" class="btn btn-p mt-3">Go Pro</button></div>
+  ${S.trial_eligible !== false ? `<div class="price-card mb-5" onclick="confirmGenerateQR('trial')"><div class="flex items-center justify-between"><div><div style="font-weight:800;font-size:16px">₹2 1-Day Starter Trial</div><div class="mut" style="font-size:12.5px;margin-top:3px">24 hours · Telegram only · UPI</div></div><div style="font-size:28px;font-weight:800;color:var(--acc)">₹2</div></div><button type="button" class="btn btn-g mt-3">Try for ₹2</button></div>` : ''}
+  <div class="price-card mb-6" onclick="confirmGenerateQR('${st.key}')">${y ? `<span class="badge save">${st.badge}</span>` : ''}<div style="font-weight:800;font-size:17px">Starter</div><div class="mut" style="font-size:12.5px">Telegram only</div>${price(st)}<div class="mt-3">${f('24/7 Telegram auto-reply')}${f('Keyword rules (up to 10)')}${f('Per-user cooldown timer')}${f('WhatsApp Bridge', false)}${f('Custom Webhooks', false)}</div><button type="button" class="btn btn-g mt-3">Choose Starter</button></div>
+  <div class="price-card pro mb-5" onclick="confirmGenerateQR('${pr.key}')"><span class="badge">MOST POPULAR</span>${y ? `<span class="badge save">${pr.badge.split('|')[1].trim()}</span>` : ''}<div style="font-weight:800;font-size:17px;margin-top:4px">Pro All-In-One</div><div class="mut" style="font-size:12.5px">Telegram + WhatsApp + Webhooks</div>${price(pr)}<div class="mt-3">${f('Everything in Starter')}${f('WhatsApp Bridge')}${f('Custom Webhooks')}${f('Priority speed')}${f('Unlimited keyword rules')}</div><button type="button" class="btn btn-p mt-3">Go Pro</button></div>
   <div class="glass pad mt-6"><p class="lbl">Compare features</p><table class="mx"><tr><th></th><th>Starter</th><th style="color:var(--acc)">Pro</th></tr>
-  ${[['Telegram auto-reply', '✓', '✓'], ['Keyword rules', '10', '∞'], ['Smart cooldown', '✓', '✓'], ['WhatsApp Bridge', '—', '✓'], ['Custom Webhooks', '—', '✓'], ['Priority speed', '—', '✓']].map(r => `<tr><td>${r[0]}</td><td ${r[1] === '—' ? 'class="mut"' : ''}>${r[1]}</td><td style="color:var(--acc);font-weight:700">${r[2]}</td></tr>`).join('')}</table></div>
+  ${[['Telegram auto-reply', '✓', '✓'], ['Keyword rules', '10', '∞'], ['Per-user cooldown', '✓', '✓'], ['WhatsApp Bridge', '—', '✓'], ['Custom Webhooks', '—', '✓'], ['Priority speed', '—', '✓']].map(r => `<tr><td>${r[0]}</td><td ${r[1] === '—' ? 'class="mut"' : ''}>${r[1]}</td><td style="color:var(--acc);font-weight:700">${r[2]}</td></tr>`).join('')}</table></div>
   <p class="mut" style="font-size:12px;text-align:center;margin-top:14px">Renewing adds time on top of your remaining days.</p>`;
 }
 
@@ -506,21 +659,76 @@ function openSheet(html) {
     modal.style.display = 'flex';
     modal.classList.add('open');
   }
+  updatePendingBanner();
 }
-function closeSheet() {
+function closeModalOnly() {
   const modal = $('#payModal');
   if (modal) {
     modal.classList.remove('open');
     modal.style.display = 'none';
   }
+}
+function minimizeOrCloseSheet() {
+  closeModalOnly();
   if (P) {
+    // Keep pendingPay active if not completed and within 5-minute window
+    if (!P.done && pendingPay && pendingPay.expiresAt > Date.now()) {
+      pendingPay.state = P;
+      toast('Payment minimized — tap Pending Payment at top to return');
+    }
     P = null;
     if (U.tab === 'ghost' && U.dirty) mb.set('Save Auto-Reply', saveSettings);
     else mb.hide();
   }
+  updatePendingBanner();
 }
+function cancelPaymentCompletely() {
+  pendingPay = null;
+  P = null;
+  closeModalOnly();
+  if (U.tab === 'ghost' && U.dirty) mb.set('Save Auto-Reply', saveSettings);
+  else mb.hide();
+  updatePendingBanner();
+  toast('Payment cancelled');
+}
+function resumePendingPay() {
+  if (!pendingPay || pendingPay.expiresAt <= Date.now()) {
+    pendingPay = null;
+    updatePendingBanner();
+    return toast('Pending payment session expired');
+  }
+  H.light();
+  P = pendingPay.state;
+  renderPay();
+  mb.set('Verify Payment', doVerify);
+}
+
+/* Step 1: Confirmation Dialog before generating QR */
+function confirmGenerateQR(key) {
+  const plan = planBy(key);
+  H.light();
+  // If same plan is already pending & active within 5 mins, resume directly
+  if (pendingPay && pendingPay.plan.key === key && pendingPay.expiresAt > Date.now()) {
+    return resumePendingPay();
+  }
+  openSheet(`
+    <div style="text-align:center;padding:8px 4px 4px">
+      <div class="okc" style="width:62px;height:62px">${ic('plans', 'w-7 h-7')}</div>
+      <h3 style="font-size:20px;font-weight:800;margin:16px 0 6px">Generate Payment QR?</h3>
+      <p class="mut" style="font-size:13.5px;line-height:1.55;margin:0 0 16px">You are about to generate a 5-minute payment QR for <b style="color:#F8FAFC">${esc(plan.name)}</b> (<b style="color:var(--acc)">₹${plan.inr.toLocaleString('en-IN')}</b>).</p>
+      <div class="glass pad mb-4" style="text-align:left;background:rgba(0,229,168,.06);border-color:rgba(0,229,168,.25)">
+        <div class="flex justify-between text-xs mb-1.5"><span class="mut">Selected Plan</span><span style="font-weight:700">${esc(plan.name)}</span></div>
+        <div class="flex justify-between text-xs mb-1.5"><span class="mut">Validity</span><span style="font-weight:700">${plan.days === 1 ? '24 Hours' : plan.days + ' Days'}</span></div>
+        <div class="flex justify-between text-xs"><span class="mut">QR Session Timer</span><span class="mono" style="color:var(--acc);font-weight:700">05:00 Minutes</span></div>
+      </div>
+      <button type="button" class="btn btn-p" onclick="openPay('${esc(plan.key)}')">Yes, Generate QR</button>
+      <button type="button" class="btn btn-g mt-2" onclick="closeModalOnly()">Cancel</button>
+    </div>
+  `);
+}
+
 function openUpgrade() {
-  openSheet(`<div style="text-align:center;padding:6px 0 4px"><div class="okc" style="width:62px;height:62px">${ic('lock', 'w-7 h-7')}</div><h3 style="font-size:20px;font-weight:800;margin:16px 0 6px">Upgrade to Pro</h3><p class="mut" style="font-size:14px;line-height:1.6;margin:0 0 18px">WhatsApp Bridge and Custom Webhooks are part of the Pro All-In-One plan, along with priority speed and unlimited rules.</p><button class="btn btn-p" onclick="closeSheet();go('plans')">See Pro plans</button><button class="btn btn-g mt-2" onclick="closeSheet()">Maybe later</button></div>`);
+  openSheet(`<div style="text-align:center;padding:6px 0 4px"><div class="okc" style="width:62px;height:62px">${ic('lock', 'w-7 h-7')}</div><h3 style="font-size:20px;font-weight:800;margin:16px 0 6px">Upgrade to Pro</h3><p class="mut" style="font-size:14px;line-height:1.6;margin:0 0 18px">WhatsApp Bridge and Custom Webhooks are part of the Pro All-In-One plan, along with priority speed and unlimited rules.</p><button class="btn btn-p" onclick="closeModalOnly();go('plans')">See Pro plans</button><button class="btn btn-g mt-2" onclick="closeModalOnly()">Maybe later</button></div>`);
 }
 function switchMethod(m) {
   if (!P) return;
@@ -531,12 +739,15 @@ function switchMethod(m) {
   loadPayInfo();
 }
 function payDoneClick() {
-  closeSheet();
+  pendingPay = null;
+  P = null;
+  closeModalOnly();
+  updatePendingBanner();
   go(S && S.account ? 'home' : 'ghost');
 }
 async function openPay(key) {
   const plan = planBy(key);
-  H.light();
+  H.ok();
   const upiLink = `upi://pay?pa=profitix@upi&pn=${encodeURIComponent('Profitix Ghost')}&am=${plan.inr}&cu=INR`;
   P = {
     plan,
@@ -546,6 +757,11 @@ async function openPay(key) {
       usdt: { wallet: DEFAULT_USDT_WALLET, qr_svg: qrFallbackSrc(DEFAULT_USDT_WALLET) }
     },
     utr: '', tx: '', busy: false, err: '', done: null
+  };
+  pendingPay = {
+    plan,
+    expiresAt: Date.now() + 5 * 60 * 1000,
+    state: P
   };
   renderPay();
   mb.set('Verify Payment', doVerify);
@@ -570,11 +786,14 @@ async function loadPayInfo() {
 function renderPay() {
   if (!P) return;
   const p = P.plan, m = P.method, i = P.info[m] || {};
+  const leftMs = pendingPay ? Math.max(0, pendingPay.expiresAt - Date.now()) : 5 * 60 * 1000;
   if (P.busy) {
     openSheet(`<div style="text-align:center;padding:34px 0">${ghostLoaderHtml(m === 'upi' ? 'Checking your bank credit alert...' : 'Confirming on BNB Smart Chain...')}<p class="mut" style="font-size:12.5px;margin-top:6px">This can take up to 30 seconds.</p></div>`);
     return;
   }
   if (P.done) {
+    pendingPay = null;
+    updatePendingBanner();
     openSheet(`<div style="text-align:center;padding:24px 0 8px"><div class="okc">${ic('check', 'w-10 h-10').replace('<svg', '<svg stroke-width="3"')}</div><h3 style="font-size:22px;font-weight:800;margin:20px 0 6px">Payment verified! 🎉</h3><p class="mut" style="font-size:14px;margin:0 0 4px">${esc(p.name)} is now active</p><p style="font-size:13px;margin:0 0 20px;color:var(--acc)" class="mono">Valid until ${esc(fmtDate(P.done))}</p><button class="btn btn-p" onclick="payDoneClick()">${S && S.account ? 'Back to Home' : 'Connect Telegram now'}</button></div>`);
     return;
   }
@@ -599,10 +818,21 @@ function renderPay() {
       <p class="lbl" style="margin-top:16px">After sending, paste the TxHash</p>
       <input id="txh" class="inp mono" placeholder="0x..." style="font-size:12px" value="${esc(P.tx)}">`;
   }
-  openSheet(`<div class="flex items-center justify-between mb-3"><div><div style="font-weight:800;font-size:19px">${esc(p.name)}</div><div class="mut" style="font-size:12.5px">${p.days === 1 ? '24 hours' : p.days + ' days'} access</div></div><div style="font-size:24px;font-weight:800;color:var(--acc)">${amt}</div></div>
+  openSheet(`
+  <div class="flex items-center justify-between mb-2">
+    <div><div style="font-weight:800;font-size:18px">${esc(p.name)}</div><div class="mut" style="font-size:12px">${p.days === 1 ? '24 hours' : p.days + ' days'} access</div></div>
+    <div style="text-align:right">
+      <div style="font-size:22px;font-weight:800;color:var(--acc)">${amt}</div>
+      <div class="inline-flex items-center gap-1 mono" style="font-size:11.5px;color:#FCD34D;background:rgba(245,158,11,.14);padding:2px 8px;border-radius:999px;margin-top:2px">⏱ <span id="qrTimerText">${fmt5Min(leftMs)}</span></div>
+    </div>
+  </div>
   <div class="seg mb-4"><button type="button" class="${m === 'upi' ? 'on' : ''}" onclick="switchMethod('upi')">UPI</button>${usdtOk ? `<button type="button" class="${m === 'usdt' ? 'on' : ''}" onclick="switchMethod('usdt')">USDT BEP20</button>` : ''}</div>
   ${body}${P.err ? `<div class="err">${esc(P.err)}</div>` : ''}
-  <button type="button" class="btn btn-p mt-4" onclick="doVerify()">Verify Payment</button><button type="button" class="btn btn-g mt-2" onclick="closeSheet()">Cancel</button>`);
+  <button type="button" class="btn btn-p mt-4" onclick="doVerify()">Verify Payment</button>
+  <div class="grid grid-cols-2 gap-2 mt-2">
+    <button type="button" class="btn btn-g" style="font-size:13px;padding:11px" onclick="minimizeOrCloseSheet()">Pay Later (Minimize)</button>
+    <button type="button" class="btn btn-d" style="font-size:13px;padding:11px" onclick="cancelPaymentCompletely()">Cancel QR</button>
+  </div>`);
 }
 async function doVerify() {
   if (!P || P.busy || P.done) return;
@@ -627,7 +857,7 @@ async function doVerify() {
   if (tg) tg.MainButton.hideProgress && tg.MainButton.hideProgress();
   if (!P) return;
   P.busy = false;
-  if (r._ok && r.status === 'ok') { P.done = r.expires_at; H.ok(); mb.hide(); U.history = null; renderPay(); confetti(); loadState(); }
+  if (r._ok && r.status === 'ok') { P.done = r.expires_at; pendingPay = null; H.ok(); mb.hide(); U.history = null; renderPay(); confetti(); loadState(); }
   else { P.err = r.error || 'Verification failed.'; H.err(); renderPay(); }
 }
 function confetti() {
@@ -646,7 +876,7 @@ function toggleFaq(n) {
   renderProfile();
 }
 function openSupport() {
-  const url = 'https://t.me/' + ((S && S.support) || 'support');
+  const url = 'https://t.me/' + ((S && S.support) || 'Profitix00');
   if (tg && tg.openTelegramLink) tg.openTelegramLink(url);
   else window.open(url, '_blank');
 }
@@ -678,7 +908,7 @@ document.addEventListener('input', e => {
 document.addEventListener('change', e => { if (e.target.id === 'cc') U.wiz.cc = e.target.value; });
 
 (async function () {
-  if (!INIT) return showFatal('');
+  if (!INIT) return showTelegramLoginScreen();
   const q = new URLSearchParams(location.search).get('tab');
   if (['home', 'ghost', 'plans', 'profile'].includes(q)) U.tab = q;
   if (await loadState()) go(U.tab);
