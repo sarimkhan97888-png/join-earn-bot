@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#070B14">
+<meta name="theme-color" content="#05080D">
 <title>Profitix Ghost</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -11,63 +11,82 @@
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
-:root{--bg:#070B14;--card:#0F1623;--line:rgba(255,255,255,.08);--txt:#F8FAFC;--mut:#94A3B8;--ind:#6366F1;--vio:#8B5CF6;--cyan:#38BDF8;--em:#10B981;--rose:#F43F5E;--amber:#F59E0B;--grad:linear-gradient(135deg,#6366F1 0%,#8B5CF6 100%)}
+:root{
+  --bg:#05080D;
+  --card:#0B111A;
+  --line:rgba(255,255,255,.08);
+  --txt:#F8FAFC;
+  --mut:#8E9BAE;
+  --acc:#00E5A8;
+  --acc2:#00B4D8;
+  --cyan:#38BDF8;
+  --em:#10B981;
+  --rose:#F43F5E;
+  --amber:#F59E0B;
+  --grad:linear-gradient(135deg,#00E5A8 0%,#00B4D8 100%);
+  --acc-txt:#03120E;
+}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;background:var(--bg);color:var(--txt);font-family:'Plus Jakarta Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased;overscroll-behavior:none}
 .mono{font-family:'JetBrains Mono',monospace}
-#aurora{position:fixed;inset:-10%;z-index:-1;pointer-events:none;background:radial-gradient(40% 35% at 20% 15%,rgba(99,102,241,.14),transparent 70%),radial-gradient(35% 30% at 85% 30%,rgba(56,189,248,.08),transparent 70%),radial-gradient(40% 35% at 50% 95%,rgba(139,92,246,.12),transparent 70%)}
+#aurora{position:fixed;inset:-10%;z-index:-1;pointer-events:none;background:radial-gradient(45% 35% at 20% 12%,rgba(0,229,168,.11),transparent 70%),radial-gradient(40% 30% at 85% 28%,rgba(0,180,216,.09),transparent 70%),radial-gradient(45% 35% at 50% 95%,rgba(16,185,129,.08),transparent 70%)}
 .glass{background:var(--card);border:1px solid var(--line);border-radius:18px}
 .pad{padding:16px}
 .mut{color:var(--mut)}
-.tab{display:none}.tab.on{display:block;animation:fade .22s ease both}
+.tab{display:none}.tab.on{display:block;animation:fade .2s ease both}
 @keyframes fade{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
-.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;border:0;border-radius:14px;padding:14px 16px;font:700 15px 'Plus Jakarta Sans',sans-serif;color:#fff;cursor:pointer;text-decoration:none;transition:transform .12s,opacity .15s}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;border:0;border-radius:14px;padding:14px 16px;font:800 15px 'Plus Jakarta Sans',sans-serif;color:#fff;cursor:pointer;text-decoration:none;transition:transform .12s,opacity .15s}
 .btn:active{transform:scale(.97)}.btn[disabled]{opacity:.5;pointer-events:none}
-.btn-p{background:var(--grad);box-shadow:0 8px 24px rgba(99,102,241,.3)}
-.btn-g{background:rgba(255,255,255,.06);border:1px solid var(--line)}
+.btn-p{background:var(--grad);color:var(--acc-txt);box-shadow:0 8px 24px rgba(0,229,168,.25)}
+.btn-g{background:rgba(255,255,255,.06);border:1px solid var(--line);color:var(--txt)}
 .btn-d{background:rgba(244,63,94,.12);border:1px solid rgba(244,63,94,.35);color:#FDA4AF}
 .btn-s{width:auto;padding:9px 14px;font-size:13px;border-radius:11px}
 .inp{width:100%;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:12px;padding:13px 14px;color:var(--txt);font:500 15px 'Plus Jakarta Sans',sans-serif;outline:none;transition:border .15s}
-.inp:focus{border-color:var(--ind)}
+.inp:focus{border-color:var(--acc)}
 select.inp{appearance:none}
 textarea.inp{resize:none;min-height:88px;line-height:1.5}
-.chip{padding:8px 13px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.04);font:600 13px 'Plus Jakarta Sans';color:var(--mut);cursor:pointer;white-space:nowrap}
-.chip.on{background:var(--grad);color:#fff;border-color:transparent}
-.pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font:700 10px 'Plus Jakarta Sans';letter-spacing:.06em}
-.pill-pro{background:rgba(139,92,246,.18);color:#C4B5FD;border:1px solid rgba(139,92,246,.4)}
+.chip{padding:8px 13px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.04);font:700 13px 'Plus Jakarta Sans';color:var(--mut);cursor:pointer;white-space:nowrap}
+.chip.on{background:var(--grad);color:var(--acc-txt);border-color:transparent}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font:800 10px 'Plus Jakarta Sans';letter-spacing:.06em}
+.pill-pro{background:rgba(0,229,168,.15);color:#5EEAD4;border:1px solid rgba(0,229,168,.4)}
 .pill-ok{background:rgba(16,185,129,.14);color:#6EE7B7;border:1px solid rgba(16,185,129,.35)}
 .pill-bad{background:rgba(244,63,94,.12);color:#FDA4AF;border:1px solid rgba(244,63,94,.3)}
 .pill-warn{background:rgba(245,158,11,.14);color:#FCD34D;border:1px solid rgba(245,158,11,.35)}
 .dot{width:10px;height:10px;border-radius:50%;position:relative;background:var(--mut)}
-.dot.on{background:var(--em)}
+.dot.on{background:var(--acc)}
 .sw{width:58px;height:32px;border-radius:999px;background:rgba(255,255,255,.12);position:relative;border:0;cursor:pointer;transition:background .2s;flex:none}
 .sw::after{content:'';position:absolute;top:3px;left:3px;width:26px;height:26px;border-radius:50%;background:#fff;transition:transform .2s}
-.sw.on{background:var(--em)}.sw.on::after{transform:translateX(26px)}
+.sw.on{background:var(--acc)}.sw.on::after{transform:translateX(26px)}
 .seg{display:flex;background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:14px;padding:4px;gap:4px}
 .seg button{flex:1;border:0;background:transparent;color:var(--mut);padding:10px 8px;border-radius:10px;font:700 13px 'Plus Jakarta Sans';cursor:pointer;display:flex;gap:6px;align-items:center;justify-content:center}
-.seg button.on{background:var(--grad);color:#fff}
-#nav{position:fixed;left:50%;bottom:calc(14px + env(safe-area-inset-bottom));transform:translateX(-50%);width:min(92vw,26rem);display:flex;padding:7px;gap:4px;border-radius:22px;background:rgba(15,22,35,.94);border:1px solid var(--line);box-shadow:0 14px 40px rgba(0,0,0,.5);z-index:30}
+.seg button.on{background:var(--grad);color:var(--acc-txt)}
+#nav{position:fixed;left:50%;bottom:calc(14px + env(safe-area-inset-bottom));transform:translateX(-50%);width:min(92vw,26rem);display:flex;padding:7px;gap:4px;border-radius:22px;background:rgba(11,17,26,.95);border:1px solid var(--line);box-shadow:0 14px 40px rgba(0,0,0,.6);z-index:30}
 #nav button{flex:1;border:0;background:transparent;color:var(--mut);padding:9px 0 7px;border-radius:16px;display:flex;flex-direction:column;align-items:center;gap:3px;font:700 10.5px 'Plus Jakarta Sans';cursor:pointer}
-#nav button.on{color:#fff;background:var(--grad)}
-.bd{position:fixed;inset:0;background:rgba(2,6,14,.68);opacity:0;pointer-events:none;transition:opacity .2s;z-index:40}.bd.on{opacity:1;pointer-events:auto}
-.sheet{position:fixed;left:0;right:0;bottom:0;margin:0 auto;max-width:28rem;max-height:90vh;overflow:auto;transform:translateY(105%);transition:transform .28s cubic-bezier(.2,.9,.25,1);z-index:50;background:#0F1623;border:1px solid var(--line);border-bottom:0;border-radius:26px 26px 0 0;padding:10px 18px calc(24px + env(safe-area-inset-bottom))}.sheet.on{transform:none}
-.grab{width:42px;height:4px;border-radius:9px;background:rgba(255,255,255,.18);margin:0 auto 14px}
+#nav button.on{color:var(--acc-txt);background:var(--grad)}
+
+/* Bulletproof Modal Overlay */
+#payModal{position:fixed;inset:0;z-index:9999;display:none;align-items:flex-end;justify-content:center;background:rgba(2,5,10,.78)}
+#payModal.open{display:flex !important}
+#payBox{width:100%;max-width:28rem;max-height:92vh;overflow-y:auto;background:#0B111A;border:1px solid rgba(0,229,168,.28);border-bottom:0;border-radius:26px 26px 0 0;padding:12px 18px calc(26px + env(safe-area-inset-bottom));box-shadow:0 -12px 48px rgba(0,0,0,.75);animation:slideUp .24s ease-out}
+@keyframes slideUp{from{transform:translateY(40px);opacity:.4}to{transform:none;opacity:1}}
+.grab{width:42px;height:4px;border-radius:9px;background:rgba(255,255,255,.22);margin:0 auto 14px}
+
 .price-card{position:relative;padding:18px;border-radius:20px;background:var(--card);border:1px solid var(--line);cursor:pointer;transition:transform .12s}
 .price-card:active{transform:scale(.985)}
-.price-card.pro{border:1.5px solid rgba(139,92,246,.55);box-shadow:0 12px 36px rgba(99,102,241,.2)}
-.badge{position:absolute;top:-11px;right:16px;padding:5px 11px;border-radius:999px;font:800 10px 'Plus Jakarta Sans';letter-spacing:.06em;color:#fff;background:var(--grad)}
-.badge.save{right:auto;left:16px;background:linear-gradient(135deg,#10B981,#059669)}
+.price-card.pro{border:1.5px solid rgba(0,229,168,.48);box-shadow:0 12px 36px rgba(0,229,168,.12)}
+.badge{position:absolute;top:-11px;right:16px;padding:5px 11px;border-radius:999px;font:800 10px 'Plus Jakarta Sans';letter-spacing:.06em;color:var(--acc-txt);background:var(--grad)}
+.badge.save{right:auto;left:16px;background:linear-gradient(135deg,#10B981,#059669);color:#fff}
 .feat{display:flex;gap:9px;align-items:center;font-size:13px;color:#CBD5E1;margin:7px 0}
-.feat svg{color:var(--em);flex:none}.feat.no{color:#64748B;text-decoration:line-through}.feat.no svg{color:#64748B}
+.feat svg{color:var(--acc);flex:none}.feat.no{color:#64748B;text-decoration:line-through}.feat.no svg{color:#64748B}
 .qr{background:#fff;border-radius:16px;padding:10px;width:176px;height:176px;margin:0 auto;display:grid;place-items:center}.qr img{width:100%;height:100%;display:block;border-radius:8px}
 @keyframes rot{to{transform:rotate(360deg)}}
 .ghost-loader{position:relative;width:84px;height:84px;margin:0 auto;display:grid;place-items:center}
-.ghost-loader::after{content:'';position:absolute;inset:4px;border-radius:50%;border:2.5px solid transparent;border-top-color:#8B5CF6;border-right-color:#38BDF8;animation:rot 1s linear infinite}
-.ghost-float{position:relative;z-index:2;width:52px;height:52px;border-radius:18px;background:var(--grad);display:grid;place-items:center;box-shadow:0 8px 24px rgba(99,102,241,.45)}
-.okc{width:76px;height:76px;border-radius:50%;background:var(--grad);display:grid;place-items:center;margin:0 auto;box-shadow:0 0 40px rgba(99,102,241,.5)}
-.cf{position:fixed;top:-12px;width:9px;height:14px;border-radius:2px;z-index:60;pointer-events:none;animation:fall linear forwards}
+.ghost-loader::after{content:'';position:absolute;inset:4px;border-radius:50%;border:2.5px solid transparent;border-top-color:#00E5A8;border-right-color:#00B4D8;animation:rot 1s linear infinite}
+.ghost-float{position:relative;z-index:2;width:52px;height:52px;border-radius:18px;background:var(--grad);color:var(--acc-txt);display:grid;place-items:center;box-shadow:0 8px 24px rgba(0,229,168,.35)}
+.okc{width:76px;height:76px;border-radius:50%;background:var(--grad);color:var(--acc-txt);display:grid;place-items:center;margin:0 auto;box-shadow:0 0 40px rgba(0,229,168,.4)}
+.cf{position:fixed;top:-12px;width:9px;height:14px;border-radius:2px;z-index:10000;pointer-events:none;animation:fall linear forwards}
 @keyframes fall{to{transform:translateY(105vh) rotate(720deg);opacity:.9}}
-#toast{position:fixed;top:calc(14px + env(safe-area-inset-top));left:50%;transform:translate(-50%,-140%);background:#0F1623;border:1px solid var(--line);padding:11px 16px;border-radius:14px;font:600 13px 'Plus Jakarta Sans';z-index:80;transition:transform .25s ease;max-width:90vw;text-align:center}#toast.on{transform:translate(-50%,0)}
+#toast{position:fixed;top:calc(14px + env(safe-area-inset-top));left:50%;transform:translate(-50%,-140%);background:#0B111A;border:1px solid rgba(0,229,168,.35);padding:11px 16px;border-radius:14px;font:600 13px 'Plus Jakarta Sans';z-index:10001;transition:transform .25s ease;max-width:90vw;text-align:center}#toast.on{transform:translate(-50%,0)}
 .faq{border-bottom:1px solid var(--line)}.faq:last-child{border:0}
 .faq button{width:100%;display:flex;justify-content:space-between;gap:10px;background:none;border:0;color:var(--txt);padding:14px 0;font:600 14px 'Plus Jakarta Sans';text-align:left;cursor:pointer}
 .faq .a{max-height:0;overflow:hidden;color:var(--mut);font-size:13px;line-height:1.6;transition:max-height .25s ease}.faq.on .a{max-height:160px;padding-bottom:14px}.faq.on svg{transform:rotate(180deg)}.faq svg{transition:transform .2s;flex:none}
@@ -88,10 +107,10 @@ table.mx{width:100%;border-collapse:collapse;font-size:12.5px}table.mx td,table.
   <section id="boot" class="glass pad" style="text-align:center;margin-top:26vh;padding:28px 18px">
     <div class="ghost-loader">
       <div class="ghost-float">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
           <path d="M12 2a7 7 0 0 0-7 7v12l3-2 2 2 2-2 2 2 2-2 3 2V9a7 7 0 0 0-7-7z"/>
-          <circle cx="9.5" cy="10" r="1.2" fill="#fff"/>
-          <circle cx="14.5" cy="10" r="1.2" fill="#fff"/>
+          <circle cx="9.5" cy="10" r="1.2" fill="currentColor"/>
+          <circle cx="14.5" cy="10" r="1.2" fill="currentColor"/>
         </svg>
       </div>
     </div>
@@ -100,8 +119,12 @@ table.mx{width:100%;border-collapse:collapse;font-size:12.5px}table.mx td,table.
   </section>
 </main>
 <nav id="nav" class="hide"></nav>
-<div id="bd" class="bd"></div>
-<div id="sheet" class="sheet"><div class="grab"></div><div id="sheetBody"></div></div>
+<div id="payModal" onclick="if(event.target===this)closeSheet()">
+  <div id="payBox">
+    <div class="grab" onclick="closeSheet()"></div>
+    <div id="sheetBody"></div>
+  </div>
+</div>
 
 <script>
 const tg = window.Telegram && window.Telegram.WebApp;
@@ -110,8 +133,8 @@ if (tg) {
   tg.ready();
   tg.expand();
   try {
-    tg.setHeaderColor('#070B14');
-    tg.setBackgroundColor('#070B14');
+    tg.setHeaderColor('#05080D');
+    tg.setBackgroundColor('#05080D');
     tg.disableVerticalSwipes && tg.disableVerticalSwipes();
   } catch (e) {}
 }
@@ -198,7 +221,7 @@ const fmtDate = iso => iso ? new Date(iso).toLocaleDateString(undefined, { day: 
 const TIER = { trial: '1-DAY TRIAL', starter: 'STARTER', pro: 'PRO', none: 'FREE' };
 const mb = {
   fn: null,
-  set(t, f) { if (!tg) return; this.hide(); this.fn = f; tg.MainButton.setParams({ text: t, color: '#6366F1', text_color: '#ffffff' }); tg.MainButton.onClick(f); tg.MainButton.show(); },
+  set(t, f) { if (!tg) return; this.hide(); this.fn = f; tg.MainButton.setParams({ text: t, color: '#00E5A8', text_color: '#03120E' }); tg.MainButton.onClick(f); tg.MainButton.show(); },
   hide() { if (!tg) return; if (this.fn) tg.MainButton.offClick(this.fn); this.fn = null; tg.MainButton.hide(); }
 };
 
@@ -236,15 +259,20 @@ async function loadState() {
 }
 function showFatal(msg) {
   const inTg = !!INIT;
-  $('#boot').innerHTML = `<div style="font-size:42px">👻</div><h2 style="font-weight:800;font-size:19px;margin:10px 0 6px">${inTg ? 'Something went wrong' : 'Open inside Telegram'}</h2><p class="mut" style="font-size:14px;line-height:1.6">${esc(inTg ? msg : 'Profitix Ghost is a Telegram Mini App. Open it from the bot using the Open Ghost button.')}</p>${inTg ? '<button class="btn btn-p" style="margin-top:18px" data-act="retry">Try again</button>' : ''}`;
+  $('#boot').innerHTML = `<div style="font-size:42px">👻</div><h2 style="font-weight:800;font-size:19px;margin:10px 0 6px">${inTg ? 'Something went wrong' : 'Open inside Telegram'}</h2><p class="mut" style="font-size:14px;line-height:1.6">${esc(inTg ? msg : 'Profitix Ghost is a Telegram Mini App. Open it from the bot using the Open Ghost button.')}</p>${inTg ? '<button class="btn btn-p" style="margin-top:18px" onclick="retryBoot()">Try again</button>' : ''}`;
   $('#boot').classList.remove('hide');
+}
+function retryBoot() {
+  $('#boot').innerHTML = ghostLoaderHtml('Reconnecting your Ghost...');
+  loadState();
 }
 
 const TABS = [['home', 'Home'], ['ghost', 'Ghost'], ['plans', 'Plans'], ['profile', 'Profile']];
 function renderNav() {
-  $('#nav').innerHTML = TABS.map(([k, l]) => `<button class="${U.tab === k ? 'on' : ''}" data-act="go" data-t="${k}">${ic(k, 'w-5 h-5')}<span>${l}</span></button>`).join('');
+  $('#nav').innerHTML = TABS.map(([k, l]) => `<button class="${U.tab === k ? 'on' : ''}" onclick="go('${k}')">${ic(k, 'w-5 h-5')}<span>${l}</span></button>`).join('');
 }
 function go(t) {
+  H.sel();
   U.tab = t;
   document.querySelectorAll('.tab').forEach(e => e.classList.toggle('on', e.id === 'tab-' + t));
   renderNav();
@@ -270,22 +298,22 @@ function renderHome() {
   const a = S.account;
   $('#tab-home').innerHTML = `
   <div class="flex items-center justify-between mb-4"><div><p class="mut" style="font-size:13px;margin:0">Welcome back</p><h1 style="font-size:22px;font-weight:800;margin:2px 0 0">${esc(S.user.first_name || 'Ghost User')} 👻</h1></div><span class="pill ${active ? 'pill-ok' : 'pill-bad'}">${esc(TIER[active ? st.plan : 'none'])}</span></div>
-  <div class="glass pad" style="${on ? 'box-shadow:0 0 36px rgba(16,185,129,.12);border-color:rgba(16,185,129,.25)' : ''}">
+  <div class="glass pad" style="${on ? 'box-shadow:0 0 36px rgba(0,229,168,.12);border-color:rgba(0,229,168,.28)' : ''}">
     <div class="flex items-center justify-between gap-3">
-      <div class="flex items-center gap-3"><div class="dot ${on ? 'on' : ''}"></div><div><div class="mono" style="font-size:13px;font-weight:700;color:${on ? 'var(--em)' : '#FCA5A5'}">${label}</div><div class="mut" style="font-size:12.5px;margin-top:3px">${esc(sub)}</div></div></div>
-      <button class="sw ${S.settings.is_active && active ? 'on' : ''}" data-act="master" aria-label="Master switch"></button>
+      <div class="flex items-center gap-3"><div class="dot ${on ? 'on' : ''}"></div><div><div class="mono" style="font-size:13px;font-weight:700;color:${on ? 'var(--acc)' : '#FCA5A5'}">${label}</div><div class="mut" style="font-size:12.5px;margin-top:3px">${esc(sub)}</div></div></div>
+      <button class="sw ${S.settings.is_active && active ? 'on' : ''}" onclick="toggleMaster()" aria-label="Master switch"></button>
     </div>
   </div>
   <div class="glass pad mt-3 flex items-center gap-3">
-    ${a ? `<div style="width:42px;height:42px;border-radius:50%;background:var(--grad);display:grid;place-items:center;font-weight:800">${esc((a.name || 'T')[0].toUpperCase())}</div><div style="min-width:0;flex:1"><div style="font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(a.name)}</div><div class="mut" style="font-size:12.5px">${a.username ? '@' + esc(a.username) + ' · ' : ''}<span class="mono">${esc(a.phone)}</span></div></div><span class="pill pill-ok">CONNECTED</span>`
-      : `<div style="width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,.06);display:grid;place-items:center" class="mut">${ic('tg')}</div><div style="flex:1"><div style="font-weight:700;font-size:14px">No Telegram account connected</div><div class="mut" style="font-size:12.5px">Link it to start auto-replying</div></div><button class="btn btn-p btn-s" data-act="go" data-t="ghost">Connect</button>`}
+    ${a ? `<div style="width:42px;height:42px;border-radius:50%;background:var(--grad);color:var(--acc-txt);display:grid;place-items:center;font-weight:800">${esc((a.name || 'T')[0].toUpperCase())}</div><div style="min-width:0;flex:1"><div style="font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(a.name)}</div><div class="mut" style="font-size:12.5px">${a.username ? '@' + esc(a.username) + ' · ' : ''}<span class="mono">${esc(a.phone)}</span></div></div><span class="pill pill-ok">CONNECTED</span>`
+      : `<div style="width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,.06);display:grid;place-items:center" class="mut">${ic('tg')}</div><div style="flex:1"><div style="font-weight:700;font-size:14px">No Telegram account connected</div><div class="mut" style="font-size:12.5px">Link it to start auto-replying</div></div><button class="btn btn-p btn-s" onclick="go('ghost')">Connect</button>`}
   </div>
   <div class="grid grid-cols-2 gap-3 mt-3">
     <div class="glass pad"><p class="lbl">Replies Sent</p><div class="mono" style="font-size:26px;font-weight:700">${Number(st.replies_sent).toLocaleString()}</div></div>
-    <div class="glass pad"><p class="lbl">Plan Time Left</p><div class="mono cd" style="font-size:${active ? 20 : 26}px;font-weight:700;padding-top:${active ? 4 : 0}px;color:${active ? 'var(--cyan)' : '#64748B'}">${cdText()}</div></div>
+    <div class="glass pad"><p class="lbl">Plan Time Left</p><div class="mono cd" style="font-size:${active ? 20 : 26}px;font-weight:700;padding-top:${active ? 4 : 0}px;color:${active ? 'var(--acc)' : '#64748B'}">${cdText()}</div></div>
   </div>
-  ${S.trial_eligible !== false ? `<div class="price-card pro mt-4" data-act="pay" data-k="trial" style="padding:18px"><div class="flex items-center gap-3"><div style="width:46px;height:46px;border-radius:14px;background:var(--grad);display:grid;place-items:center;flex:none">${ic('bolt', 'w-6 h-6')}</div><div style="flex:1"><div style="font-weight:800;font-size:16px">Unlock 24h Starter Ghost for ₹2</div><div class="mut" style="font-size:12.5px;margin-top:3px">Telegram auto-reply · one-time trial · UPI</div></div>${ic('chev', 'w-5 h-5').replace('<svg', '<svg style="transform:rotate(-90deg)"')}</div></div>` : ''}
-  ${active ? '' : `<button class="btn btn-g mt-3" data-act="go" data-t="plans">${ic('plans')} View Plans</button>`}`;
+  ${S.trial_eligible !== false ? `<div class="price-card pro mt-4" onclick="openPay('trial')" style="padding:18px"><div class="flex items-center gap-3"><div style="width:46px;height:46px;border-radius:14px;background:var(--grad);color:var(--acc-txt);display:grid;place-items:center;flex:none">${ic('bolt', 'w-6 h-6')}</div><div style="flex:1"><div style="font-weight:800;font-size:16px">Unlock 24h Starter Ghost for ₹2</div><div class="mut" style="font-size:12.5px;margin-top:3px">Telegram auto-reply · one-time trial · UPI</div></div>${ic('chev', 'w-5 h-5').replace('<svg', '<svg style="transform:rotate(-90deg)"')}</div></div>` : ''}
+  ${active ? '' : `<button class="btn btn-g mt-3" onclick="go('plans')">${ic('plans')} View Plans</button>`}`;
 }
 setInterval(() => {
   document.querySelectorAll('.cd').forEach(e => { e.textContent = cdText(); });
@@ -313,41 +341,93 @@ function ensureDraft() {
 function markDirty() {
   if (!U.dirty) { U.dirty = true; if (U.tab === 'ghost' && !P) mb.set('Save Auto-Reply', saveSettings); const b = $('#saveBtn'); if (b) b.disabled = false; }
 }
+function setPlatform(p) {
+  H.sel();
+  if (p !== 'telegram' && !S.features.whatsapp) return openUpgrade();
+  U.platform = p;
+  renderGhost();
+}
+function setTpl(k) {
+  const d = ensureDraft();
+  d.template = k;
+  if (TEMPLATES[k]) d.default_reply = TEMPLATES[k];
+  H.sel();
+  markDirty();
+  renderGhost();
+}
+function setCool(c) {
+  ensureDraft().cooldown_seconds = c;
+  H.sel();
+  markDirty();
+  renderGhost();
+}
+function addRule() {
+  const d = ensureDraft();
+  if (d.keyword_rules.length >= S.max_rules) {
+    H.err();
+    toast(S.features.whatsapp ? 'Rule limit reached' : `Starter allows ${S.max_rules} rules. Upgrade to Pro for unlimited.`);
+    return;
+  }
+  d.keyword_rules.push({ keyword: '', reply: '' });
+  H.light();
+  markDirty();
+  renderGhost();
+}
+function delRule(i) {
+  ensureDraft().keyword_rules.splice(i, 1);
+  H.light();
+  markDirty();
+  renderGhost();
+}
+function editPhone() {
+  clearInterval(wizTimer);
+  Object.assign(U.wiz, { step: 'phone', err: '', code: '' });
+  renderGhost();
+}
+function disconnectAccount() {
+  const run = async () => {
+    const r = await api('/api/telegram/disconnect', {});
+    if (r._ok) { H.ok(); toast('Account disconnected'); await loadState(); }
+    else toast(r.error || 'Failed');
+  };
+  if (tg && tg.showConfirm) tg.showConfirm('Disconnect this Telegram account? Auto-reply will stop.', ok => ok && run());
+  else if (confirm('Disconnect this account?')) run();
+}
 function renderGhost() {
   const pro = S.features.whatsapp, d = ensureDraft(), w = U.wiz, active = S.status.status === 'active';
-  const pt = (k, l, i, lock) => `<button class="${U.platform === k ? 'on' : ''}" data-act="platform" data-p="${k}">${ic(i, 'w-4 h-4')}${l}${lock ? '<span class="pill pill-pro" style="padding:2px 6px">PRO</span>' : ''}</button>`;
+  const pt = (k, l, i, lock) => `<button class="${U.platform === k ? 'on' : ''}" onclick="setPlatform('${k}')">${ic(i, 'w-4 h-4')}${l}${lock ? '<span class="pill pill-pro" style="padding:2px 6px">PRO</span>' : ''}</button>`;
   let body = '';
   if (U.platform !== 'telegram') {
     body = `<div class="glass pad" style="text-align:center"><div class="okc" style="width:56px;height:56px">${ic(U.platform === 'whatsapp' ? 'wa' : 'hook', 'w-6 h-6')}</div><h3 style="font-weight:800;margin:14px 0 6px">${U.platform === 'whatsapp' ? 'WhatsApp Bridge' : 'Custom Webhooks'} is unlocked</h3><p class="mut" style="font-size:13.5px;line-height:1.6;margin:0">Your Pro plan includes this module. Setup is being rolled out to your dashboard, you will get a message from the bot as soon as it is live.</p></div>`;
   } else {
     let wiz = '';
     if (S.account) {
-      wiz = `<div class="glass pad"><div class="flex items-center gap-3"><div style="width:44px;height:44px;border-radius:50%;background:var(--grad);display:grid;place-items:center;font-weight:800">${esc((S.account.name || 'T')[0].toUpperCase())}</div><div style="flex:1;min-width:0"><div style="font-weight:700">${esc(S.account.name)}</div><div class="mut mono" style="font-size:12px">${esc(S.account.phone)}</div></div><span class="pill pill-ok">LIVE</span></div><button class="btn btn-d mt-3" data-act="disconnect">Disconnect account</button></div>`;
+      wiz = `<div class="glass pad"><div class="flex items-center gap-3"><div style="width:44px;height:44px;border-radius:50%;background:var(--grad);color:var(--acc-txt);display:grid;place-items:center;font-weight:800">${esc((S.account.name || 'T')[0].toUpperCase())}</div><div style="flex:1;min-width:0"><div style="font-weight:700">${esc(S.account.name)}</div><div class="mut mono" style="font-size:12px">${esc(S.account.phone)}</div></div><span class="pill pill-ok">LIVE</span></div><button class="btn btn-d mt-3" onclick="disconnectAccount()">Disconnect account</button></div>`;
     } else if (!active) {
-      wiz = `<div class="glass pad" style="text-align:center"><div style="color:var(--vio);display:flex;justify-content:center">${ic('lock', 'w-8 h-8')}</div><h3 style="font-weight:800;margin:10px 0 6px">Activate a plan to connect</h3><p class="mut" style="font-size:13.5px;margin:0 0 14px">Start with the ₹2 trial or pick a plan, then link your account here.</p><button class="btn btn-p" data-act="go" data-t="plans">See Plans</button></div>`;
+      wiz = `<div class="glass pad" style="text-align:center"><div style="color:var(--acc);display:flex;justify-content:center">${ic('lock', 'w-8 h-8')}</div><h3 style="font-weight:800;margin:10px 0 6px">Activate a plan to connect</h3><p class="mut" style="font-size:13.5px;margin:0 0 14px">Start with the ₹2 trial or pick a plan, then link your account here.</p><button class="btn btn-p" onclick="go('plans')">See Plans</button></div>`;
     } else {
       const steps = { phone: 1, code: 2, '2fa': 3 };
       const dots = [1, 2, 3].map(i => `<div style="flex:1;height:4px;border-radius:9px;background:${i <= steps[w.step] ? 'var(--grad)' : 'rgba(255,255,255,.1)'}"></div>`).join('');
       let inner = '';
-      if (w.step === 'phone') inner = `<p class="lbl">Step 1 · Phone number</p><div class="flex gap-2"><select id="cc" class="inp" style="width:44%">${COUNTRIES.map(c => `<option value="${c[1]}" ${c[1] === w.cc ? 'selected' : ''}>${c[0]} ${c[1]}</option>`).join('')}</select><input id="ph" class="inp mono" inputmode="tel" placeholder="98765 43210" value="${esc(w.phone)}"></div><button class="btn btn-p mt-3" data-act="sendcode" ${w.busy ? 'disabled' : ''}>${w.busy ? 'Sending...' : 'Send Code'}</button>`;
-      if (w.step === 'code') inner = `<p class="lbl">Step 2 · Enter code</p><div class="mut" style="font-size:13px;line-height:1.55;margin-bottom:10px">Check your <b style="color:#E2E8F0">official Telegram app chat</b>, not SMS, for the 5-digit code sent to <span class="mono">${esc(w.full)}</span>.</div><input id="cd" class="inp mono" inputmode="numeric" maxlength="6" placeholder="• • • • •" style="text-align:center;font-size:24px;letter-spacing:.4em" value="${esc(w.code)}"><button class="btn btn-p mt-3" data-act="verifycode" ${w.busy ? 'disabled' : ''}>${w.busy ? 'Verifying...' : 'Verify Code'}</button><div class="flex justify-between mt-3"><button class="btn btn-g btn-s" data-act="editphone">Change number</button><button id="rsBtn" class="btn btn-g btn-s" data-act="resend" ${w.resend > 0 ? 'disabled' : ''}>${w.resend > 0 ? 'Resend in ' + w.resend + 's' : 'Resend code'}</button></div>`;
-      if (w.step === '2fa') inner = `<p class="lbl">Step 3 · Two-step password</p><div class="mut" style="font-size:13px;margin-bottom:10px">This account has 2FA enabled. Enter your Telegram cloud password.</div><input id="pw" class="inp" type="password" placeholder="2FA password" autocomplete="off" value="${esc(w.pw)}"><button class="btn btn-p mt-3" data-act="verify2fa" ${w.busy ? 'disabled' : ''}>${w.busy ? 'Verifying...' : 'Unlock & Connect'}</button>`;
+      if (w.step === 'phone') inner = `<p class="lbl">Step 1 · Phone number</p><div class="flex gap-2"><select id="cc" class="inp" style="width:44%">${COUNTRIES.map(c => `<option value="${c[1]}" ${c[1] === w.cc ? 'selected' : ''}>${c[0]} ${c[1]}</option>`).join('')}</select><input id="ph" class="inp mono" inputmode="tel" placeholder="98765 43210" value="${esc(w.phone)}"></div><button class="btn btn-p mt-3" onclick="sendCode(false)" ${w.busy ? 'disabled' : ''}>${w.busy ? 'Sending...' : 'Send Code'}</button>`;
+      if (w.step === 'code') inner = `<p class="lbl">Step 2 · Enter code</p><div class="mut" style="font-size:13px;line-height:1.55;margin-bottom:10px">Check your <b style="color:#E2E8F0">official Telegram app chat</b>, not SMS, for the 5-digit code sent to <span class="mono">${esc(w.full)}</span>.</div><input id="cd" class="inp mono" inputmode="numeric" maxlength="6" placeholder="• • • • •" style="text-align:center;font-size:24px;letter-spacing:.4em" value="${esc(w.code)}"><button class="btn btn-p mt-3" onclick="verifyCode()" ${w.busy ? 'disabled' : ''}>${w.busy ? 'Verifying...' : 'Verify Code'}</button><div class="flex justify-between mt-3"><button class="btn btn-g btn-s" onclick="editPhone()">Change number</button><button id="rsBtn" class="btn btn-g btn-s" onclick="sendCode(true)" ${w.resend > 0 ? 'disabled' : ''}>${w.resend > 0 ? 'Resend in ' + w.resend + 's' : 'Resend code'}</button></div>`;
+      if (w.step === '2fa') inner = `<p class="lbl">Step 3 · Two-step password</p><div class="mut" style="font-size:13px;margin-bottom:10px">This account has 2FA enabled. Enter your Telegram cloud password.</div><input id="pw" class="inp" type="password" placeholder="2FA password" autocomplete="off" value="${esc(w.pw)}"><button class="btn btn-p mt-3" onclick="verify2fa()" ${w.busy ? 'disabled' : ''}>${w.busy ? 'Verifying...' : 'Unlock & Connect'}</button>`;
       wiz = `<div class="glass pad"><div class="flex gap-2 mb-4">${dots}</div>${inner}${w.err ? `<div class="err">${esc(w.err)}</div>` : ''}</div>`;
     }
     const max = S.max_rules;
     body = wiz + `
-    <div class="glass pad mt-3"><p class="lbl">Quick templates</p><div class="flex gap-2" style="overflow-x:auto;padding-bottom:2px">${[['busy', 'Busy / AFK'], ['hours', 'Business Hours'], ['sleep', 'Sleeping'], ['custom', 'Custom']].map(([k, l]) => `<button class="chip ${d.template === k ? 'on' : ''}" data-act="tpl" data-k="${k}">${l}</button>`).join('')}</div>
+    <div class="glass pad mt-3"><p class="lbl">Quick templates</p><div class="flex gap-2" style="overflow-x:auto;padding-bottom:2px">${[['busy', 'Busy / AFK'], ['hours', 'Business Hours'], ['sleep', 'Sleeping'], ['custom', 'Custom']].map(([k, l]) => `<button class="chip ${d.template === k ? 'on' : ''}" onclick="setTpl('${k}')">${l}</button>`).join('')}</div>
       <p class="lbl" style="margin-top:16px">Default reply</p><textarea id="dr" class="inp" maxlength="1000" placeholder="What should Ghost reply?">${esc(d.default_reply)}</textarea></div>
     <div class="glass pad mt-3"><div class="flex items-center justify-between"><p class="lbl" style="margin:0">Keyword rules</p><span class="mut mono" style="font-size:11px">${d.keyword_rules.length}/${S.features.whatsapp ? '∞' : max}</span></div>
       <div id="rules">${d.keyword_rules.map((r, i) => ruleHtml(r, i)).join('') || '<p class="mut" style="font-size:13px;margin:12px 0 0">No rules yet. Add one to reply differently when a message contains a word.</p>'}</div>
-      <button class="btn btn-g mt-3" data-act="addrule">${ic('plus')} Add rule</button></div>
-    <div class="glass pad mt-3"><p class="lbl">Per-contact cooldown</p><div class="seg">${S.allowed_cooldowns.map(c => `<button class="${d.cooldown_seconds === c ? 'on' : ''}" data-act="cool" data-c="${c}">${c === 300 ? '5m' : c === 900 ? '15m' : '1h'}</button>`).join('')}</div><p class="mut" style="font-size:12px;margin:10px 0 0">Ghost replies once per contact in this window, so nobody gets spammed.</p></div>
-    <button id="saveBtn" class="btn btn-p mt-3" data-act="save" ${U.dirty ? '' : 'disabled'}>Save Auto-Reply</button>`;
+      <button class="btn btn-g mt-3" onclick="addRule()">${ic('plus')} Add rule</button></div>
+    <div class="glass pad mt-3"><p class="lbl">Per-contact cooldown</p><div class="seg">${S.allowed_cooldowns.map(c => `<button class="${d.cooldown_seconds === c ? 'on' : ''}" onclick="setCool(${c})">${c === 300 ? '5m' : c === 900 ? '15m' : '1h'}</button>`).join('')}</div><p class="mut" style="font-size:12px;margin:10px 0 0">Ghost replies once per contact in this window, so nobody gets spammed.</p></div>
+    <button id="saveBtn" class="btn btn-p mt-3" onclick="saveSettings()" ${U.dirty ? '' : 'disabled'}>Save Auto-Reply</button>`;
   }
   $('#tab-ghost').innerHTML = `<h1 style="font-size:22px;font-weight:800;margin:0 0 14px">Automation Studio</h1><div class="seg mb-3">${pt('telegram', 'Telegram', 'tg', false)}${pt('whatsapp', 'WhatsApp', 'wa', !pro)}${pt('webhooks', 'Webhooks', 'hook', !pro)}</div>${body}`;
 }
 function ruleHtml(r, i) {
-  return `<div style="margin-top:12px;padding:12px;border-radius:14px;background:rgba(255,255,255,.03);border:1px solid var(--line)"><div class="flex gap-2 items-center"><input class="inp" data-rk="${i}" maxlength="100" placeholder="If message contains..." value="${esc(r.keyword)}"><button class="btn btn-d btn-s" data-act="delrule" data-i="${i}" style="padding:12px">${ic('trash', 'w-4 h-4')}</button></div><textarea class="inp mt-2" data-rr="${i}" maxlength="1000" placeholder="Reply with..." style="min-height:64px">${esc(r.reply)}</textarea></div>`;
+  return `<div style="margin-top:12px;padding:12px;border-radius:14px;background:rgba(255,255,255,.03);border:1px solid var(--line)"><div class="flex gap-2 items-center"><input class="inp" data-rk="${i}" maxlength="100" placeholder="If message contains..." value="${esc(r.keyword)}"><button class="btn btn-d btn-s" onclick="delRule(${i})" style="padding:12px">${ic('trash', 'w-4 h-4')}</button></div><textarea class="inp mt-2" data-rr="${i}" maxlength="1000" placeholder="Reply with..." style="min-height:64px">${esc(r.reply)}</textarea></div>`;
 }
 async function saveSettings() {
   if (!U.dirty) return;
@@ -394,18 +474,23 @@ const planBy = k => {
   const list = (S && Array.isArray(S.plans) && S.plans.length) ? S.plans : FALLBACK_PLANS;
   return list.find(p => p.key === k) || FALLBACK_PLANS.find(p => p.key === k) || FALLBACK_PLANS[0];
 };
+function setBill(b) {
+  U.billing = b;
+  H.sel();
+  renderPlans();
+}
 function renderPlans() {
   const y = U.billing === 'yearly', st = planBy('starter_' + (y ? 'yearly' : 'monthly')), pr = planBy('pro_' + (y ? 'yearly' : 'monthly'));
   const f = (t, ok = true) => `<div class="feat ${ok ? '' : 'no'}">${ic(ok ? 'check' : 'x', 'w-4 h-4')}<span>${t}</span></div>`;
   const price = (p) => `<div class="flex items-end gap-1 mt-2"><span style="font-size:34px;font-weight:800;line-height:1">₹${p.inr.toLocaleString('en-IN')}</span><span class="mut" style="font-size:13px;padding-bottom:4px">/${y ? 'yr' : 'mo'}</span></div><div class="mut mono" style="font-size:12px;margin-top:4px">or $${p.usdt} USDT (BEP20)</div>`;
   $('#tab-plans').innerHTML = `
   <div class="flex items-center justify-between mb-3"><h1 style="font-size:22px;font-weight:800;margin:0">Plans</h1><span class="pill pill-ok">Save up to 37%</span></div>
-  <div class="seg mb-5"><button class="${y ? '' : 'on'}" data-act="bill" data-b="monthly">Monthly</button><button class="${y ? 'on' : ''}" data-act="bill" data-b="yearly">Yearly</button></div>
-  ${S.trial_eligible !== false ? `<div class="price-card mb-5" data-act="pay" data-k="trial"><div class="flex items-center justify-between"><div><div style="font-weight:800;font-size:16px">₹2 1-Day Starter Trial</div><div class="mut" style="font-size:12.5px;margin-top:3px">24 hours · Telegram only · UPI</div></div><div style="font-size:28px;font-weight:800">₹2</div></div><button type="button" class="btn btn-g mt-3" data-act="pay" data-k="trial">Try for ₹2</button></div>` : ''}
-  <div class="price-card mb-6" data-act="pay" data-k="${st.key}">${y ? `<span class="badge save">${st.badge}</span>` : ''}<div style="font-weight:800;font-size:17px">Starter</div><div class="mut" style="font-size:12.5px">Telegram only</div>${price(st)}<div class="mt-3">${f('24/7 Telegram auto-reply')}${f('Keyword rules (up to 10)')}${f('Smart per-contact cooldown')}${f('WhatsApp Bridge', false)}${f('Custom Webhooks', false)}</div><button type="button" class="btn btn-g mt-3" data-act="pay" data-k="${st.key}">Choose Starter</button></div>
-  <div class="price-card pro mb-5" data-act="pay" data-k="${pr.key}"><span class="badge">MOST POPULAR</span>${y ? `<span class="badge save">${pr.badge.split('|')[1].trim()}</span>` : ''}<div style="font-weight:800;font-size:17px;margin-top:4px">Pro All-In-One</div><div class="mut" style="font-size:12.5px">Telegram + WhatsApp + Webhooks</div>${price(pr)}<div class="mt-3">${f('Everything in Starter')}${f('WhatsApp Bridge')}${f('Custom Webhooks')}${f('Priority speed')}${f('Unlimited keyword rules')}</div><button type="button" class="btn btn-p mt-3" data-act="pay" data-k="${pr.key}">Go Pro</button></div>
-  <div class="glass pad mt-6"><p class="lbl">Compare features</p><table class="mx"><tr><th></th><th>Starter</th><th style="color:#C4B5FD">Pro</th></tr>
-  ${[['Telegram auto-reply', '✓', '✓'], ['Keyword rules', '10', '∞'], ['Smart cooldown', '✓', '✓'], ['WhatsApp Bridge', '—', '✓'], ['Custom Webhooks', '—', '✓'], ['Priority speed', '—', '✓']].map(r => `<tr><td>${r[0]}</td><td ${r[1] === '—' ? 'class="mut"' : ''}>${r[1]}</td><td style="color:var(--em);font-weight:700">${r[2]}</td></tr>`).join('')}</table></div>
+  <div class="seg mb-5"><button class="${y ? '' : 'on'}" onclick="setBill('monthly')">Monthly</button><button class="${y ? 'on' : ''}" onclick="setBill('yearly')">Yearly</button></div>
+  ${S.trial_eligible !== false ? `<div class="price-card mb-5" onclick="openPay('trial')"><div class="flex items-center justify-between"><div><div style="font-weight:800;font-size:16px">₹2 1-Day Starter Trial</div><div class="mut" style="font-size:12.5px;margin-top:3px">24 hours · Telegram only · UPI</div></div><div style="font-size:28px;font-weight:800;color:var(--acc)">₹2</div></div><button type="button" class="btn btn-g mt-3">Try for ₹2</button></div>` : ''}
+  <div class="price-card mb-6" onclick="openPay('${st.key}')">${y ? `<span class="badge save">${st.badge}</span>` : ''}<div style="font-weight:800;font-size:17px">Starter</div><div class="mut" style="font-size:12.5px">Telegram only</div>${price(st)}<div class="mt-3">${f('24/7 Telegram auto-reply')}${f('Keyword rules (up to 10)')}${f('Smart per-contact cooldown')}${f('WhatsApp Bridge', false)}${f('Custom Webhooks', false)}</div><button type="button" class="btn btn-g mt-3">Choose Starter</button></div>
+  <div class="price-card pro mb-5" onclick="openPay('${pr.key}')"><span class="badge">MOST POPULAR</span>${y ? `<span class="badge save">${pr.badge.split('|')[1].trim()}</span>` : ''}<div style="font-weight:800;font-size:17px;margin-top:4px">Pro All-In-One</div><div class="mut" style="font-size:12.5px">Telegram + WhatsApp + Webhooks</div>${price(pr)}<div class="mt-3">${f('Everything in Starter')}${f('WhatsApp Bridge')}${f('Custom Webhooks')}${f('Priority speed')}${f('Unlimited keyword rules')}</div><button type="button" class="btn btn-p mt-3">Go Pro</button></div>
+  <div class="glass pad mt-6"><p class="lbl">Compare features</p><table class="mx"><tr><th></th><th>Starter</th><th style="color:var(--acc)">Pro</th></tr>
+  ${[['Telegram auto-reply', '✓', '✓'], ['Keyword rules', '10', '∞'], ['Smart cooldown', '✓', '✓'], ['WhatsApp Bridge', '—', '✓'], ['Custom Webhooks', '—', '✓'], ['Priority speed', '—', '✓']].map(r => `<tr><td>${r[0]}</td><td ${r[1] === '—' ? 'class="mut"' : ''}>${r[1]}</td><td style="color:var(--acc);font-weight:700">${r[2]}</td></tr>`).join('')}</table></div>
   <p class="mut" style="font-size:12px;text-align:center;margin-top:14px">Renewing adds time on top of your remaining days.</p>`;
 }
 
@@ -414,17 +499,40 @@ function qrFallbackSrc(text) {
   return `https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=4&data=${enc}`;
 }
 function openSheet(html) {
-  $('#sheetBody').innerHTML = html;
-  $('#bd').classList.add('on');
-  $('#sheet').classList.add('on');
+  const body = $('#sheetBody');
+  const modal = $('#payModal');
+  if (body) body.innerHTML = html;
+  if (modal) {
+    modal.style.display = 'flex';
+    modal.classList.add('open');
+  }
 }
 function closeSheet() {
-  $('#bd').classList.remove('on');
-  $('#sheet').classList.remove('on');
-  if (P) { P = null; if (U.tab === 'ghost' && U.dirty) mb.set('Save Auto-Reply', saveSettings); else mb.hide(); }
+  const modal = $('#payModal');
+  if (modal) {
+    modal.classList.remove('open');
+    modal.style.display = 'none';
+  }
+  if (P) {
+    P = null;
+    if (U.tab === 'ghost' && U.dirty) mb.set('Save Auto-Reply', saveSettings);
+    else mb.hide();
+  }
 }
 function openUpgrade() {
-  openSheet(`<div style="text-align:center;padding:6px 0 4px"><div class="okc" style="width:62px;height:62px">${ic('lock', 'w-7 h-7')}</div><h3 style="font-size:20px;font-weight:800;margin:16px 0 6px">Upgrade to Pro</h3><p class="mut" style="font-size:14px;line-height:1.6;margin:0 0 18px">WhatsApp Bridge and Custom Webhooks are part of the Pro All-In-One plan, along with priority speed and unlimited rules.</p><button class="btn btn-p" data-act="toplans">See Pro plans</button><button class="btn btn-g mt-2" data-act="closesheet">Maybe later</button></div>`);
+  openSheet(`<div style="text-align:center;padding:6px 0 4px"><div class="okc" style="width:62px;height:62px">${ic('lock', 'w-7 h-7')}</div><h3 style="font-size:20px;font-weight:800;margin:16px 0 6px">Upgrade to Pro</h3><p class="mut" style="font-size:14px;line-height:1.6;margin:0 0 18px">WhatsApp Bridge and Custom Webhooks are part of the Pro All-In-One plan, along with priority speed and unlimited rules.</p><button class="btn btn-p" onclick="closeSheet();go('plans')">See Pro plans</button><button class="btn btn-g mt-2" onclick="closeSheet()">Maybe later</button></div>`);
+}
+function switchMethod(m) {
+  if (!P) return;
+  P.method = m;
+  P.err = '';
+  H.sel();
+  renderPay();
+  loadPayInfo();
+}
+function payDoneClick() {
+  closeSheet();
+  go(S && S.account ? 'home' : 'ghost');
 }
 async function openPay(key) {
   const plan = planBy(key);
@@ -463,11 +571,11 @@ function renderPay() {
   if (!P) return;
   const p = P.plan, m = P.method, i = P.info[m] || {};
   if (P.busy) {
-    $('#sheetBody').innerHTML = `<div style="text-align:center;padding:34px 0">${ghostLoaderHtml(m === 'upi' ? 'Checking your bank credit alert...' : 'Confirming on BNB Smart Chain...')}<p class="mut" style="font-size:12.5px;margin-top:6px">This can take up to 30 seconds.</p></div>`;
+    openSheet(`<div style="text-align:center;padding:34px 0">${ghostLoaderHtml(m === 'upi' ? 'Checking your bank credit alert...' : 'Confirming on BNB Smart Chain...')}<p class="mut" style="font-size:12.5px;margin-top:6px">This can take up to 30 seconds.</p></div>`);
     return;
   }
   if (P.done) {
-    $('#sheetBody').innerHTML = `<div style="text-align:center;padding:24px 0 8px"><div class="okc">${ic('check', 'w-10 h-10').replace('<svg', '<svg stroke-width="3"')}</div><h3 style="font-size:22px;font-weight:800;margin:20px 0 6px">Payment verified! 🎉</h3><p class="mut" style="font-size:14px;margin:0 0 4px">${esc(p.name)} is now active</p><p style="font-size:13px;margin:0 0 20px;color:var(--cyan)" class="mono">Valid until ${esc(fmtDate(P.done))}</p><button class="btn btn-p" data-act="paydone">${S && S.account ? 'Back to Home' : 'Connect Telegram now'}</button></div>`;
+    openSheet(`<div style="text-align:center;padding:24px 0 8px"><div class="okc">${ic('check', 'w-10 h-10').replace('<svg', '<svg stroke-width="3"')}</div><h3 style="font-size:22px;font-weight:800;margin:20px 0 6px">Payment verified! 🎉</h3><p class="mut" style="font-size:14px;margin:0 0 4px">${esc(p.name)} is now active</p><p style="font-size:13px;margin:0 0 20px;color:var(--acc)" class="mono">Valid until ${esc(fmtDate(P.done))}</p><button class="btn btn-p" onclick="payDoneClick()">${S && S.account ? 'Back to Home' : 'Connect Telegram now'}</button></div>`);
     return;
   }
   const usdtOk = p.usdt != null, amt = m === 'upi' ? '₹' + p.inr.toLocaleString('en-IN') : p.usdt + ' USDT';
@@ -476,25 +584,25 @@ function renderPay() {
   if (m === 'upi') {
     const upiId = i.upi_id || 'profitix@upi';
     const deep = i.deep_link || `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent('Profitix Ghost')}&am=${p.inr}&cu=INR`;
-    body = `<a class="btn btn-p" href="${esc(deep)}">Open UPI App · ${amt}</a>
+    body = `<a class="btn btn-p" href="${esc(deep)}" onclick="H.light()">Open UPI App · ${amt}</a>
       <div class="mut" style="text-align:center;font-size:12px;margin:14px 0 10px">or scan with any UPI app</div>
       <div class="qr"><img alt="UPI QR" src="${esc(qrSrc)}" onerror="this.src='${esc(qrFallbackSrc(deep))}'"></div>
-      <div class="flex items-center gap-2 mt-4" style="padding:11px 12px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid var(--line)"><div style="flex:1;min-width:0"><div class="lbl" style="margin:0 0 2px">UPI ID</div><div class="mono" style="font-size:13.5px;overflow:hidden;text-overflow:ellipsis">${esc(upiId)}</div></div><button type="button" class="btn btn-g btn-s" data-act="copy" data-v="${esc(upiId)}" data-l="UPI ID">${ic('copy', 'w-4 h-4')} Copy</button></div>
+      <div class="flex items-center gap-2 mt-4" style="padding:11px 12px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid var(--line)"><div style="flex:1;min-width:0"><div class="lbl" style="margin:0 0 2px">UPI ID</div><div class="mono" style="font-size:13.5px;overflow:hidden;text-overflow:ellipsis">${esc(upiId)}</div></div><button type="button" class="btn btn-g btn-s" onclick="copy('${esc(upiId)}','UPI ID')">${ic('copy', 'w-4 h-4')} Copy</button></div>
       <p class="lbl" style="margin-top:16px">After paying, enter the 12-digit UTR</p>
       <input id="utr" class="inp mono" inputmode="numeric" maxlength="12" placeholder="123456789012" value="${esc(P.utr)}">`;
   } else {
     const wallet = i.wallet || DEFAULT_USDT_WALLET;
     body = `<div class="qr"><img alt="USDT QR" src="${esc(qrSrc)}" onerror="this.src='${esc(qrFallbackSrc(wallet))}'"></div>
-      <div class="flex items-center justify-between mt-4" style="padding:12px;border-radius:12px;background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.25)"><span class="mut" style="font-size:13px">Send exactly</span><span class="mono" style="font-weight:700;color:var(--cyan);font-size:16px">${p.usdt} USDT</span></div>
+      <div class="flex items-center justify-between mt-4" style="padding:12px;border-radius:12px;background:rgba(0,229,168,.08);border:1px solid rgba(0,229,168,.25)"><span class="mut" style="font-size:13px">Send exactly</span><span class="mono" style="font-weight:700;color:var(--acc);font-size:16px">${p.usdt} USDT</span></div>
       <div class="mut" style="font-size:12px;margin:8px 0 0">Network: <b style="color:#E2E8F0">BEP20 (BNB Smart Chain)</b>. Other networks will be lost.</div>
-      <div class="flex items-center gap-2 mt-3" style="padding:11px 12px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid var(--line)"><div style="flex:1;min-width:0"><div class="lbl" style="margin:0 0 2px">Wallet address</div><div class="mono" style="font-size:11px;word-break:break-all">${esc(wallet)}</div></div><button type="button" class="btn btn-g btn-s" data-act="copy" data-v="${esc(wallet)}" data-l="Address">${ic('copy', 'w-4 h-4')} Copy</button></div>
+      <div class="flex items-center gap-2 mt-3" style="padding:11px 12px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid var(--line)"><div style="flex:1;min-width:0"><div class="lbl" style="margin:0 0 2px">Wallet address</div><div class="mono" style="font-size:11px;word-break:break-all">${esc(wallet)}</div></div><button type="button" class="btn btn-g btn-s" onclick="copy('${esc(wallet)}','Address')">${ic('copy', 'w-4 h-4')} Copy</button></div>
       <p class="lbl" style="margin-top:16px">After sending, paste the TxHash</p>
       <input id="txh" class="inp mono" placeholder="0x..." style="font-size:12px" value="${esc(P.tx)}">`;
   }
-  $('#sheetBody').innerHTML = `<div class="flex items-center justify-between mb-3"><div><div style="font-weight:800;font-size:19px">${esc(p.name)}</div><div class="mut" style="font-size:12.5px">${p.days === 1 ? '24 hours' : p.days + ' days'} access</div></div><div style="font-size:24px;font-weight:800">${amt}</div></div>
-  <div class="seg mb-4"><button type="button" class="${m === 'upi' ? 'on' : ''}" data-act="method" data-m="upi">UPI</button>${usdtOk ? `<button type="button" class="${m === 'usdt' ? 'on' : ''}" data-act="method" data-m="usdt">USDT BEP20</button>` : ''}</div>
+  openSheet(`<div class="flex items-center justify-between mb-3"><div><div style="font-weight:800;font-size:19px">${esc(p.name)}</div><div class="mut" style="font-size:12.5px">${p.days === 1 ? '24 hours' : p.days + ' days'} access</div></div><div style="font-size:24px;font-weight:800;color:var(--acc)">${amt}</div></div>
+  <div class="seg mb-4"><button type="button" class="${m === 'upi' ? 'on' : ''}" onclick="switchMethod('upi')">UPI</button>${usdtOk ? `<button type="button" class="${m === 'usdt' ? 'on' : ''}" onclick="switchMethod('usdt')">USDT BEP20</button>` : ''}</div>
   ${body}${P.err ? `<div class="err">${esc(P.err)}</div>` : ''}
-  <button type="button" class="btn btn-p mt-4" data-act="verify">Verify Payment</button><button type="button" class="btn btn-g mt-2" data-act="closesheet">Cancel</button>`;
+  <button type="button" class="btn btn-p mt-4" onclick="doVerify()">Verify Payment</button><button type="button" class="btn btn-g mt-2" onclick="closeSheet()">Cancel</button>`);
 }
 async function doVerify() {
   if (!P || P.busy || P.done) return;
@@ -523,7 +631,7 @@ async function doVerify() {
   else { P.err = r.error || 'Verification failed.'; H.err(); renderPay(); }
 }
 function confetti() {
-  const cols = ['#6366F1', '#8B5CF6', '#38BDF8', '#10B981', '#F59E0B', '#F8FAFC'];
+  const cols = ['#00E5A8', '#00B4D8', '#38BDF8', '#10B981', '#F59E0B', '#F8FAFC'];
   for (let n = 0; n < 50; n++) {
     const e = document.createElement('i'); e.className = 'cf'; e.style.left = Math.random() * 100 + 'vw';
     e.style.background = cols[n % cols.length]; e.style.animationDuration = 1.6 + Math.random() * 1.4 + 's';
@@ -532,54 +640,30 @@ function confetti() {
   }
 }
 
+function toggleFaq(n) {
+  U.faq = U.faq === n ? -1 : n;
+  H.light();
+  renderProfile();
+}
+function openSupport() {
+  const url = 'https://t.me/' + ((S && S.support) || 'support');
+  if (tg && tg.openTelegramLink) tg.openTelegramLink(url);
+  else window.open(url, '_blank');
+}
 async function loadHistory() { const r = await api('/api/payments'); U.history = r._ok ? r.payments : []; if (U.tab === 'profile') renderProfile(); }
 function renderProfile() {
   const u = S.user, st = S.status, active = st.status === 'active';
   const av = u.photo_url ? `<img src="${esc(u.photo_url)}" style="width:100%;height:100%;border-radius:50%;object-fit:cover" referrerpolicy="no-referrer" onerror="this.remove()">` : '';
   const hist = U.history === null ? `<div style="text-align:center;padding:18px">${ghostLoaderHtml('Loading history...')}</div>` : U.history.length === 0 ? '<p class="mut" style="font-size:13px;margin:6px 0 0">No payments yet.</p>' : U.history.map(h => { const p = planBy(h.plan_key); const cls = h.status === 'success' ? 'pill-ok' : h.status === 'rejected' ? 'pill-bad' : 'pill-warn'; return `<div class="flex items-center justify-between" style="padding:12px 0;border-bottom:1px solid var(--line)"><div><div style="font-weight:700;font-size:14px">${esc(p ? p.name : h.plan_key)}</div><div class="mut" style="font-size:11.5px;margin-top:2px">${esc(h.method.toUpperCase())} · ${esc(fmtDate(h.created_at))}</div></div><div style="text-align:right"><div class="mono" style="font-weight:700;font-size:14px">${h.currency === 'INR' ? '₹' + Number(h.amount).toLocaleString('en-IN') : Number(h.amount) + ' USDT'}</div><span class="pill ${cls}" style="margin-top:3px">${esc(h.status.toUpperCase())}</span></div></div>`; }).join('');
   $('#tab-profile').innerHTML = `
-  <div class="glass pad" style="text-align:center"><div style="width:76px;height:76px;border-radius:50%;background:var(--grad);display:grid;place-items:center;margin:0 auto;font-size:30px;font-weight:800;overflow:hidden;position:relative"><span style="position:absolute">${esc((u.first_name || 'G')[0].toUpperCase())}</span>${av ? `<div style="position:absolute;inset:0">${av}</div>` : ''}</div>
+  <div class="glass pad" style="text-align:center"><div style="width:76px;height:76px;border-radius:50%;background:var(--grad);color:var(--acc-txt);display:grid;place-items:center;margin:0 auto;font-size:30px;font-weight:800;overflow:hidden;position:relative"><span style="position:absolute">${esc((u.first_name || 'G')[0].toUpperCase())}</span>${av ? `<div style="position:absolute;inset:0">${av}</div>` : ''}</div>
     <h2 style="font-size:20px;font-weight:800;margin:12px 0 2px">${esc(u.first_name || 'Ghost User')}</h2><div class="mut mono" style="font-size:12px">ID ${u.id}${u.username ? ' · @' + esc(u.username) : ''}</div>
     <div class="flex items-center justify-center gap-2 mt-3"><span class="pill ${active ? 'pill-ok' : 'pill-bad'}">${esc(TIER[active ? st.plan : 'none'])}</span><span class="mut" style="font-size:12.5px">${active ? 'Expires ' + esc(fmtDate(st.expires_at)) : st.status === 'expired' ? 'Expired ' + esc(fmtDate(st.expires_at)) : 'No active plan'}</span></div></div>
   <div class="glass pad mt-3"><p class="lbl">Payment history</p>${hist}</div>
-  <div class="glass pad mt-3"><p class="lbl">FAQ</p>${FAQ.map((f, n) => `<div class="faq ${U.faq === n ? 'on' : ''}"><button type="button" data-act="faq" data-n="${n}"><span>${esc(f[0])}</span>${ic('chev', 'w-4 h-4')}</button><div class="a">${esc(f[1])}</div></div>`).join('')}</div>
-  <button type="button" class="btn btn-p mt-3" data-act="support">Contact Support</button>`;
+  <div class="glass pad mt-3"><p class="lbl">FAQ</p>${FAQ.map((f, n) => `<div class="faq ${U.faq === n ? 'on' : ''}"><button type="button" onclick="toggleFaq(${n})"><span>${esc(f[0])}</span>${ic('chev', 'w-4 h-4')}</button><div class="a">${esc(f[1])}</div></div>`).join('')}</div>
+  <button type="button" class="btn btn-p mt-3" onclick="openSupport()">Contact Support</button>`;
 }
 
-const ACTIONS = {
-  go: el => { H.sel(); go(el.dataset.t); },
-  retry: () => { $('#boot').innerHTML = ghostLoaderHtml('Reconnecting your Ghost...'); loadState(); },
-  master: toggleMaster,
-  platform: el => { const p = el.dataset.p; H.sel(); if (p !== 'telegram' && !S.features.whatsapp) return openUpgrade(); U.platform = p; renderGhost(); },
-  toplans: () => { closeSheet(); go('plans'); },
-  closesheet: closeSheet,
-  paydone: () => { closeSheet(); go(S && S.account ? 'home' : 'ghost'); },
-  tpl: el => { const d = ensureDraft(), k = el.dataset.k; d.template = k; if (TEMPLATES[k]) d.default_reply = TEMPLATES[k]; H.sel(); markDirty(); renderGhost(); },
-  cool: el => { ensureDraft().cooldown_seconds = +el.dataset.c; H.sel(); markDirty(); renderGhost(); },
-  addrule: () => { const d = ensureDraft(); if (d.keyword_rules.length >= S.max_rules) { H.err(); toast(S.features.whatsapp ? 'Rule limit reached' : `Starter allows ${S.max_rules} rules. Upgrade to Pro for unlimited.`); return; } d.keyword_rules.push({ keyword: '', reply: '' }); H.light(); markDirty(); renderGhost(); },
-  delrule: el => { ensureDraft().keyword_rules.splice(+el.dataset.i, 1); H.light(); markDirty(); renderGhost(); },
-  save: saveSettings,
-  sendcode: () => sendCode(false),
-  resend: () => sendCode(true),
-  verifycode: verifyCode, verify2fa: verify2fa,
-  editphone: () => { clearInterval(wizTimer); Object.assign(U.wiz, { step: 'phone', err: '', code: '' }); renderGhost(); },
-  disconnect: () => { const run = async () => { const r = await api('/api/telegram/disconnect', {}); if (r._ok) { H.ok(); toast('Account disconnected'); await loadState(); } else toast(r.error || 'Failed'); }; if (tg && tg.showConfirm) tg.showConfirm('Disconnect this Telegram account? Auto-reply will stop.', ok => ok && run()); else if (confirm('Disconnect this account?')) run(); },
-  bill: el => { U.billing = el.dataset.b; H.sel(); renderPlans(); },
-  pay: el => openPay(el.dataset.k),
-  method: el => { if (!P) return; P.method = el.dataset.m; P.err = ''; H.sel(); renderPay(); loadPayInfo(); },
-  verify: doVerify,
-  copy: el => copy(el.dataset.v, el.dataset.l),
-  faq: el => { const n = +el.dataset.n; U.faq = U.faq === n ? -1 : n; H.light(); renderProfile(); },
-  support: () => { const url = 'https://t.me/' + ((S && S.support) || 'support'); if (tg && tg.openTelegramLink) tg.openTelegramLink(url); else window.open(url, '_blank'); }
-};
-document.addEventListener('click', e => {
-  const el = e.target.closest('[data-act]');
-  if (!el) return;
-  if (el.tagName === 'A') { H.light(); return; }
-  e.stopPropagation();
-  const f = ACTIONS[el.dataset.act];
-  if (f) f(el);
-});
 document.addEventListener('input', e => {
   const t = e.target;
   if (t.id === 'ph') U.wiz.phone = t.value;
@@ -592,7 +676,6 @@ document.addEventListener('input', e => {
   else if (t.id === 'txh' && P) P.tx = t.value.trim();
 });
 document.addEventListener('change', e => { if (e.target.id === 'cc') U.wiz.cc = e.target.value; });
-$('#bd').addEventListener('click', closeSheet);
 
 (async function () {
   if (!INIT) return showFatal('');
