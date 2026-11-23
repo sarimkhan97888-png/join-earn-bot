@@ -100,7 +100,20 @@ async def cmd_help(message: Message) -> None:
 async def cmd_stats(message: Message) -> None:
     if not message.from_user or message.from_user.id != config.ADMIN_ID:
         return
-    await message.answer(f"Active workers in RAM: <b>{worker.active_count()}</b>")
+    online, count = await worker.engine_status()
+    await message.answer(
+        f"Auto-reply engine: <b>{'ONLINE' if online else 'OFFLINE'}</b>\nActive clients: <b>{count}</b>"
+    )
+
+
+@router.message(Command("admin"))
+async def cmd_admin(message: Message) -> None:
+    if not message.from_user or not config.ADMIN_ID or message.from_user.id != config.ADMIN_ID:
+        return
+    await message.answer(
+        "<b>Admin panel</b>\nLive users, QR, payments and activity.",
+        reply_markup=open_app_keyboard("Open Admin Panel", "admin"),
+    )
 
 
 # ------------------------------------------------------------------ outgoing notifications

@@ -17,7 +17,7 @@ _pool: Optional[asyncpg.Pool] = None
 
 SETTINGS_FIELDS = {
     "is_active", "template", "default_reply", "keyword_rules",
-    "cooldown_seconds", "delay_min", "delay_max",
+    "cooldown_seconds", "delay_min", "delay_max", "only_when_offline",
 }
 
 SCHEMA = """
@@ -96,6 +96,30 @@ CREATE INDEX IF NOT EXISTS idx_users_status_expiry ON users (plan_status, plan_e
 CREATE INDEX IF NOT EXISTS idx_payments_user ON payments (user_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_tg_sessions_account ON tg_sessions (tg_account_id);
 CREATE INDEX IF NOT EXISTS idx_trial_locks_flags ON trial_locks (trial_used);
+
+ALTER TABLE users ADD COLUMN IF NOT EXISTS last_seen_at TIMESTAMPTZ;
+ALTER TABLE auto_reply_settings ADD COLUMN IF NOT EXISTS only_when_offline BOOLEAN NOT NULL DEFAULT TRUE;
+
+-- Every user action (QR generated, payment ok/failed, connect, expiry...) for the admin live feed
+CREATE TABLE IF NOT EXISTS activity_log (
+    id          BIGSERIAL PRIMARY KEY,
+    user_id     BIGINT,
+    kind        TEXT NOT NULL,
+    meta        JSONB NOT NULL DEFAULT '{}'::jsonb,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_activity_created ON activity_log (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_activity_kind ON activity_log (kind, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_users_last_seen ON users (last_seen_at DESC);
+
+-- Single-engine lease: guarantees only ONE auto-reply worker (Render OR Kaggle) is live => no duplicate replies
+CREATE TABLE IF NOT EXISTS worker_lease (
+    name            TEXT PRIMARY KEY,
+    holder          TEXT NOT NULL,
+    active_clients  INTEGER NOT NULL DEFAULT 0,
+    expires_at      TIMESTAMPTZ NOT NULL,
+    updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
 """
 
 
@@ -129,7 +153,10 @@ async def init_db() -> None:
         init=_init_conn,
     )
     async with _pool.acquire() as conn:
-        await conn.execute(SCHEMA)
+        async with conn.transaction():
+            # Render and Kaggle may boot together: serialise schema creation
+            await conn.execute("SELECT pg_advisory_xact_lock(727274)")
+            await conn.execute(SCHEMA)
     log.info("Database ready")
 
 
@@ -510,4 +537,191 @@ async def list_payments(user_id: int, limit: int = 20) -> list:
         item["amount"] = float(item["amount"])
         item["created_at"] = item["created_at"].isoformat()
         out.append(item)
+    return out
+
+
+# ------------------------------------------------------------------ presence + activity log
+_TODAY = "(date_trunc('day', NOW() AT TIME ZONE 'Asia/Kolkata') AT TIME ZONE 'Asia/Kolkata')"
+
+
+def _mask_phone(phone: Optional[str]) -> str:
+    if not phone:
+        return ""
+    return phone[:3] + "•" * max(0, len(phone) - 6) + phone[-3:]
+
+
+async def touch_user(user_id: int) -> None:
+    """Heartbeat: marks the user as 'online now' (throttled to one write per 20s)."""
+    async with pool().acquire() as conn:
+        await conn.execute(
+            """
+            UPDATE users SET last_seen_at = NOW()
+            WHERE telegram_user_id = $1
+              AND (last_seen_at IS NULL OR last_seen_at < NOW() - INTERVAL '20 seconds')
+            """,
+            user_id,
+        )
+
+
+async def log_event(user_id: Optional[int], kind: str, meta: Optional[dict] = None) -> None:
+    """Never raises: activity logging must not break a user request."""
+    try:
+        async with pool().acquire() as conn:
+            await conn.execute(
+                "INSERT INTO activity_log (user_id, kind, meta) VALUES ($1, $2, $3)",
+                user_id, kind, meta or {},
+            )
+    except Exception:
+        log.warning("activity log write failed (%s)", kind)
+
+
+async def prune_activity(days: int = 30) -> None:
+    async with pool().acquire() as conn:
+        await conn.execute(
+            "DELETE FROM activity_log WHERE created_at < NOW() - make_interval(days => $1::int)", days
+        )
+
+
+# ------------------------------------------------------------------ admin panel queries
+async def admin_overview() -> dict:
+    async with pool().acquire() as conn:
+        u = await conn.fetchrow(
+            f"""
+            SELECT
+              COUNT(*) AS total,
+              COUNT(*) FILTER (WHERE created_at >= {_TODAY}) AS new_today,
+              COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '7 days') AS new_7d,
+              COUNT(*) FILTER (WHERE plan_status = 'active' AND plan_expires_at > NOW()) AS active_total,
+              COUNT(*) FILTER (WHERE plan_status = 'active' AND plan_expires_at > NOW() AND plan = 'trial') AS active_trial,
+              COUNT(*) FILTER (WHERE plan_status = 'active' AND plan_expires_at > NOW() AND plan = 'starter') AS active_starter,
+              COUNT(*) FILTER (WHERE plan_status = 'active' AND plan_expires_at > NOW() AND plan = 'pro') AS active_pro,
+              COUNT(*) FILTER (WHERE plan_status = 'expired' OR (plan_status = 'active' AND plan_expires_at <= NOW())) AS expired,
+              COUNT(*) FILTER (WHERE plan_status = 'none') AS never_paid,
+              COUNT(*) FILTER (WHERE plan_status = 'active' AND plan_expires_at > NOW()
+                               AND plan_expires_at < NOW() + INTERVAL '24 hours') AS expiring_24h,
+              COUNT(*) FILTER (WHERE last_seen_at > NOW() - INTERVAL '90 seconds') AS online_now,
+              COUNT(*) FILTER (WHERE last_seen_at >= {_TODAY}) AS seen_today,
+              COALESCE(SUM(total_replies_sent), 0) AS replies_total
+            FROM users
+            """
+        )
+        c = await conn.fetchrow(
+            """
+            SELECT
+              COUNT(*) AS connected,
+              COUNT(*) FILTER (WHERE u.plan_status = 'active' AND u.plan_expires_at > NOW()
+                               AND COALESCE(a.is_active, TRUE)) AS reply_on,
+              COUNT(*) FILTER (WHERE NOT COALESCE(a.is_active, TRUE)) AS reply_off,
+              COUNT(*) FILTER (WHERE COALESCE(a.only_when_offline, TRUE)) AS smart_mode
+            FROM tg_sessions s
+            JOIN users u ON u.telegram_user_id = s.user_id
+            LEFT JOIN auto_reply_settings a ON a.user_id = s.user_id
+            """
+        )
+        money = await conn.fetch(
+            f"""
+            SELECT currency,
+                   COALESCE(SUM(amount) FILTER (WHERE created_at >= {_TODAY}), 0) AS today,
+                   COALESCE(SUM(amount), 0) AS total,
+                   COUNT(*) AS n
+            FROM payments WHERE status = 'success' GROUP BY currency
+            """
+        )
+        act = await conn.fetch(
+            f"""
+            SELECT kind, COUNT(*) AS n, COUNT(DISTINCT user_id) AS users
+            FROM activity_log WHERE created_at >= {_TODAY} GROUP BY kind
+            """
+        )
+    return {
+        "users": {k: int(v) for k, v in dict(u).items()},
+        "accounts": {k: int(v) for k, v in dict(c).items()},
+        "money": {
+            r["currency"]: {"today": float(r["today"]), "total": float(r["total"]), "count": int(r["n"])}
+            for r in money
+        },
+        "today": {r["kind"]: {"n": int(r["n"]), "users": int(r["users"])} for r in act},
+    }
+
+
+async def admin_feed(after_id: int = 0, limit: int = 40) -> list:
+    async with pool().acquire() as conn:
+        rows = await conn.fetch(
+            """
+            SELECT a.id, a.user_id, a.kind, a.meta, a.created_at, u.first_name, u.username
+            FROM activity_log a
+            LEFT JOIN users u ON u.telegram_user_id = a.user_id
+            WHERE a.id > $1
+            ORDER BY a.id DESC LIMIT $2
+            """,
+            after_id, limit,
+        )
+    out = []
+    for r in rows:
+        d = dict(r)
+        d["created_at"] = d["created_at"].isoformat()
+        out.append(d)
+    return out
+
+
+async def admin_users(q: str = "", limit: int = 30, offset: int = 0) -> dict:
+    q = (q or "").strip()
+    where = """
+        ($1 = '' OR u.first_name ILIKE '%' || $1 || '%' OR u.username ILIKE '%' || $1 || '%'
+         OR u.telegram_user_id::text = $1)
+    """
+    async with pool().acquire() as conn:
+        total = await conn.fetchval(f"SELECT COUNT(*) FROM users u WHERE {where}", q)
+        rows = await conn.fetch(
+            f"""
+            SELECT u.telegram_user_id, u.first_name, u.username, u.plan, u.plan_status, u.plan_expires_at,
+                   u.total_replies_sent, u.trial_used, u.created_at, u.last_seen_at,
+                   s.tg_phone, s.tg_name, COALESCE(a.is_active, TRUE) AS reply_on,
+                   COALESCE(a.only_when_offline, TRUE) AS smart_mode
+            FROM users u
+            LEFT JOIN tg_sessions s ON s.user_id = u.telegram_user_id
+            LEFT JOIN auto_reply_settings a ON a.user_id = u.telegram_user_id
+            WHERE {where}
+            ORDER BY u.last_seen_at DESC NULLS LAST, u.created_at DESC
+            LIMIT $2 OFFSET $3
+            """,
+            q, limit, offset,
+        )
+    now = _now()
+    items = []
+    for r in rows:
+        d = dict(r)
+        exp = d["plan_expires_at"]
+        if d["plan_status"] == "active" and exp and exp > now:
+            d["status"] = "active"
+        elif d["plan_status"] in ("active", "expired"):
+            d["status"] = "expired"
+        else:
+            d["status"] = "none"
+        d["connected"] = d["tg_phone"] is not None
+        d["tg_phone"] = _mask_phone(d["tg_phone"])
+        d["online"] = bool(d["last_seen_at"] and (now - d["last_seen_at"]).total_seconds() < 90)
+        for key in ("plan_expires_at", "created_at", "last_seen_at"):
+            d[key] = d[key].isoformat() if d[key] else None
+        items.append(d)
+    return {"total": int(total), "users": items}
+
+
+async def admin_payments(limit: int = 30) -> list:
+    async with pool().acquire() as conn:
+        rows = await conn.fetch(
+            """
+            SELECT p.user_id, p.plan_key, p.amount, p.currency, p.method, p.status, p.created_at,
+                   u.first_name, u.username
+            FROM payments p LEFT JOIN users u ON u.telegram_user_id = p.user_id
+            ORDER BY p.created_at DESC LIMIT $1
+            """,
+            limit,
+        )
+    out = []
+    for r in rows:
+        d = dict(r)
+        d["amount"] = float(d["amount"])
+        d["created_at"] = d["created_at"].isoformat()
+        out.append(d)
     return out

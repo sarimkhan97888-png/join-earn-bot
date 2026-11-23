@@ -1,6 +1,10 @@
 """
-Profitix Ghost - FastAPI + Bot entrypoint.
-Supports single-process mode (ENABLE_WORKER=true) and split Render+Kaggle mode (ENABLE_WORKER=false).
+Profitix Ghost - web gateway (FastAPI + aiogram bot).
+
+ENABLE_WORKER=false (Render):  FastAPI + Mini App + API + aiogram bot ONLY. The Telethon auto-reply
+                               engine lives on the Kaggle worker (worker.py) and shares the Neon DB.
+ENABLE_WORKER=true  (single server): the engine runs embedded. A DB lease still guarantees that only
+                               one engine anywhere can reply, so duplicates are impossible.
 """
 import asyncio
 import hashlib
@@ -10,6 +14,7 @@ import logging
 import time
 from collections import defaultdict
 from contextlib import asynccontextmanager
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Awaitable, Callable, Dict, List, Optional
 from urllib.parse import parse_qsl
@@ -36,6 +41,7 @@ BASE_DIR = Path(__file__).resolve().parent
 STATIC_DIR = BASE_DIR / "static"
 MAX_RULES_PRO = 50
 TEMPLATES = {"busy", "hours", "sleep", "custom"}
+ENABLE_WORKER = config.ENABLE_WORKER
 
 
 # ------------------------------------------------------------------ errors
@@ -75,6 +81,15 @@ async def _init_db_with_retry(attempts: int = 6) -> None:
             await asyncio.sleep(3 * i)  # Neon may be waking from idle
 
 
+async def _prune_loop() -> None:
+    while True:
+        try:
+            await db.prune_activity(30)
+        except Exception:
+            log.exception("Activity prune failed")
+        await asyncio.sleep(6 * 3600)
+
+
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     missing = config.missing_config()
@@ -86,24 +101,27 @@ async def lifespan(_: FastAPI):
     if config.BOT_TOKEN:
         tasks.append(asyncio.create_task(_supervise("bot", bot_module.run_polling)))
 
-    if config.ENABLE_WORKER:
-        worker.set_notifier(bot_module.notify_expired)
+    if ENABLE_WORKER:
         if config.API_ID and config.API_HASH:
-            tasks.append(asyncio.create_task(_supervise("worker-restore", worker.restore_all)))
-        tasks.append(asyncio.create_task(_supervise("cleanup", worker.cleanup_loop)))
-        log.info("Embedded Telethon worker ENABLED")
+            tasks.append(asyncio.create_task(
+                _supervise("worker-engine", lambda: worker.run_engine(bot_module.notify_expired))
+            ))
+            log.info("Embedded auto-reply engine ENABLED (lease-protected: only one engine can ever reply)")
+        else:
+            log.warning("ENABLE_WORKER=true but API_ID/API_HASH are missing: engine not started")
     else:
-        log.info("Split mode active (ENABLE_WORKER=false): Telethon worker delegated to external 30GB worker")
+        log.info("Lightweight gateway mode (ENABLE_WORKER=false): auto-reply runs on the external worker")
 
     tasks.append(asyncio.create_task(_supervise("otp-gc", telegram_manager.gc_loop)))
-    log.info("Profitix Ghost web gateway is up on port %s", config.PORT)
+    tasks.append(asyncio.create_task(_supervise("activity-prune", _prune_loop)))
+    log.info("Profitix Ghost gateway is up on port %s", config.PORT)
     try:
         yield
     finally:
         for task in tasks:
             task.cancel()
         await asyncio.gather(*tasks, return_exceptions=True)
-        if config.ENABLE_WORKER:
+        if ENABLE_WORKER:
             await worker.shutdown()
         await telegram_manager.shutdown()
         await bot_module.close_bot()
@@ -164,6 +182,37 @@ async def current_user(x_telegram_init_data: str = Header(default="")) -> dict:
     return user
 
 
+async def admin_user(user: dict = Depends(current_user)) -> dict:
+    if not config.ADMIN_ID or int(user["id"]) != config.ADMIN_ID:
+        raise ApiError(403, "Admins only.", "forbidden")
+    return user
+
+
+def _is_admin(user: dict) -> bool:
+    return bool(config.ADMIN_ID) and int(user["id"]) == config.ADMIN_ID
+
+
+async def track(user_id: int, kind: str, **meta) -> None:
+    """Writes one line to the admin live feed. Never raises."""
+    await db.log_event(user_id, kind, meta)
+
+
+async def _monitoring(uid: int, settings: dict, status: Optional[dict] = None, has_account: Optional[bool] = None) -> bool:
+    """True when this user's auto-reply is genuinely live right now."""
+    if not settings.get("is_active"):
+        return False
+    if ENABLE_WORKER and worker.is_running(uid):
+        return True
+    if status is None:
+        status = await db.get_status(uid)
+    if has_account is None:
+        has_account = (await db.get_tg_session(uid)) is not None
+    if status["status"] != "active" or not has_account:
+        return False
+    online, _ = await worker.engine_status()
+    return online
+
+
 # ------------------------------------------------------------------ request models
 class PhoneIn(BaseModel):
     phone: str = Field(min_length=5, max_length=25)
@@ -184,6 +233,7 @@ class Rule(BaseModel):
 
 class SettingsIn(BaseModel):
     is_active: Optional[bool] = None
+    only_when_offline: Optional[bool] = None
     template: Optional[str] = Field(default=None, max_length=20)
     default_reply: Optional[str] = Field(default=None, max_length=1000)
     keyword_rules: Optional[List[Rule]] = Field(default=None, max_length=MAX_RULES_PRO)
@@ -203,10 +253,17 @@ class UsdtVerifyIn(BaseModel):
 # ------------------------------------------------------------------ public routes
 @app.api_route("/health", methods=["GET", "HEAD"])
 async def health():
+    if ENABLE_WORKER:
+        online, count = worker.is_engine_active(), worker.active_count()
+        if not online:
+            online, count = await worker.engine_status()
+    else:
+        online, count = await worker.engine_status()
     return {
         "status": "ok",
-        "mode": "embedded" if config.ENABLE_WORKER else "gateway",
-        "active_workers": worker.active_count(),
+        "mode": "embedded" if ENABLE_WORKER else "gateway",
+        "worker_online": online,
+        "active_workers": count,
     }
 
 
@@ -215,11 +272,20 @@ async def index():
     return FileResponse(STATIC_DIR / "index.html", headers={"Cache-Control": "no-store"})
 
 
+@app.get("/api/ping")
+async def api_ping(user: dict = Depends(current_user)):
+    await db.touch_user(int(user["id"]))
+    return {"status": "ok"}
+
+
 # ------------------------------------------------------------------ state
 @app.get("/api/state")
-async def api_state(user: dict = Depends(current_user)):
+async def api_state(opened: int = Query(0, alias="open"), user: dict = Depends(current_user)):
     uid = int(user["id"])
     await db.upsert_user(uid, user.get("first_name", ""), user.get("username", ""))
+    await db.touch_user(uid)
+    if opened:
+        await track(uid, "app_open")
     status = await db.get_status(uid)
     settings = await db.get_settings(uid)
     account = await telegram_manager.get_account(uid)
@@ -228,9 +294,9 @@ async def api_state(user: dict = Depends(current_user)):
     if active and status["plan"] in ("starter", "pro"):
         eligible = False
     tier = status["plan"] if active else None
-    running = (worker.is_running(uid) if config.ENABLE_WORKER else bool(active and account)) and bool(settings["is_active"])
     return {
         "status_ok": True,
+        "is_admin": _is_admin(user),
         "user": {
             "id": uid,
             "first_name": user.get("first_name", ""),
@@ -240,7 +306,7 @@ async def api_state(user: dict = Depends(current_user)):
         "status": status,
         "settings": settings,
         "account": account,
-        "monitoring": running,
+        "monitoring": await _monitoring(uid, settings, status, account is not None),
         "plans": config.public_plans(),
         "features": {f: config.tier_has(tier, f) for f in ("telegram", "whatsapp", "webhooks")},
         "max_rules": MAX_RULES_PRO if config.tier_has(tier, "unlimited_rules") else config.MAX_RULES_LIMITED,
@@ -254,9 +320,11 @@ async def api_state(user: dict = Depends(current_user)):
 @app.post("/api/settings")
 async def api_settings(body: SettingsIn, user: dict = Depends(current_user)):
     uid = int(user["id"])
-    fields = {}
+    fields: dict = {}
     if body.is_active is not None:
         fields["is_active"] = body.is_active
+    if body.only_when_offline is not None:
+        fields["only_when_offline"] = body.only_when_offline
     if body.template is not None:
         if body.template not in TEMPLATES:
             raise ApiError(422, "Unknown template.")
@@ -281,35 +349,58 @@ async def api_settings(body: SettingsIn, user: dict = Depends(current_user)):
             for r in body.keyword_rules if r.keyword.strip() and r.reply.strip()
         ]
     settings = await db.save_settings(uid, **fields)
-    if config.ENABLE_WORKER:
-        worker.invalidate_settings(uid)
-        running = worker.is_running(uid) and bool(settings["is_active"])
+    worker.invalidate_settings(uid)
+    if body.is_active is not None and len(fields) == 1:
+        await track(uid, "reply_toggled", on=bool(body.is_active))
     else:
-        st = await db.get_status(uid)
-        acc = await telegram_manager.get_account(uid)
-        running = bool(st["status"] == "active" and acc and settings["is_active"])
-    return {"status": "ok", "settings": settings, "monitoring": running}
+        await track(uid, "settings_saved", smart=bool(settings.get("only_when_offline", True)))
+    return {"status": "ok", "settings": settings, "monitoring": await _monitoring(uid, settings)}
 
 
 # ------------------------------------------------------------------ Telegram connection
 @app.post("/api/telegram/send-code")
 async def api_send_code(body: PhoneIn, user: dict = Depends(current_user)):
-    return await telegram_manager.send_code(int(user["id"]), body.phone)
+    uid = int(user["id"])
+    try:
+        result = await telegram_manager.send_code(uid, body.phone)
+    except TGError as exc:
+        await track(uid, "tg_connect_failed", step="send_code", code=exc.code)
+        raise
+    await track(uid, "tg_code_sent")
+    return result
 
 
 @app.post("/api/telegram/verify-code")
 async def api_verify_code(body: CodeIn, user: dict = Depends(current_user)):
-    return await telegram_manager.verify_code(int(user["id"]), body.phone, body.code)
+    uid = int(user["id"])
+    try:
+        result = await telegram_manager.verify_code(uid, body.phone, body.code)
+    except TGError as exc:
+        await track(uid, "tg_connect_failed", step="code", code=exc.code)
+        raise
+    if result.get("status") == "connected":
+        await track(uid, "tg_connected")
+    return result
 
 
 @app.post("/api/telegram/verify-2fa")
 async def api_verify_2fa(body: TwoFAIn, user: dict = Depends(current_user)):
-    return await telegram_manager.verify_2fa(int(user["id"]), body.phone, body.password)
+    uid = int(user["id"])
+    try:
+        result = await telegram_manager.verify_2fa(uid, body.phone, body.password)
+    except TGError as exc:
+        await track(uid, "tg_connect_failed", step="2fa", code=exc.code)
+        raise
+    if result.get("status") == "connected":
+        await track(uid, "tg_connected")
+    return result
 
 
 @app.post("/api/telegram/disconnect")
 async def api_disconnect(user: dict = Depends(current_user)):
-    await telegram_manager.disconnect_account(int(user["id"]))
+    uid = int(user["id"])
+    await telegram_manager.disconnect_account(uid)
+    await track(uid, "tg_disconnected")
     return {"status": "ok"}
 
 
@@ -318,7 +409,8 @@ _verify_locks: Dict[int, asyncio.Lock] = defaultdict(asyncio.Lock)
 _last_verify: Dict[int, float] = {}
 
 
-async def _guarded_verify(uid: int, run: Callable[[], Awaitable[payment.PaymentResult]]):
+async def _guarded_verify(uid: int, plan_key: str, method: str, run: Callable[[], Awaitable[payment.PaymentResult]]):
+    plan = config.get_plan(plan_key)
     lock = _verify_locks[uid]
     if lock.locked():
         raise ApiError(429, "A verification is already in progress.", "busy")
@@ -327,11 +419,15 @@ async def _guarded_verify(uid: int, run: Callable[[], Awaitable[payment.PaymentR
         if wait > 0:
             raise ApiError(429, f"Please wait {int(wait) + 1}s before trying again.", "rate_limited")
         _last_verify[uid] = time.time()
+        await track(uid, "pay_attempt", plan=plan_key, method=method)
         result = await run()
+    amount = (plan.usdt if method == "usdt" else plan.inr) if plan else 0
+    currency = "USDT" if method == "usdt" else "INR"
     if not result.ok:
+        await track(uid, "pay_failed", plan=plan_key, method=method, code=result.code, amount=amount, currency=currency)
         return _err(400, result.message, result.code)
-    if config.ENABLE_WORKER:
-        await worker.ensure_running(uid)  # resume immediately in single-process mode
+    await track(uid, "pay_success", plan=plan_key, method=method, amount=amount, currency=currency)
+    await worker.ensure_running(uid)  # instant resume when this process is the engine; otherwise next sync (<=20s)
     status = await db.get_status(uid)
     return {"status": "ok", "message": result.message, "plan_key": result.plan_key,
             "expires_at": result.expires_at, "plan_status": status}
@@ -346,6 +442,7 @@ async def api_payment_info(
     payload = payment.build_upi_payload(plan_key) if method == "upi" else payment_usdt.build_usdt_payload(plan_key)
     if not payload:
         raise ApiError(404, "This payment option is not available for the selected plan.")
+    await track(int(user["id"]), "qr_generated", plan=plan_key, method=method, amount=payload["amount"])
     return {"status": "ok", **payload}
 
 
@@ -353,19 +450,54 @@ async def api_payment_info(
 async def api_verify_upi(body: UpiVerifyIn, user: dict = Depends(current_user)):
     uid = int(user["id"])
     await db.upsert_user(uid, user.get("first_name", ""), user.get("username", ""))
-    return await _guarded_verify(uid, lambda: payment.verify_upi_payment(uid, body.plan_key, body.utr))
+    return await _guarded_verify(uid, body.plan_key, "upi", lambda: payment.verify_upi_payment(uid, body.plan_key, body.utr))
 
 
 @app.post("/api/payment/verify-usdt")
 async def api_verify_usdt(body: UsdtVerifyIn, user: dict = Depends(current_user)):
     uid = int(user["id"])
     await db.upsert_user(uid, user.get("first_name", ""), user.get("username", ""))
-    return await _guarded_verify(uid, lambda: payment_usdt.verify_usdt_payment(uid, body.plan_key, body.tx_hash))
+    return await _guarded_verify(uid, body.plan_key, "usdt", lambda: payment_usdt.verify_usdt_payment(uid, body.plan_key, body.tx_hash))
 
 
 @app.get("/api/payments")
 async def api_payments(user: dict = Depends(current_user)):
     return {"status": "ok", "payments": await db.list_payments(int(user["id"]), 20)}
+
+
+# ------------------------------------------------------------------ admin panel (ADMIN_ID only)
+@app.get("/api/admin/overview")
+async def api_admin_overview(_: dict = Depends(admin_user)):
+    data = await db.admin_overview()
+    online, count = await worker.engine_status()
+    if ENABLE_WORKER and worker.is_engine_active():
+        online, count = True, worker.active_count()
+    data["worker"] = {
+        "online": online, "clients": count,
+        "mode": "embedded" if ENABLE_WORKER else "gateway",
+    }
+    data["server_time"] = datetime.now(timezone.utc).isoformat()
+    return {"status": "ok", **data}
+
+
+@app.get("/api/admin/feed")
+async def api_admin_feed(
+    after: int = Query(0, ge=0), limit: int = Query(40, ge=1, le=100), _: dict = Depends(admin_user),
+):
+    return {"status": "ok", "events": await db.admin_feed(after, limit)}
+
+
+@app.get("/api/admin/users")
+async def api_admin_users(
+    q: str = Query("", max_length=60), offset: int = Query(0, ge=0), limit: int = Query(30, ge=1, le=100),
+    _: dict = Depends(admin_user),
+):
+    return {"status": "ok", **(await db.admin_users(q, limit, offset))}
+
+
+@app.get("/api/admin/payments")
+async def api_admin_payments(_: dict = Depends(admin_user)):
+    return {"status": "ok", "payments": await db.admin_payments(40)}
 
 
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
