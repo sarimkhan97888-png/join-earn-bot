@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#05080D">
+<meta name="theme-color" content="#060912">
 <title>Profitix Ghost</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -11,182 +11,134 @@
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
-:root{
-  --bg:#05080D;
-  --card:#0B111A;
-  --line:rgba(255,255,255,.08);
-  --txt:#F8FAFC;
-  --mut:#8E9BAE;
-  --acc:#00E5A8;
-  --acc2:#00B4D8;
-  --cyan:#38BDF8;
-  --em:#10B981;
-  --rose:#F43F5E;
-  --amber:#F59E0B;
-  --grad:linear-gradient(135deg,#00E5A8 0%,#00B4D8 100%);
-  --acc-txt:#03120E;
-}
+:root{--bg:#060912;--card:#0E1424;--line:rgba(255,255,255,.07);--line2:rgba(255,255,255,.14);--txt:#F8FAFC;--mut:#94A3B8;--mut2:#64748B;--ind:#6366F1;--vio:#8B5CF6;--cyan:#38BDF8;--em:#10B981;--rose:#FB7185;--amber:#FBBF24;--grad:linear-gradient(135deg,#6366F1 0%,#8B5CF6 55%,#C084FC 100%)}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;background:var(--bg);color:var(--txt);font-family:'Plus Jakarta Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased;overscroll-behavior:none}
-.mono{font-family:'JetBrains Mono',monospace}
-#aurora{position:fixed;inset:-10%;z-index:-1;pointer-events:none;background:radial-gradient(45% 35% at 20% 12%,rgba(0,229,168,.12),transparent 70%),radial-gradient(40% 30% at 85% 28%,rgba(0,180,216,.1),transparent 70%),radial-gradient(45% 35% at 50% 95%,rgba(16,185,129,.08),transparent 70%)}
-.glass{background:var(--card);border:1px solid var(--line);border-radius:18px}
+.mono{font-family:'JetBrains Mono',monospace}.mut{color:var(--mut)}
+#aurora{position:fixed;inset:-25%;z-index:-1;pointer-events:none;background:radial-gradient(38% 32% at 18% 12%,rgba(99,102,241,.2),transparent 70%),radial-gradient(34% 30% at 88% 28%,rgba(56,189,248,.11),transparent 70%),radial-gradient(40% 34% at 55% 96%,rgba(192,132,252,.15),transparent 70%);animation:drift 20s ease-in-out infinite alternate}
+@keyframes drift{from{transform:translate3d(-2%,-1%,0) scale(1)}to{transform:translate3d(3%,2%,0) scale(1.1)}}
+.glass{background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.012)),var(--card);border:1px solid var(--line);border-radius:22px;box-shadow:0 12px 34px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.05)}
 .pad{padding:16px}
-.mut{color:var(--mut)}
-.tab{display:none}.tab.on{display:block;animation:fade .2s ease both}
-@keyframes fade{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
-.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;border:0;border-radius:14px;padding:14px 16px;font:800 15px 'Plus Jakarta Sans',sans-serif;color:#fff;cursor:pointer;text-decoration:none;transition:transform .12s,opacity .15s}
+.tab{display:none}.tab.on{display:block;animation:fade .4s cubic-bezier(.2,.8,.2,1) both}
+@keyframes fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+h1.t{font-size:24px;font-weight:800;letter-spacing:-.02em;margin:0}
+.lbl{font:700 11px 'Plus Jakarta Sans';letter-spacing:.09em;color:var(--mut);text-transform:uppercase;margin:0 0 10px}
+/* ---------- splash ---------- */
+#splash{position:fixed;inset:0;z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(60% 42% at 50% 36%,rgba(99,102,241,.26),transparent 70%),var(--bg);transition:opacity .55s,transform .55s}
+#splash.out{opacity:0;transform:scale(1.05);pointer-events:none}
+.gh{filter:drop-shadow(0 0 26px rgba(139,92,246,.75));animation:float 2.8s ease-in-out infinite}
+@keyframes float{50%{transform:translateY(-12px)}}
+.gh .eye{animation:blink 3.6s infinite;transform-box:fill-box;transform-origin:center}
+@keyframes blink{0%,92%,100%{transform:scaleY(1)}96%{transform:scaleY(.1)}}
+.gsh{width:72px;height:10px;border-radius:50%;background:rgba(0,0,0,.55);filter:blur(7px);margin-top:12px;animation:gs 2.8s ease-in-out infinite}
+@keyframes gs{50%{transform:scale(.65);opacity:.45}}
+.brand{margin-top:24px;font:800 28px 'Plus Jakarta Sans';letter-spacing:-.03em}.brand b{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.bar{width:160px;height:4px;border-radius:9px;background:rgba(255,255,255,.08);overflow:hidden;margin-top:26px}
+.bar i{display:block;height:100%;width:42%;border-radius:9px;background:var(--grad);animation:slide 1.15s ease-in-out infinite}
+@keyframes slide{0%{transform:translateX(-110%)}100%{transform:translateX(290%)}}
+#tip{margin-top:16px;color:var(--mut);font-size:13px;min-height:18px;transition:opacity .25s}
+.sk{background:linear-gradient(90deg,rgba(255,255,255,.04) 25%,rgba(255,255,255,.1) 50%,rgba(255,255,255,.04) 75%);background-size:200% 100%;animation:shm 1.3s infinite;border-radius:16px}
+@keyframes shm{to{background-position:-200% 0}}
+/* ---------- controls ---------- */
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;border:0;border-radius:15px;padding:14px 16px;font:700 15px 'Plus Jakarta Sans',sans-serif;color:#fff;cursor:pointer;text-decoration:none;transition:transform .15s,opacity .2s}
 .btn:active{transform:scale(.97)}.btn[disabled]{opacity:.5;pointer-events:none}
-.btn-p{background:var(--grad);color:var(--acc-txt);box-shadow:0 8px 24px rgba(0,229,168,.25)}
-.btn-g{background:rgba(255,255,255,.06);border:1px solid var(--line);color:var(--txt)}
-.btn-d{background:rgba(244,63,94,.12);border:1px solid rgba(244,63,94,.35);color:#FDA4AF}
-.btn-s{width:auto;padding:9px 14px;font-size:13px;border-radius:11px}
-.inp{width:100%;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:12px;padding:13px 14px;color:var(--txt);font:500 15px 'Plus Jakarta Sans',sans-serif;outline:none;transition:border .15s}
-.inp:focus{border-color:var(--acc)}
-select.inp{appearance:none}
-textarea.inp{resize:none;min-height:88px;line-height:1.5}
-.chip{padding:8px 13px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.04);font:700 13px 'Plus Jakarta Sans';color:var(--mut);cursor:pointer;white-space:nowrap}
-.chip.on{background:var(--grad);color:var(--acc-txt);border-color:transparent}
-.pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font:800 10px 'Plus Jakarta Sans';letter-spacing:.06em}
-.pill-pro{background:rgba(0,229,168,.15);color:#5EEAD4;border:1px solid rgba(0,229,168,.4)}
+.btn-p{background:var(--grad);box-shadow:0 10px 26px rgba(99,102,241,.4)}
+.btn-g{background:rgba(255,255,255,.06);border:1px solid var(--line)}
+.btn-d{background:rgba(251,113,133,.1);border:1px solid rgba(251,113,133,.35);color:#FDA4AF}
+.btn-s{width:auto;padding:9px 14px;font-size:13px;border-radius:12px}
+.inp{width:100%;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:13px;padding:13px 14px;color:var(--txt);font:500 15px 'Plus Jakarta Sans',sans-serif;outline:none;transition:border .2s,box-shadow .2s}
+.inp:focus{border-color:var(--ind);box-shadow:0 0 0 3px rgba(99,102,241,.22)}
+select.inp{appearance:none}textarea.inp{resize:none;min-height:88px;line-height:1.5}
+.chip{padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.04);font:600 13px 'Plus Jakarta Sans';color:var(--mut);cursor:pointer;white-space:nowrap}
+.chip.on{background:var(--grad);color:#fff;border-color:transparent;box-shadow:0 4px 16px rgba(99,102,241,.38)}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font:700 10px 'Plus Jakarta Sans';letter-spacing:.06em;white-space:nowrap}
+.pill-pro{background:rgba(139,92,246,.18);color:#C4B5FD;border:1px solid rgba(139,92,246,.4)}
 .pill-ok{background:rgba(16,185,129,.14);color:#6EE7B7;border:1px solid rgba(16,185,129,.35)}
-.pill-bad{background:rgba(244,63,94,.12);color:#FDA4AF;border:1px solid rgba(244,63,94,.3)}
-.pill-warn{background:rgba(245,158,11,.14);color:#FCD34D;border:1px solid rgba(245,158,11,.35)}
-.dot{width:10px;height:10px;border-radius:50%;position:relative;background:var(--mut)}
-.dot.on{background:var(--acc);box-shadow:0 0 12px var(--acc)}
-.sw{width:58px;height:32px;border-radius:999px;background:rgba(255,255,255,.12);position:relative;border:0;cursor:pointer;transition:background .2s;flex:none}
-.sw::after{content:'';position:absolute;top:3px;left:3px;width:26px;height:26px;border-radius:50%;background:#fff;transition:transform .2s}
-.sw.on{background:var(--acc)}.sw.on::after{transform:translateX(26px)}
-.seg{display:flex;background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:14px;padding:4px;gap:4px}
-.seg button{flex:1;border:0;background:transparent;color:var(--mut);padding:10px 8px;border-radius:10px;font:700 13px 'Plus Jakarta Sans';cursor:pointer;display:flex;gap:6px;align-items:center;justify-content:center}
-.seg button.on{background:var(--grad);color:var(--acc-txt)}
-#nav{position:fixed;left:50%;bottom:calc(14px + env(safe-area-inset-bottom));transform:translateX(-50%);width:min(92vw,26rem);display:flex;padding:7px;gap:4px;border-radius:22px;background:rgba(11,17,26,.96);border:1px solid var(--line);box-shadow:0 14px 40px rgba(0,0,0,.6);z-index:30}
-#nav button{flex:1;border:0;background:transparent;color:var(--mut);padding:9px 0 7px;border-radius:16px;display:flex;flex-direction:column;align-items:center;gap:3px;font:700 10.5px 'Plus Jakarta Sans';cursor:pointer}
-#nav button.on{color:var(--acc-txt);background:var(--grad)}
-
-/* Pending Payment Top Pill Banner */
-#pendingBanner{
-  position:sticky;
-  top:calc(8px + env(safe-area-inset-top));
-  z-index:35;
-  margin-bottom:14px;
-  padding:11px 14px;
-  border-radius:16px;
-  background:linear-gradient(135deg,rgba(245,158,11,.18),rgba(0,229,168,.14));
-  border:1px solid rgba(245,158,11,.45);
-  box-shadow:0 10px 28px rgba(0,0,0,.45);
-  display:none;
-  align-items:center;
-  justify-content:space-between;
-  gap:10px;
-  cursor:pointer;
-}
-#pendingBanner.show{display:flex !important}
-@keyframes pulseDot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.8)}}
-.p-dot{width:9px;height:9px;border-radius:50%;background:#F59E0B;animation:pulseDot 1.2s infinite;flex:none}
-
-/* Bulletproof Modal Overlay */
-#payModal{position:fixed;inset:0;z-index:9999;display:none;align-items:flex-end;justify-content:center;background:rgba(2,5,10,.82)}
-#payModal.open{display:flex !important}
-#payBox{width:100%;max-width:28rem;max-height:92vh;overflow-y:auto;background:#0B111A;border:1px solid rgba(0,229,168,.3);border-bottom:0;border-radius:26px 26px 0 0;padding:12px 18px calc(26px + env(safe-area-inset-bottom));box-shadow:0 -12px 48px rgba(0,0,0,.78);animation:slideUp .22s ease-out}
-@keyframes slideUp{from{transform:translateY(36px);opacity:.4}to{transform:none;opacity:1}}
-.grab{width:42px;height:4px;border-radius:9px;background:rgba(255,255,255,.22);margin:0 auto 14px}
-
-.price-card{position:relative;padding:18px;border-radius:20px;background:var(--card);border:1px solid var(--line);cursor:pointer;transition:transform .12s}
-.price-card:active{transform:scale(.985)}
-.price-card.pro{border:1.5px solid rgba(0,229,168,.48);box-shadow:0 12px 36px rgba(0,229,168,.12)}
-.badge{position:absolute;top:-11px;right:16px;padding:5px 11px;border-radius:999px;font:800 10px 'Plus Jakarta Sans';letter-spacing:.06em;color:var(--acc-txt);background:var(--grad)}
-.badge.save{right:auto;left:16px;background:linear-gradient(135deg,#10B981,#059669);color:#fff}
-.feat{display:flex;gap:9px;align-items:center;font-size:13px;color:#CBD5E1;margin:7px 0}
-.feat svg{color:var(--acc);flex:none}.feat.no{color:#64748B;text-decoration:line-through}.feat.no svg{color:#64748B}
-.qr{background:#fff;border-radius:16px;padding:10px;width:176px;height:176px;margin:0 auto;display:grid;place-items:center}.qr img{width:100%;height:100%;display:block;border-radius:8px}
-@keyframes rot{to{transform:rotate(360deg)}}
-@keyframes floatGhost{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
-.ghost-loader{position:relative;width:88px;height:88px;margin:0 auto;display:grid;place-items:center}
-.ghost-loader::after{content:'';position:absolute;inset:2px;border-radius:50%;border:2.5px solid transparent;border-top-color:#00E5A8;border-right-color:#00B4D8;animation:rot 1s linear infinite}
-.ghost-float{position:relative;z-index:2;width:56px;height:56px;border-radius:20px;background:var(--grad);color:var(--acc-txt);display:grid;place-items:center;box-shadow:0 10px 30px rgba(0,229,168,.38);animation:floatGhost 2.2s ease-in-out infinite}
-.okc{width:76px;height:76px;border-radius:50%;background:var(--grad);color:var(--acc-txt);display:grid;place-items:center;margin:0 auto;box-shadow:0 0 40px rgba(0,229,168,.4)}
-.cf{position:fixed;top:-12px;width:9px;height:14px;border-radius:2px;z-index:10000;pointer-events:none;animation:fall linear forwards}
-@keyframes fall{to{transform:translateY(105vh) rotate(720deg);opacity:.9}}
-#toast{position:fixed;top:calc(14px + env(safe-area-inset-top));left:50%;transform:translate(-50%,-140%);background:#0B111A;border:1px solid rgba(0,229,168,.35);padding:11px 16px;border-radius:14px;font:600 13px 'Plus Jakarta Sans';z-index:10001;transition:transform .25s ease;max-width:90vw;text-align:center}#toast.on{transform:translate(-50%,0)}
+.pill-bad{background:rgba(251,113,133,.12);color:#FDA4AF;border:1px solid rgba(251,113,133,.3)}
+.pill-warn{background:rgba(251,191,36,.13);color:#FCD34D;border:1px solid rgba(251,191,36,.33)}
+.dot{width:10px;height:10px;border-radius:50%;position:relative;background:var(--mut2);flex:none}
+.dot.on{background:var(--em)}.dot.on::after{content:'';position:absolute;inset:-5px;border-radius:50%;border:2px solid var(--em);animation:ring 1.6s ease-out infinite}
+@keyframes ring{from{transform:scale(.6);opacity:.9}to{transform:scale(1.9);opacity:0}}
+.sw{width:58px;height:32px;border-radius:999px;background:rgba(255,255,255,.12);position:relative;border:0;cursor:pointer;transition:background .25s;flex:none}
+.sw::after{content:'';position:absolute;top:3px;left:3px;width:26px;height:26px;border-radius:50%;background:#fff;transition:transform .25s cubic-bezier(.3,1.4,.5,1)}
+.sw.on{background:var(--em);box-shadow:0 0 18px rgba(16,185,129,.45)}.sw.on::after{transform:translateX(26px)}
+.seg{display:flex;background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:15px;padding:4px;gap:4px}
+.seg button{flex:1;border:0;background:transparent;color:var(--mut);padding:10px 8px;border-radius:11px;font:700 13px 'Plus Jakarta Sans';cursor:pointer;display:flex;gap:6px;align-items:center;justify-content:center}
+.seg button.on{background:var(--grad);color:#fff;box-shadow:0 4px 14px rgba(99,102,241,.38)}
+#nav{position:fixed;left:50%;bottom:calc(14px + env(safe-area-inset-bottom));transform:translateX(-50%);width:min(93vw,27rem);display:flex;padding:7px;gap:3px;border-radius:24px;background:rgba(14,20,36,.84);border:1px solid var(--line2);backdrop-filter:blur(26px);-webkit-backdrop-filter:blur(26px);box-shadow:0 16px 44px rgba(0,0,0,.55);z-index:30}
+#nav button{flex:1;border:0;background:transparent;color:var(--mut);padding:9px 0 7px;border-radius:17px;display:flex;flex-direction:column;align-items:center;gap:3px;font:700 10.5px 'Plus Jakarta Sans';cursor:pointer;transition:all .25s}
+#nav button.on{color:#fff;background:var(--grad);box-shadow:0 6px 20px rgba(99,102,241,.45)}
+.bd{position:fixed;inset:0;background:rgba(2,6,14,.64);backdrop-filter:blur(4px);opacity:0;pointer-events:none;transition:opacity .25s;z-index:40}.bd.on{opacity:1;pointer-events:auto}
+.sheet{position:fixed;left:0;right:0;bottom:0;margin:0 auto;max-width:28rem;max-height:90vh;overflow:auto;transform:translateY(105%);transition:transform .4s cubic-bezier(.2,.9,.25,1);z-index:50;background:rgba(14,20,36,.98);border:1px solid var(--line2);border-bottom:0;border-radius:28px 28px 0 0;padding:10px 18px calc(22px + env(safe-area-inset-bottom))}.sheet.on{transform:none}
+.grab{width:42px;height:4px;border-radius:9px;background:rgba(255,255,255,.2);margin:0 auto 14px}
+.price-card{position:relative;padding:18px;border-radius:22px;background:var(--card);border:1px solid var(--line);cursor:pointer;transition:transform .2s}.price-card:active{transform:scale(.985)}
+.price-card.pro{border:1.5px solid transparent;background:linear-gradient(var(--card),var(--card)) padding-box,var(--grad) border-box;box-shadow:0 14px 44px rgba(99,102,241,.28)}
+.badge{position:absolute;top:-11px;right:16px;padding:5px 11px;border-radius:999px;font:800 10px 'Plus Jakarta Sans';letter-spacing:.06em;color:#fff;background:var(--grad);box-shadow:0 4px 14px rgba(99,102,241,.5)}
+.badge.save{right:auto;left:16px;background:linear-gradient(135deg,#10B981,#059669);box-shadow:0 4px 14px rgba(16,185,129,.4)}
+.shine{position:relative;overflow:hidden}.shine::after{content:'';position:absolute;top:0;left:-60%;width:40%;height:100%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.32),transparent);animation:shine 2.8s ease-in-out infinite}
+@keyframes shine{0%{left:-60%}60%,100%{left:130%}}
+.feat{display:flex;gap:9px;align-items:center;font-size:13px;color:#CBD5E1;margin:7px 0}.feat svg{color:var(--em);flex:none}.feat.no{color:#64748B;text-decoration:line-through}.feat.no svg{color:#64748B}
+.qr{background:#fff;border-radius:18px;padding:10px;width:178px;height:178px;margin:0 auto}.qr img{width:100%;height:100%;display:block}
+.spin{width:44px;height:44px;border-radius:50%;border:4px solid rgba(255,255,255,.12);border-top-color:var(--ind);animation:rot .8s linear infinite;margin:0 auto}@keyframes rot{to{transform:rotate(360deg)}}
+.okc{width:78px;height:78px;border-radius:50%;background:var(--grad);display:grid;place-items:center;margin:0 auto;animation:pop .6s cubic-bezier(.3,1.6,.5,1) both;box-shadow:0 0 50px rgba(99,102,241,.6)}@keyframes pop{from{transform:scale(0)}to{transform:scale(1)}}
+.cf{position:fixed;top:-12px;width:9px;height:14px;border-radius:2px;z-index:90;pointer-events:none;animation:fall linear forwards}@keyframes fall{to{transform:translateY(105vh) rotate(720deg);opacity:.9}}
+#toast{position:fixed;top:calc(14px + env(safe-area-inset-top));left:50%;transform:translate(-50%,-140%);background:rgba(14,20,36,.96);border:1px solid var(--line2);padding:11px 16px;border-radius:14px;font:600 13px 'Plus Jakarta Sans';z-index:120;transition:transform .35s cubic-bezier(.2,.9,.25,1);max-width:90vw;text-align:center}#toast.on{transform:translate(-50%,0)}
 .faq{border-bottom:1px solid var(--line)}.faq:last-child{border:0}
 .faq button{width:100%;display:flex;justify-content:space-between;gap:10px;background:none;border:0;color:var(--txt);padding:14px 0;font:600 14px 'Plus Jakarta Sans';text-align:left;cursor:pointer}
-.faq .a{max-height:0;overflow:hidden;color:var(--mut);font-size:13px;line-height:1.6;transition:max-height .25s ease}.faq.on .a{max-height:160px;padding-bottom:14px}.faq.on svg{transform:rotate(180deg)}.faq svg{transition:transform .2s;flex:none}
+.faq .a{max-height:0;overflow:hidden;color:var(--mut);font-size:13px;line-height:1.6;transition:max-height .3s ease}.faq.on .a{max-height:170px;padding-bottom:14px}.faq.on svg{transform:rotate(180deg)}.faq svg{transition:transform .25s;flex:none}
 table.mx{width:100%;border-collapse:collapse;font-size:12.5px}table.mx td,table.mx th{padding:10px 4px;text-align:center;border-bottom:1px solid var(--line)}table.mx td:first-child,table.mx th:first-child{text-align:left;color:#CBD5E1}table.mx tr:last-child td{border:0}
-.lbl{font:700 11px 'Plus Jakarta Sans';letter-spacing:.08em;color:var(--mut);text-transform:uppercase;margin:0 0 8px}
-.err{color:#FDA4AF;font-size:13px;margin-top:10px;line-height:1.5}
-.hide{display:none!important}
-.hero-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:999px;background:rgba(0,229,168,.12);border:1px solid rgba(0,229,168,.3);color:var(--acc);font:700 11px 'Plus Jakarta Sans';letter-spacing:.05em}
-.feature-pill{display:flex;align-items:center;gap:10px;padding:11px 13px;border-radius:14px;background:rgba(255,255,255,.03);border:1px solid var(--line);text-align:left}
+.err{color:#FDA4AF;font-size:13px;margin-top:10px;line-height:1.5}.hide{display:none!important}
+/* ---------- home hero ---------- */
+.hero{position:relative;overflow:hidden}.hero.live{border-color:rgba(16,185,129,.32);box-shadow:0 0 46px rgba(16,185,129,.14),0 12px 34px rgba(0,0,0,.28)}
+.hg{width:54px;height:58px;flex:none;filter:drop-shadow(0 0 14px rgba(139,92,246,.6))}.hero.live .hg{animation:float 2.8s ease-in-out infinite}.hero:not(.live) .hg{filter:grayscale(1) opacity(.55)}
+.hn{font:800 30px 'Plus Jakarta Sans';letter-spacing:-.02em}
+/* ---------- admin ---------- */
+.kpi{padding:14px;border-radius:18px;background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.012)),var(--card);border:1px solid var(--line)}
+.kpi .kl{font:700 10.5px 'Plus Jakarta Sans';letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}
+.kpi .kv{font:800 28px 'Plus Jakarta Sans';letter-spacing:-.02em;margin-top:4px}.kpi .ks{font-size:11.5px;color:var(--mut2);margin-top:2px}
+.kpi.em .kv{color:var(--em)}.kpi.cy .kv{color:var(--cyan)}.kpi.vi .kv{color:#C4B5FD}.kpi.am .kv{color:var(--amber)}.kpi.ro .kv{color:var(--rose)}
+.fr{display:flex;gap:11px;padding:12px 0;border-bottom:1px solid var(--line);align-items:flex-start}.fr:last-child{border:0}
+.fr.fresh{animation:fresh 1.6s ease-out}@keyframes fresh{from{background:rgba(99,102,241,.22)}to{background:transparent}}
+.fi{width:36px;height:36px;border-radius:12px;display:grid;place-items:center;font-size:17px;flex:none;background:rgba(255,255,255,.05)}
+.c-em .fi{background:rgba(16,185,129,.15)}.c-rose .fi{background:rgba(251,113,133,.14)}.c-amb .fi{background:rgba(251,191,36,.14)}.c-vio .fi{background:rgba(139,92,246,.18)}.c-cyan .fi{background:rgba(56,189,248,.14)}
+.fb{min-width:0;font-size:13.5px;line-height:1.45}.ft{font-size:11px;color:var(--mut2);margin-top:2px}
+.bar2{height:8px;border-radius:9px;background:rgba(255,255,255,.07);overflow:hidden}.bar2 i{display:block;height:100%;border-radius:9px;background:var(--grad)}
+.livedot{width:8px;height:8px;border-radius:50%;background:var(--em);animation:ring2 1.4s infinite}@keyframes ring2{0%{box-shadow:0 0 0 0 rgba(16,185,129,.6)}100%{box-shadow:0 0 0 10px rgba(16,185,129,0)}}
 </style>
 </head>
 <body>
 <div id="aurora"></div>
 <div id="toast"></div>
-<main id="app" class="mx-auto px-4 pt-4" style="max-width:28rem;padding-bottom:130px;padding-top:calc(16px + env(safe-area-inset-top))">
-  <!-- Pending Payment Return Banner -->
-  <div id="pendingBanner" onclick="resumePendingPay()">
-    <div class="flex items-center gap-2.5" style="min-width:0">
-      <span class="p-dot"></span>
-      <div style="min-width:0">
-        <div style="font-weight:800;font-size:12.5px;color:#FDE68A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Pending Payment · <span id="pbPlan">Plan</span></div>
-        <div style="font-size:11px;color:#CBD5E1">Tap to open QR & submit UTR</div>
-      </div>
-    </div>
-    <div class="mono" id="pbTimer" style="font-weight:800;font-size:13px;color:var(--acc);background:rgba(0,0,0,.35);padding:5px 9px;border-radius:10px;flex:none">05:00</div>
-  </div>
 
+<div id="splash">
+  <svg class="gh" width="112" height="120" viewBox="0 0 120 130" aria-hidden="true">
+    <defs><linearGradient id="gg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#818CF8"/><stop offset=".55" stop-color="#8B5CF6"/><stop offset="1" stop-color="#C084FC"/></linearGradient></defs>
+    <path d="M60 8C34 8 16 28 16 54v58l14-10 15 12 15-12 15 12 15-12 14 10V54C104 28 86 8 60 8z" fill="url(#gg)"/>
+    <ellipse class="eye" cx="46" cy="54" rx="7" ry="9" fill="#0B1020"/><ellipse class="eye" cx="74" cy="54" rx="7" ry="9" fill="#0B1020"/>
+    <path d="M52 76q8 7 16 0" stroke="#0B1020" stroke-width="4" fill="none" stroke-linecap="round"/>
+  </svg>
+  <div class="gsh"></div>
+  <div class="brand">Profitix <b>Ghost</b></div>
+  <div class="bar"><i></i></div>
+  <div id="tip">Waking up your Ghost...</div>
+</div>
+
+<main id="app" class="mx-auto px-4" style="max-width:28rem;padding-bottom:130px;padding-top:calc(20px + env(safe-area-inset-top))">
   <section id="tab-home" class="tab on"></section>
   <section id="tab-ghost" class="tab"></section>
   <section id="tab-plans" class="tab"></section>
   <section id="tab-profile" class="tab"></section>
-
-  <!-- Premium First Login / Boot Screen -->
-  <section id="boot" class="glass pad" style="text-align:center;margin-top:8vh;padding:28px 20px;border-color:rgba(0,229,168,.24);box-shadow:0 20px 50px rgba(0,0,0,.55)">
-    <div class="hero-badge mb-4"><span>●</span> 24/7 AI AUTO-RESPONDER</div>
-    <div class="ghost-loader">
-      <div class="ghost-float">
-        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 2a7 7 0 0 0-7 7v12l3-2 2 2 2-2 2 2 2-2 3 2V9a7 7 0 0 0-7-7z"/>
-          <circle cx="9.5" cy="10" r="1.2" fill="currentColor"/>
-          <circle cx="14.5" cy="10" r="1.2" fill="currentColor"/>
-        </svg>
-      </div>
-    </div>
-    <h1 style="font-weight:800;font-size:23px;margin:18px 0 6px;letter-spacing:-.02em">Profitix <span style="color:var(--acc)">Ghost</span></h1>
-    <p class="mut" style="margin:0 0 20px;font-size:13.5px;line-height:1.55">Connecting to your private automation cloud...</p>
-    <div class="space-y-2.5 mb-2">
-      <div class="feature-pill">
-        <span style="color:var(--acc);font-weight:800">⚡</span>
-        <div><div style="font-weight:700;font-size:13px">Instant Offline Replies</div><div class="mut" style="font-size:11.5px">Replies automatically even when your phone is off</div></div>
-      </div>
-      <div class="feature-pill">
-        <span style="color:var(--acc);font-weight:800">🛡️</span>
-        <div><div style="font-weight:700;font-size:13px">Per-User Smart Cooldown</div><div class="mut" style="font-size:11.5px">Separate timer for every sender — zero spam</div></div>
-      </div>
-    </div>
-  </section>
+  <section id="tab-admin" class="tab"></section>
 </main>
 <nav id="nav" class="hide"></nav>
-<div id="payModal" onclick="if(event.target===this)minimizeOrCloseSheet()">
-  <div id="payBox">
-    <div class="grab" onclick="minimizeOrCloseSheet()"></div>
-    <div id="sheetBody"></div>
-  </div>
-</div>
+<div id="bd" class="bd"></div>
+<div id="sheet" class="sheet"><div class="grab"></div><div id="sheetBody"></div></div>
 
 <script>
+/* ===================== Telegram + helpers ===================== */
 const tg = window.Telegram && window.Telegram.WebApp;
 const INIT = (tg && tg.initData) || '';
-if (tg) {
-  tg.ready();
-  tg.expand();
-  try {
-    tg.setHeaderColor('#05080D');
-    tg.setBackgroundColor('#05080D');
-    tg.disableVerticalSwipes && tg.disableVerticalSwipes();
-  } catch (e) {}
-}
+if (tg) { tg.ready(); tg.expand(); try { tg.setHeaderColor('#060912'); tg.setBackgroundColor('#060912'); tg.disableVerticalSwipes && tg.disableVerticalSwipes(); } catch (e) {} }
 const H = {
   light: () => { try { tg.HapticFeedback.impactOccurred('light'); } catch (e) {} },
   sel: () => { try { tg.HapticFeedback.selectionChanged(); } catch (e) {} },
@@ -195,109 +147,60 @@ const H = {
 };
 const $ = (s, r = document) => r.querySelector(s);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-
-const FALLBACK_PLANS = [
-  { key: 'trial', tier: 'trial', period: 'day', name: '1-Day Starter Trial', inr: 2, usdt: null, days: 1, badge: '' },
-  { key: 'starter_monthly', tier: 'starter', period: 'month', name: 'Starter Monthly', inr: 49, usdt: 1, days: 30, badge: '' },
-  { key: 'starter_yearly', tier: 'starter', period: 'year', name: 'Starter Yearly', inr: 399, usdt: 8, days: 365, badge: 'SAVE 32%' },
-  { key: 'pro_monthly', tier: 'pro', period: 'month', name: 'Pro Monthly', inr: 199, usdt: 3, days: 30, badge: '' },
-  { key: 'pro_yearly', tier: 'pro', period: 'year', name: 'Pro Yearly', inr: 1499, usdt: 20, days: 365, badge: 'MOST POPULAR | SAVE 37%' }
-];
-const DEFAULT_USDT_WALLET = '0x8f61C470a4fC19f79685BB60F8c6e3676BCf886B';
-
-function defaultGuestState() {
-  const u = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) || {};
-  return {
-    offline_demo: true,
-    user: { id: u.id || 0, first_name: u.first_name || 'Ghost User', username: u.username || '', photo_url: u.photo_url || '' },
-    status: { status: 'none', plan: 'none', replies_sent: 0, seconds_left: 0, expires_at: null },
-    settings: { is_active: false, template: 'busy', default_reply: "Hi! I'm busy right now and will reply soon.", keyword_rules: [], cooldown_seconds: 300 },
-    account: null,
-    trial_eligible: true,
-    features: { whatsapp: false },
-    max_rules: 10,
-    allowed_cooldowns: [300, 900, 3600],
-    plans: FALLBACK_PLANS,
-    support: 'Profitix00'
-  };
-}
-
 const ICONS = {
   home: '<path d="M3 11l9-8 9 8v9a2 2 0 0 1-2 2h-4v-6H9v6H5a2 2 0 0 1-2-2z"/>',
   ghost: '<path d="M12 2a7 7 0 0 0-7 7v12l3-2 2 2 2-2 2 2 2-2 3 2V9a7 7 0 0 0-7-7z"/><circle cx="9.5" cy="10" r="1"/><circle cx="14.5" cy="10" r="1"/>',
   plans: '<rect x="2" y="5" width="20" height="14" rx="3"/><path d="M2 10h20"/>',
   profile: '<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/>',
+  admin: '<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/>',
   lock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
   check: '<path d="M5 13l4 4L19 7"/>', x: '<path d="M6 6l12 12M18 6L6 18"/>',
   copy: '<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/>',
   plus: '<path d="M12 5v14M5 12h14"/>', trash: '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',
   chev: '<path d="M6 9l6 6 6-6"/>', bolt: '<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>',
   tg: '<path d="M21 4L3 11l6 2 2 6 3-4 5 4z"/>', wa: '<path d="M21 12a9 9 0 1 1-4-7.5L21 4l-1.5 4A9 9 0 0 1 21 12z"/>',
-  hook: '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
-  clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'
+  hook: '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>'
 };
 const ic = (n, c = 'w-5 h-5') => `<svg class="${c}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICONS[n]}</svg>`;
-function ghostLoaderHtml(text) {
-  return `<div class="ghost-loader"><div class="ghost-float">${ic('ghost', 'w-7 h-7')}</div></div><p class="mut" style="margin:14px 0 0;font-size:13.5px">${esc(text || 'Loading...')}</p>`;
-}
-function toast(m) {
-  const t = $('#toast');
-  t.textContent = m;
-  t.classList.add('on');
-  clearTimeout(toast.t);
-  toast.t = setTimeout(() => t.classList.remove('on'), 2800);
-}
-async function api(path, body, timeoutMs = 12000) {
+const GHOST = c => `<svg class="${c}" viewBox="0 0 120 130"><defs><linearGradient id="hg${c}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#818CF8"/><stop offset=".55" stop-color="#8B5CF6"/><stop offset="1" stop-color="#C084FC"/></linearGradient></defs><path d="M60 8C34 8 16 28 16 54v58l14-10 15 12 15-12 15 12 15-12 14 10V54C104 28 86 8 60 8z" fill="url(#hg${c})"/><ellipse cx="46" cy="54" rx="7" ry="9" fill="#0B1020"/><ellipse cx="74" cy="54" rx="7" ry="9" fill="#0B1020"/><path d="M52 76q8 7 16 0" stroke="#0B1020" stroke-width="4" fill="none" stroke-linecap="round"/></svg>`;
+const skel = (n = 3) => Array.from({ length: n }, () => '<div class="sk" style="height:84px;margin-top:12px"></div>').join('');
+function toast(m) { const t = $('#toast'); t.textContent = m; t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on'), 2800); }
+async function api(path, body) {
   const o = { headers: { 'X-Telegram-Init-Data': INIT } };
-  if (body !== undefined) {
-    o.method = 'POST';
-    o.headers['Content-Type'] = 'application/json';
-    o.body = JSON.stringify(body);
-  }
-  const ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
-  const timer = ctrl ? setTimeout(() => ctrl.abort(), timeoutMs) : null;
-  if (ctrl) o.signal = ctrl.signal;
-  let r;
-  try {
-    r = await fetch(path, o);
-  } catch (e) {
-    if (timer) clearTimeout(timer);
-    return { status: 'error', error: e && e.name === 'AbortError' ? 'Server waking up, please retry.' : 'Network error. Check your connection.', _ok: false };
-  }
-  if (timer) clearTimeout(timer);
-  let j = {};
-  try { j = await r.json(); } catch (e) {}
-  j._ok = r.ok;
-  return j;
+  if (body !== undefined) { o.method = 'POST'; o.headers['Content-Type'] = 'application/json'; o.body = JSON.stringify(body); }
+  let r; try { r = await fetch(path, o); } catch (e) { return { status: 'error', error: 'Network error. Check your connection.', _ok: false }; }
+  let j = {}; try { j = await r.json(); } catch (e) {}
+  j._ok = r.ok; return j;
 }
 function copy(text, label) {
-  if (!text) return toast('Nothing to copy');
   const done = () => { H.ok(); toast((label || 'Copied') + ' copied'); };
-  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done).catch(() => fb());
-  else fb();
-  function fb() {
-    const a = document.createElement('textarea');
-    a.value = text;
-    document.body.appendChild(a);
-    a.select();
-    try { document.execCommand('copy'); done(); } catch (e) { toast('Copy failed'); }
-    a.remove();
-  }
+  const fb = () => { const a = document.createElement('textarea'); a.value = text; document.body.appendChild(a); a.select(); try { document.execCommand('copy'); done(); } catch (e) { toast('Copy failed'); } a.remove(); };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done).catch(fb); else fb();
 }
 const fmtDate = iso => iso ? new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : '-';
+function ago(iso) { if (!iso) return '-'; const s = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000); if (s < 10) return 'just now'; if (s < 60) return Math.floor(s) + 's ago'; if (s < 3600) return Math.floor(s / 60) + 'm ago'; if (s < 86400) return Math.floor(s / 3600) + 'h ago'; return Math.floor(s / 86400) + 'd ago'; }
 const TIER = { trial: '1-DAY TRIAL', starter: 'STARTER', pro: 'PRO', none: 'FREE' };
 const mb = {
   fn: null,
-  set(t, f) { if (!tg) return; this.hide(); this.fn = f; tg.MainButton.setParams({ text: t, color: '#00E5A8', text_color: '#03120E' }); tg.MainButton.onClick(f); tg.MainButton.show(); },
+  set(t, f) { if (!tg) return; this.hide(); this.fn = f; tg.MainButton.setParams({ text: t, color: '#6366F1', text_color: '#ffffff' }); tg.MainButton.onClick(f); tg.MainButton.show(); },
   hide() { if (!tg) return; if (this.fn) tg.MainButton.offClick(this.fn); this.fn = null; tg.MainButton.hide(); }
 };
 
-let S = null;
-const U = {
-  tab: 'home', platform: 'telegram', billing: 'monthly', draft: null, dirty: false, history: null, faq: -1,
-  wiz: { step: 'phone', cc: '+91', phone: '', code: '', pw: '', full: '', err: '', busy: false, resend: 0 }
-};
-let P = null, pendingPay = null, endTs = 0, wizTimer = null;
+/* ===================== Splash ===================== */
+const TIPS = ['Waking up your Ghost...', 'Syncing your plan...', 'Checking your auto-reply...', 'Almost there...'];
+let tipN = 0; const tipTimer = setInterval(() => { const t = $('#tip'); if (!t) return; t.style.opacity = 0; setTimeout(() => { tipN = (tipN + 1) % TIPS.length; t.textContent = TIPS[tipN]; t.style.opacity = 1; }, 220); }, 1500);
+const splashT0 = Date.now();
+function hideSplash() { const wait = Math.max(0, 900 - (Date.now() - splashT0)); setTimeout(() => { clearInterval(tipTimer); const s = $('#splash'); s.classList.add('out'); setTimeout(() => s.remove(), 600); }, wait); }
+function showFatal(msg) {
+  clearInterval(tipTimer); const inTg = !!INIT;
+  $('#splash').innerHTML = `<div class="gh" style="animation:none;filter:grayscale(1) opacity(.7)">${GHOST('fx')}</div><h2 style="font-weight:800;font-size:20px;margin:18px 0 6px">${inTg ? 'Something went wrong' : 'Open inside Telegram'}</h2><p class="mut" style="font-size:14px;line-height:1.6;max-width:280px;text-align:center;margin:0">${esc(inTg ? msg : 'Profitix Ghost is a Telegram Mini App. Open it from the bot with the Open Ghost button.')}</p>${inTg ? '<button class="btn btn-p" style="margin-top:20px;width:200px" data-act="retry">Try again</button>' : ''}`;
+}
+
+/* ===================== State ===================== */
+let S = null, P = null, endTs = 0, wizTimer = null;
+const U = { tab: 'home', platform: 'telegram', billing: 'monthly', draft: null, dirty: false, history: null, faq: -1,
+  wiz: { step: 'phone', cc: '+91', phone: '', code: '', pw: '', full: '', err: '', busy: false, resend: 0 } };
+const A = { sub: 'overview', ov: null, feed: [], lastId: 0, fresh: new Set(), users: null, uq: '', upage: 0, pays: null, timer: null, n: 0, busy: false };
 const COUNTRIES = [['🇮🇳 India', '+91'], ['🇺🇸 USA / Canada', '+1'], ['🇬🇧 UK', '+44'], ['🇦🇪 UAE', '+971'], ['🇸🇦 Saudi Arabia', '+966'], ['🇵🇰 Pakistan', '+92'], ['🇧🇩 Bangladesh', '+880'], ['🇳🇵 Nepal', '+977'], ['🇱🇰 Sri Lanka', '+94'], ['🇮🇩 Indonesia', '+62'], ['🇲🇾 Malaysia', '+60'], ['🇸🇬 Singapore', '+65'], ['🇳🇬 Nigeria', '+234'], ['🇿🇦 South Africa', '+27'], ['🇧🇷 Brazil', '+55'], ['🇷🇺 Russia', '+7'], ['🇹🇷 Turkey', '+90'], ['🇩🇪 Germany', '+49'], ['🇫🇷 France', '+33'], ['🇦🇺 Australia', '+61']];
 const TEMPLATES = {
   busy: "Hi! I'm busy / away from my phone right now and will get back to you as soon as I can. 🙏",
@@ -306,288 +209,127 @@ const TEMPLATES = {
 };
 const FAQ = [
   ['Which code do I enter when connecting?', 'Telegram sends a 5-digit code to your official Telegram app chat (the chat named "Telegram"), not by SMS. Open that chat and type the code here.'],
+  ['When does Ghost reply?', 'With Smart mode ON, Ghost waits a few seconds and replies only if you are offline: it stays silent when you are active in Telegram, read the message, or already answered it.'],
   ['How does the ₹2 trial work?', 'You get 24 hours of Telegram auto-reply for ₹2 via UPI. It can be claimed once per Telegram user, once per payer UPI ID and once per connected Telegram account.'],
-  ['My payment is not detected', 'Bank alerts can take 1-2 minutes. Make sure you paid the exact plan amount, typed the correct 12-digit UTR, and for USDT used the BEP20 (BNB Smart Chain) network with the exact amount.'],
-  ['Will Ghost spam my contacts?', 'No. Cooldown works separately for each sender (per-user timer). If User A gets a reply, User A waits 5m/15m/1h, while User B still gets an instant reply!'],
-  ['How do I stop or remove it?', 'Use the master switch on Home to pause instantly, or press Disconnect in the Ghost tab to log the session out completely.']
+  ['My payment is not detected', 'Bank alerts can take 1-2 minutes. Make sure you paid the exact plan amount, typed the correct 12-digit UTR, and for USDT used the BEP20 network with the exact amount.'],
+  ['How do I stop or remove it?', 'Use the master switch on Home to pause, or press Disconnect in the Ghost tab to log the session out completely.']
 ];
+const planBy = k => (S && S.plans.find(p => p.key === k)) || null;
+const planName = k => { const p = planBy(k); return p ? p.name : (k || 'plan'); };
 
-async function loadState(isRetry = false) {
-  let r = await api('/api/state', undefined, 9000);
-  if (!r._ok && !isRetry) {
-    // Auto-retry once in case Render cold-started
-    await new Promise(res => setTimeout(res, 1200));
-    r = await api('/api/state', undefined, 10000);
-  }
-  if (!r._ok) {
-    // Instead of blocking user on a broken error wall, load clean app shell with sync banner
-    S = defaultGuestState();
-    S._syncError = r.error || 'Server waking up — tap Sync to refresh';
-    endTs = 0;
-    $('#boot').classList.add('hide');
-    $('#nav').classList.remove('hide');
-    renderAll();
-    return true;
-  }
-  S = r;
-  S._syncError = '';
-  if (!Array.isArray(S.plans) || !S.plans.length) S.plans = FALLBACK_PLANS;
-  endTs = Date.now() + ((S.status && S.status.seconds_left) || 0) * 1000;
+async function loadState(first) {
+  const r = await api('/api/state' + (first ? '?open=1' : ''));
+  if (!r._ok) { showFatal(r.error || 'Could not load your account.'); return false; }
+  S = r; endTs = Date.now() + (S.status.seconds_left || 0) * 1000;
   if (!U.dirty) U.draft = null;
-  $('#boot').classList.add('hide');
-  $('#nav').classList.remove('hide');
-  renderAll();
-  return true;
+  $('#nav').classList.remove('hide'); renderAll(); return true;
 }
 
-function showTelegramLoginScreen() {
-  $('#boot').innerHTML = `
-    <div class="hero-badge mb-4"><span>●</span> TELEGRAM MINI APP</div>
-    <div class="ghost-loader">
-      <div class="ghost-float">${ic('ghost', 'w-8 h-8')}</div>
-    </div>
-    <h1 style="font-weight:800;font-size:24px;margin:18px 0 6px;letter-spacing:-.02em">Profitix <span style="color:var(--acc)">Ghost</span></h1>
-    <p class="mut" style="font-size:13.5px;line-height:1.6;margin:0 0 18px">Your 24/7 offline Telegram auto-reply & smart lead responder. Please launch this app inside Telegram to sign in automatically.</p>
-    <div class="space-y-2.5 mb-5">
-      <div class="feature-pill">
-        <span style="color:var(--acc);font-weight:800">1</span>
-        <div><div style="font-weight:700;font-size:13px">One-Tap Telegram Login</div><div class="mut" style="font-size:11.5px">No separate password — secured by your Telegram ID</div></div>
-      </div>
-      <div class="feature-pill">
-        <span style="color:var(--acc);font-weight:800">2</span>
-        <div><div style="font-weight:700;font-size:13px">Per-User Cooldown Protection</div><div class="mut" style="font-size:11.5px">Individual timer per contact so every new chat gets a reply</div></div>
-      </div>
-    </div>
-    <a class="btn btn-p" href="https://t.me/Profitix00" target="_blank">Open in Telegram</a>`;
-  $('#boot').classList.remove('hide');
-}
-
-function retryBoot() {
-  toast('Syncing account...');
-  loadState(true).then(() => {
-    if (S && !S._syncError) toast('Synced ✓');
-  });
-}
-
-const TABS = [['home', 'Home'], ['ghost', 'Ghost'], ['plans', 'Plans'], ['profile', 'Profile']];
-function renderNav() {
-  $('#nav').innerHTML = TABS.map(([k, l]) => `<button class="${U.tab === k ? 'on' : ''}" onclick="go('${k}')">${ic(k, 'w-5 h-5')}<span>${l}</span></button>`).join('');
-}
+/* ===================== Navigation ===================== */
+function tabs() { const t = [['home', 'Home'], ['ghost', 'Ghost'], ['plans', 'Plans'], ['profile', 'Profile']]; if (S && S.is_admin) t.push(['admin', 'Admin']); return t; }
+function renderNav() { $('#nav').innerHTML = tabs().map(([k, l]) => `<button class="${U.tab === k ? 'on' : ''}" data-act="go" data-t="${k}">${ic(k, 'w-5 h-5')}<span>${l}</span></button>`).join(''); }
 function go(t) {
-  H.sel();
-  U.tab = t;
-  document.querySelectorAll('.tab').forEach(e => e.classList.toggle('on', e.id === 'tab-' + t));
-  renderNav();
-  renderTab(t);
-  window.scrollTo({ top: 0 });
-  if (t === 'ghost' && U.dirty) mb.set('Save Auto-Reply', saveSettings);
-  else if (!P) mb.hide();
+  if (U.tab === 'admin' && t !== 'admin') { clearInterval(A.timer); A.timer = null; }
+  U.tab = t; document.querySelectorAll('.tab').forEach(e => e.classList.toggle('on', e.id === 'tab-' + t));
+  renderNav(); renderTab(t); window.scrollTo({ top: 0 });
+  if (t === 'ghost' && U.dirty) mb.set('Save Auto-Reply', saveSettings); else if (!P) mb.hide();
   if (t === 'profile' && U.history === null) loadHistory();
+  if (t === 'admin') startAdmin();
 }
-function renderAll() { renderNav(); renderTab(U.tab); updatePendingBanner(); }
-function renderTab(t) { ({ home: renderHome, ghost: renderGhost, plans: renderPlans, profile: renderProfile })[t](); }
+function renderAll() { renderNav(); renderTab(U.tab); }
+function renderTab(t) { ({ home: renderHome, ghost: renderGhost, plans: renderPlans, profile: renderProfile, admin: renderAdmin })[t](); }
 
+/* ===================== HOME ===================== */
 function cdText() {
-  const ms = endTs - Date.now();
-  if (!S || !S.status || S.status.status !== 'active' || ms <= 0) return '--';
+  const ms = endTs - Date.now(); if (!S || S.status.status !== 'active' || ms <= 0) return '--';
   const s = Math.floor(ms / 1000), d = Math.floor(s / 86400), h = Math.floor(s % 86400 / 3600), m = Math.floor(s % 3600 / 60), x = s % 60, p = n => String(n).padStart(2, '0');
   return d > 0 ? `${d}d ${p(h)}h ${p(m)}m` : `${p(h)}:${p(m)}:${p(x)}`;
 }
-function fmt5Min(msLeft) {
-  const s = Math.max(0, Math.floor(msLeft / 1000));
-  const m = Math.floor(s / 60);
-  const sec = s % 60;
-  return `${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
-}
-function updatePendingBanner() {
-  const b = $('#pendingBanner');
-  if (!b) return;
-  if (!pendingPay || pendingPay.expiresAt <= Date.now()) {
-    pendingPay = null;
-    b.classList.remove('show');
-    return;
-  }
-  $('#pbPlan').textContent = `${pendingPay.plan.name} (₹${pendingPay.plan.inr})`;
-  $('#pbTimer').textContent = fmt5Min(pendingPay.expiresAt - Date.now());
-  if (!P) b.classList.add('show');
-  else b.classList.remove('show');
-}
-
 function renderHome() {
-  const st = S.status, active = st.status === 'active', on = active && S.settings.is_active && S.account;
+  const st = S.status, active = st.status === 'active', on = active && S.settings.is_active && !!S.account;
   const label = on ? 'ONLINE & MONITORING' : 'PAUSED / EXPIRED';
-  const sub = !active ? (st.status === 'expired' ? 'Your plan has expired. Resume in one tap.' : 'No active plan yet.') : !S.account ? 'Connect your Telegram account to go live.' : !S.settings.is_active ? 'Auto-reply is switched off.' : 'Replying to your chats 24/7.';
+  const sub = !active ? (st.status === 'expired' ? 'Your plan has expired. Resume in one tap.' : 'No active plan yet.') : !S.account ? 'Connect your Telegram account to go live.' : !S.settings.is_active ? 'Auto-reply is switched off.' : (S.settings.only_when_offline ? 'Smart mode: replies only when you are offline.' : 'Replying to every new chat, 24/7.');
   const a = S.account;
-  const syncBar = S._syncError ? `<div class="glass pad mb-3 flex items-center justify-between gap-2" style="border-color:rgba(245,158,11,.4);background:rgba(245,158,11,.08)"><div style="font-size:12px;color:#FDE68A">${esc(S._syncError)}</div><button class="btn btn-g btn-s" onclick="retryBoot()">Retry Sync</button></div>` : '';
   $('#tab-home').innerHTML = `
-  ${syncBar}
-  <div class="flex items-center justify-between mb-4"><div><p class="mut" style="font-size:13px;margin:0">Welcome back</p><h1 style="font-size:22px;font-weight:800;margin:2px 0 0">${esc(S.user.first_name || 'Ghost User')} 👻</h1></div><span class="pill ${active ? 'pill-ok' : 'pill-bad'}">${esc(TIER[active ? st.plan : 'none'])}</span></div>
-  <div class="glass pad" style="${on ? 'box-shadow:0 0 36px rgba(0,229,168,.12);border-color:rgba(0,229,168,.28)' : ''}">
-    <div class="flex items-center justify-between gap-3">
-      <div class="flex items-center gap-3"><div class="dot ${on ? 'on' : ''}"></div><div><div class="mono" style="font-size:13px;font-weight:700;color:${on ? 'var(--acc)' : '#FCA5A5'}">${label}</div><div class="mut" style="font-size:12.5px;margin-top:3px">${esc(sub)}</div></div></div>
-      <button class="sw ${S.settings.is_active && active ? 'on' : ''}" onclick="toggleMaster()" aria-label="Master switch"></button>
+  <div class="flex items-center justify-between mb-4"><div><p class="mut" style="font-size:13px;margin:0">Welcome back</p><h1 class="t" style="margin-top:2px">${esc(S.user.first_name || 'Ghost User')}</h1></div><span class="pill ${active ? 'pill-ok' : 'pill-bad'}">${esc(TIER[active ? st.plan : 'none'])}</span></div>
+  <div class="glass pad hero ${on ? 'live' : ''}">
+    <div class="flex items-center gap-3">
+      ${GHOST('hg')}
+      <div style="flex:1;min-width:0"><div class="flex items-center gap-2"><div class="dot ${on ? 'on' : ''}"></div><div class="mono" style="font-size:12.5px;font-weight:700;color:${on ? 'var(--em)' : '#FCA5A5'}">${label}</div></div><div class="mut" style="font-size:12.5px;margin-top:6px;line-height:1.45">${esc(sub)}</div></div>
+      <button class="sw ${S.settings.is_active && active ? 'on' : ''}" data-act="master" aria-label="Master switch"></button>
     </div>
   </div>
   <div class="glass pad mt-3 flex items-center gap-3">
-    ${a ? `<div style="width:42px;height:42px;border-radius:50%;background:var(--grad);color:var(--acc-txt);display:grid;place-items:center;font-weight:800">${esc((a.name || 'T')[0].toUpperCase())}</div><div style="min-width:0;flex:1"><div style="font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(a.name)}</div><div class="mut" style="font-size:12.5px">${a.username ? '@' + esc(a.username) + ' · ' : ''}<span class="mono">${esc(a.phone)}</span></div></div><span class="pill pill-ok">CONNECTED</span>`
-      : `<div style="width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,.06);display:grid;place-items:center" class="mut">${ic('tg')}</div><div style="flex:1"><div style="font-weight:700;font-size:14px">No Telegram account connected</div><div class="mut" style="font-size:12.5px">Link it to start auto-replying</div></div><button class="btn btn-p btn-s" onclick="go('ghost')">Connect</button>`}
+    ${a ? `<div style="width:44px;height:44px;border-radius:50%;background:var(--grad);display:grid;place-items:center;font-weight:800;flex:none">${esc((a.name || 'T')[0].toUpperCase())}</div><div style="min-width:0;flex:1"><div style="font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(a.name)}</div><div class="mut" style="font-size:12.5px">${a.username ? '@' + esc(a.username) + ' · ' : ''}<span class="mono">${esc(a.phone)}</span></div></div><span class="pill pill-ok">CONNECTED</span>`
+      : `<div style="width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.06);display:grid;place-items:center;flex:none" class="mut">${ic('tg')}</div><div style="flex:1"><div style="font-weight:700;font-size:14px">No Telegram account connected</div><div class="mut" style="font-size:12.5px">Link it to start auto-replying</div></div><button class="btn btn-p btn-s" data-act="go" data-t="ghost">Connect</button>`}
   </div>
   <div class="grid grid-cols-2 gap-3 mt-3">
-    <div class="glass pad"><p class="lbl">Replies Sent</p><div class="mono" style="font-size:26px;font-weight:700">${Number(st.replies_sent).toLocaleString()}</div></div>
-    <div class="glass pad"><p class="lbl">Plan Time Left</p><div class="mono cd" style="font-size:${active ? 20 : 26}px;font-weight:700;padding-top:${active ? 4 : 0}px;color:${active ? 'var(--acc)' : '#64748B'}">${cdText()}</div></div>
+    <div class="glass pad"><p class="lbl" style="margin-bottom:6px">Replies Sent</p><div class="hn mono" style="font-size:28px">${Number(st.replies_sent).toLocaleString()}</div></div>
+    <div class="glass pad"><p class="lbl" style="margin-bottom:6px">Plan Time Left</p><div class="mono cd" style="font-size:${active ? 19 : 28}px;font-weight:700;padding-top:${active ? 5 : 0}px;color:${active ? 'var(--cyan)' : '#64748B'}">${cdText()}</div></div>
   </div>
-  ${S.trial_eligible !== false ? `<div class="price-card pro mt-4" onclick="confirmGenerateQR('trial')" style="padding:18px"><div class="flex items-center gap-3"><div style="width:46px;height:46px;border-radius:14px;background:var(--grad);color:var(--acc-txt);display:grid;place-items:center;flex:none">${ic('bolt', 'w-6 h-6')}</div><div style="flex:1"><div style="font-weight:800;font-size:16px">Unlock 24h Starter Ghost for ₹2</div><div class="mut" style="font-size:12.5px;margin-top:3px">Telegram auto-reply · one-time trial · UPI</div></div>${ic('chev', 'w-5 h-5').replace('<svg', '<svg style="transform:rotate(-90deg)"')}</div></div>` : ''}
-  ${active ? '' : `<button class="btn btn-g mt-3" onclick="go('plans')">${ic('plans')} View Plans</button>`}`;
+  ${S.trial_eligible ? `<div class="price-card pro shine mt-4" data-act="pay" data-k="trial"><div class="flex items-center gap-3"><div style="width:48px;height:48px;border-radius:15px;background:var(--grad);display:grid;place-items:center;flex:none">${ic('bolt', 'w-6 h-6')}</div><div style="flex:1"><div style="font-weight:800;font-size:16px">Unlock 24h Starter Ghost for ₹2</div><div class="mut" style="font-size:12.5px;margin-top:3px">Telegram auto-reply · one-time trial · UPI</div></div>${ic('chev', 'w-5 h-5').replace('<svg', '<svg style="transform:rotate(-90deg)"')}</div></div>` : ''}
+  ${active ? '' : `<button class="btn btn-g mt-3" data-act="go" data-t="plans">${ic('plans')} View Plans</button>`}`;
 }
-
 setInterval(() => {
-  document.querySelectorAll('.cd').forEach(e => { e.textContent = cdText(); });
-  if (S && S.status && S.status.status === 'active' && endTs < Date.now() - 1500 && !setInterval.r) {
-    setInterval.r = 1;
-    loadState().then(() => { setInterval.r = 0; });
-  }
-  // 5-Minute QR Payment Countdown
-  if (pendingPay) {
-    const left = pendingPay.expiresAt - Date.now();
-    if (left <= 0) {
-      pendingPay = null;
-      updatePendingBanner();
-      if (P && !P.busy && !P.done) {
-        P = null;
-        mb.hide();
-        closeModalOnly();
-        H.err();
-        toast('QR expired after 5 minutes. Generate a new one to pay.');
-      }
-    } else {
-      updatePendingBanner();
-      const qt = $('#qrTimerText');
-      if (qt) qt.textContent = fmt5Min(left);
-    }
-  }
+  document.querySelectorAll('.cd').forEach(e => e.textContent = cdText());
+  if (S && S.status.status === 'active' && endTs < Date.now() - 1500 && !setInterval.r) { setInterval.r = 1; loadState().then(() => setInterval.r = 0); }
 }, 1000);
-
+setInterval(() => { if (document.hidden || !S) return; api('/api/ping'); }, 45000);   // presence heartbeat for the admin panel
+setInterval(() => { if (document.hidden || !S || U.tab !== 'home' || P || $('#sheet').classList.contains('on')) return; loadState(); }, 30000);  // live reply counter
 async function toggleMaster() {
   if (S.status.status !== 'active') { H.err(); toast('Activate a plan to turn Ghost on'); return go('plans'); }
   const next = !S.settings.is_active; S.settings.is_active = next; H.sel(); renderHome();
   const r = await api('/api/settings', { is_active: next });
-  if (!r._ok) { S.settings.is_active = !next; toast(r.error || 'Could not update'); }
-  else { S.settings = r.settings; S.monitoring = r.monitoring; if (U.draft) U.draft = null; }
+  if (!r._ok) { S.settings.is_active = !next; toast(r.error || 'Could not update'); } else { S.settings = r.settings; S.monitoring = r.monitoring; U.draft = null; }
   renderHome();
 }
 
-function ensureDraft() {
-  if (!U.draft) {
-    const s = S.settings;
-    U.draft = { template: s.template, default_reply: s.default_reply, keyword_rules: JSON.parse(JSON.stringify(s.keyword_rules || [])), cooldown_seconds: s.cooldown_seconds };
-  }
-  return U.draft;
-}
-function markDirty() {
-  if (!U.dirty) { U.dirty = true; if (U.tab === 'ghost' && !P) mb.set('Save Auto-Reply', saveSettings); const b = $('#saveBtn'); if (b) b.disabled = false; }
-}
-function setPlatform(p) {
-  H.sel();
-  if (p !== 'telegram' && !S.features.whatsapp) return openUpgrade();
-  U.platform = p;
-  renderGhost();
-}
-function setTpl(k) {
-  const d = ensureDraft();
-  d.template = k;
-  if (TEMPLATES[k]) d.default_reply = TEMPLATES[k];
-  H.sel();
-  markDirty();
-  renderGhost();
-}
-function setCool(c) {
-  ensureDraft().cooldown_seconds = c;
-  H.sel();
-  markDirty();
-  renderGhost();
-}
-function addRule() {
-  const d = ensureDraft();
-  if (d.keyword_rules.length >= S.max_rules) {
-    H.err();
-    toast(S.features.whatsapp ? 'Rule limit reached' : `Starter allows ${S.max_rules} rules. Upgrade to Pro for unlimited.`);
-    return;
-  }
-  d.keyword_rules.push({ keyword: '', reply: '' });
-  H.light();
-  markDirty();
-  renderGhost();
-}
-function delRule(i) {
-  ensureDraft().keyword_rules.splice(i, 1);
-  H.light();
-  markDirty();
-  renderGhost();
-}
-function editPhone() {
-  clearInterval(wizTimer);
-  Object.assign(U.wiz, { step: 'phone', err: '', code: '' });
-  renderGhost();
-}
-function disconnectAccount() {
-  const run = async () => {
-    const r = await api('/api/telegram/disconnect', {});
-    if (r._ok) { H.ok(); toast('Account disconnected'); await loadState(); }
-    else toast(r.error || 'Failed');
-  };
-  if (tg && tg.showConfirm) tg.showConfirm('Disconnect this Telegram account? Auto-reply will stop.', ok => ok && run());
-  else if (confirm('Disconnect this account?')) run();
-}
+/* ===================== GHOST ===================== */
+function ensureDraft() { if (!U.draft) { const s = S.settings; U.draft = { template: s.template, default_reply: s.default_reply, only_when_offline: s.only_when_offline !== false, keyword_rules: JSON.parse(JSON.stringify(s.keyword_rules || [])), cooldown_seconds: s.cooldown_seconds }; } return U.draft; }
+function markDirty() { if (!U.dirty) { U.dirty = true; if (U.tab === 'ghost' && !P) mb.set('Save Auto-Reply', saveSettings); const b = $('#saveBtn'); if (b) b.disabled = false; } }
 function renderGhost() {
   const pro = S.features.whatsapp, d = ensureDraft(), w = U.wiz, active = S.status.status === 'active';
-  const pt = (k, l, i, lock) => `<button class="${U.platform === k ? 'on' : ''}" onclick="setPlatform('${k}')">${ic(i, 'w-4 h-4')}${l}${lock ? '<span class="pill pill-pro" style="padding:2px 6px">PRO</span>' : ''}</button>`;
+  const pt = (k, l, i, lock) => `<button class="${U.platform === k ? 'on' : ''}" data-act="platform" data-p="${k}">${ic(i, 'w-4 h-4')}${l}${lock ? '<span class="pill pill-pro" style="padding:2px 6px">PRO</span>' : ''}</button>`;
   let body = '';
   if (U.platform !== 'telegram') {
-    body = `<div class="glass pad" style="text-align:center"><div class="okc" style="width:56px;height:56px">${ic(U.platform === 'whatsapp' ? 'wa' : 'hook', 'w-6 h-6')}</div><h3 style="font-weight:800;margin:14px 0 6px">${U.platform === 'whatsapp' ? 'WhatsApp Bridge' : 'Custom Webhooks'} is unlocked</h3><p class="mut" style="font-size:13.5px;line-height:1.6;margin:0">Your Pro plan includes this module. Setup is being rolled out to your dashboard, you will get a message from the bot as soon as it is live.</p></div>`;
+    body = `<div class="glass pad" style="text-align:center"><div class="okc" style="width:56px;height:56px;animation:none">${ic(U.platform === 'whatsapp' ? 'wa' : 'hook', 'w-6 h-6')}</div><h3 style="font-weight:800;margin:14px 0 6px">${U.platform === 'whatsapp' ? 'WhatsApp Bridge' : 'Custom Webhooks'} is unlocked</h3><p class="mut" style="font-size:13.5px;line-height:1.6;margin:0">Your Pro plan includes this module. Setup is being rolled out to your dashboard.</p></div>`;
   } else {
     let wiz = '';
     if (S.account) {
-      wiz = `<div class="glass pad"><div class="flex items-center gap-3"><div style="width:44px;height:44px;border-radius:50%;background:var(--grad);color:var(--acc-txt);display:grid;place-items:center;font-weight:800">${esc((S.account.name || 'T')[0].toUpperCase())}</div><div style="flex:1;min-width:0"><div style="font-weight:700">${esc(S.account.name)}</div><div class="mut mono" style="font-size:12px">${esc(S.account.phone)}</div></div><span class="pill pill-ok">LIVE</span></div><button class="btn btn-d mt-3" onclick="disconnectAccount()">Disconnect account</button></div>`;
+      wiz = `<div class="glass pad"><div class="flex items-center gap-3"><div style="width:44px;height:44px;border-radius:50%;background:var(--grad);display:grid;place-items:center;font-weight:800">${esc((S.account.name || 'T')[0].toUpperCase())}</div><div style="flex:1;min-width:0"><div style="font-weight:700">${esc(S.account.name)}</div><div class="mut mono" style="font-size:12px">${esc(S.account.phone)}</div></div><span class="pill pill-ok">LIVE</span></div><button class="btn btn-d mt-3" data-act="disconnect">Disconnect account</button></div>`;
     } else if (!active) {
-      wiz = `<div class="glass pad" style="text-align:center"><div style="color:var(--acc);display:flex;justify-content:center">${ic('lock', 'w-8 h-8')}</div><h3 style="font-weight:800;margin:10px 0 6px">Activate a plan to connect</h3><p class="mut" style="font-size:13.5px;margin:0 0 14px">Start with the ₹2 trial or pick a plan, then link your account here.</p><button class="btn btn-p" onclick="go('plans')">See Plans</button></div>`;
+      wiz = `<div class="glass pad" style="text-align:center"><div style="color:var(--vio);display:flex;justify-content:center">${ic('lock', 'w-8 h-8')}</div><h3 style="font-weight:800;margin:10px 0 6px">Activate a plan to connect</h3><p class="mut" style="font-size:13.5px;margin:0 0 14px">Start with the ₹2 trial or pick a plan, then link your account here.</p><button class="btn btn-p" data-act="go" data-t="plans">See Plans</button></div>`;
     } else {
       const steps = { phone: 1, code: 2, '2fa': 3 };
       const dots = [1, 2, 3].map(i => `<div style="flex:1;height:4px;border-radius:9px;background:${i <= steps[w.step] ? 'var(--grad)' : 'rgba(255,255,255,.1)'}"></div>`).join('');
       let inner = '';
-      if (w.step === 'phone') inner = `<p class="lbl">Step 1 · Phone number</p><div class="flex gap-2"><select id="cc" class="inp" style="width:44%">${COUNTRIES.map(c => `<option value="${c[1]}" ${c[1] === w.cc ? 'selected' : ''}>${c[0]} ${c[1]}</option>`).join('')}</select><input id="ph" class="inp mono" inputmode="tel" placeholder="98765 43210" value="${esc(w.phone)}"></div><button class="btn btn-p mt-3" onclick="sendCode(false)" ${w.busy ? 'disabled' : ''}>${w.busy ? 'Sending...' : 'Send Code'}</button>`;
-      if (w.step === 'code') inner = `<p class="lbl">Step 2 · Enter code</p><div class="mut" style="font-size:13px;line-height:1.55;margin-bottom:10px">Check your <b style="color:#E2E8F0">official Telegram app chat</b>, not SMS, for the 5-digit code sent to <span class="mono">${esc(w.full)}</span>.</div><input id="cd" class="inp mono" inputmode="numeric" maxlength="6" placeholder="• • • • •" style="text-align:center;font-size:24px;letter-spacing:.4em" value="${esc(w.code)}"><button class="btn btn-p mt-3" onclick="verifyCode()" ${w.busy ? 'disabled' : ''}>${w.busy ? 'Verifying...' : 'Verify Code'}</button><div class="flex justify-between mt-3"><button class="btn btn-g btn-s" onclick="editPhone()">Change number</button><button id="rsBtn" class="btn btn-g btn-s" onclick="sendCode(true)" ${w.resend > 0 ? 'disabled' : ''}>${w.resend > 0 ? 'Resend in ' + w.resend + 's' : 'Resend code'}</button></div>`;
-      if (w.step === '2fa') inner = `<p class="lbl">Step 3 · Two-step password</p><div class="mut" style="font-size:13px;margin-bottom:10px">This account has 2FA enabled. Enter your Telegram cloud password.</div><input id="pw" class="inp" type="password" placeholder="2FA password" autocomplete="off" value="${esc(w.pw)}"><button class="btn btn-p mt-3" onclick="verify2fa()" ${w.busy ? 'disabled' : ''}>${w.busy ? 'Verifying...' : 'Unlock & Connect'}</button>`;
+      if (w.step === 'phone') inner = `<p class="lbl">Step 1 · Phone number</p><div class="flex gap-2"><select id="cc" class="inp" style="width:44%">${COUNTRIES.map(c => `<option value="${c[1]}" ${c[1] === w.cc ? 'selected' : ''}>${c[0]} ${c[1]}</option>`).join('')}</select><input id="ph" class="inp mono" inputmode="tel" placeholder="98765 43210" value="${esc(w.phone)}"></div><button class="btn btn-p mt-3" data-act="sendcode" ${w.busy ? 'disabled' : ''}>${w.busy ? 'Sending...' : 'Send Code'}</button>`;
+      if (w.step === 'code') inner = `<p class="lbl">Step 2 · Enter code</p><div class="mut" style="font-size:13px;line-height:1.55;margin-bottom:10px">Check your <b style="color:#E2E8F0">official Telegram app chat</b>, not SMS, for the 5-digit code sent to <span class="mono">${esc(w.full)}</span>.</div><input id="cd" class="inp mono" inputmode="numeric" maxlength="6" placeholder="• • • • •" style="text-align:center;font-size:24px;letter-spacing:.4em" value="${esc(w.code)}"><button class="btn btn-p mt-3" data-act="verifycode" ${w.busy ? 'disabled' : ''}>${w.busy ? 'Verifying...' : 'Verify Code'}</button><div class="flex justify-between mt-3"><button class="btn btn-g btn-s" data-act="editphone">Change number</button><button id="rsBtn" class="btn btn-g btn-s" data-act="resend" ${w.resend > 0 ? 'disabled' : ''}>${w.resend > 0 ? 'Resend in ' + w.resend + 's' : 'Resend code'}</button></div>`;
+      if (w.step === '2fa') inner = `<p class="lbl">Step 3 · Two-step password</p><div class="mut" style="font-size:13px;margin-bottom:10px">This account has 2FA enabled. Enter your Telegram cloud password.</div><input id="pw" class="inp" type="password" placeholder="2FA password" autocomplete="off" value="${esc(w.pw)}"><button class="btn btn-p mt-3" data-act="verify2fa" ${w.busy ? 'disabled' : ''}>${w.busy ? 'Verifying...' : 'Unlock & Connect'}</button>`;
       wiz = `<div class="glass pad"><div class="flex gap-2 mb-4">${dots}</div>${inner}${w.err ? `<div class="err">${esc(w.err)}</div>` : ''}</div>`;
     }
     const max = S.max_rules;
-    const coolLabel = d.cooldown_seconds === 300 ? '5 minutes' : d.cooldown_seconds === 900 ? '15 minutes' : '1 hour';
     body = wiz + `
-    <div class="glass pad mt-3"><p class="lbl">Quick templates</p><div class="flex gap-2" style="overflow-x:auto;padding-bottom:2px">${[['busy', 'Busy / AFK'], ['hours', 'Business Hours'], ['sleep', 'Sleeping'], ['custom', 'Custom']].map(([k, l]) => `<button class="chip ${d.template === k ? 'on' : ''}" onclick="setTpl('${k}')">${l}</button>`).join('')}</div>
+    <div class="glass pad mt-3"><div class="flex items-center gap-3"><div style="font-size:26px">🛡️</div><div style="flex:1"><div style="font-weight:800;font-size:15px">Smart mode</div><div class="mut" style="font-size:12.5px;line-height:1.5;margin-top:2px">Reply only when I'm offline. Ghost stays silent while you're active in Telegram.</div></div><button class="sw ${d.only_when_offline ? 'on' : ''}" data-act="smart" aria-label="Smart mode"></button></div></div>
+    <div class="glass pad mt-3"><p class="lbl">Quick templates</p><div class="flex gap-2" style="overflow-x:auto;padding-bottom:2px">${[['busy', 'Busy / AFK'], ['hours', 'Business Hours'], ['sleep', 'Sleeping'], ['custom', 'Custom']].map(([k, l]) => `<button class="chip ${d.template === k ? 'on' : ''}" data-act="tpl" data-k="${k}">${l}</button>`).join('')}</div>
       <p class="lbl" style="margin-top:16px">Default reply</p><textarea id="dr" class="inp" maxlength="1000" placeholder="What should Ghost reply?">${esc(d.default_reply)}</textarea></div>
     <div class="glass pad mt-3"><div class="flex items-center justify-between"><p class="lbl" style="margin:0">Keyword rules</p><span class="mut mono" style="font-size:11px">${d.keyword_rules.length}/${S.features.whatsapp ? '∞' : max}</span></div>
       <div id="rules">${d.keyword_rules.map((r, i) => ruleHtml(r, i)).join('') || '<p class="mut" style="font-size:13px;margin:12px 0 0">No rules yet. Add one to reply differently when a message contains a word.</p>'}</div>
-      <button class="btn btn-g mt-3" onclick="addRule()">${ic('plus')} Add rule</button></div>
-    <div class="glass pad mt-3">
-      <div class="flex items-center justify-between mb-2">
-        <p class="lbl" style="margin:0">Per-User Anti-Spam Cooldown</p>
-        <span class="pill pill-ok">INDIVIDUAL TIMER</span>
-      </div>
-      <div class="seg">${S.allowed_cooldowns.map(c => `<button class="${d.cooldown_seconds === c ? 'on' : ''}" onclick="setCool(${c})">${c === 300 ? '5m' : c === 900 ? '15m' : '1h'}</button>`).join('')}</div>
-      <p class="mut" style="font-size:12px;margin:10px 0 0;line-height:1.5">Separate <b>${coolLabel}</b> timer for <b>each individual user</b>. Replying to User A will <b>never</b> block instant replies to User B or User C.</p>
-    </div>
-    <button id="saveBtn" class="btn btn-p mt-3" onclick="saveSettings()" ${U.dirty ? '' : 'disabled'}>Save Auto-Reply</button>`;
+      <button class="btn btn-g mt-3" data-act="addrule">${ic('plus')} Add rule</button></div>
+    <div class="glass pad mt-3"><p class="lbl">Per-contact cooldown</p><div class="seg">${S.allowed_cooldowns.map(c => `<button class="${d.cooldown_seconds === c ? 'on' : ''}" data-act="cool" data-c="${c}">${c === 300 ? '5m' : c === 900 ? '15m' : '1h'}</button>`).join('')}</div><p class="mut" style="font-size:12px;margin:10px 0 0">Ghost replies once per contact in this window, so nobody gets spammed.</p></div>
+    <button id="saveBtn" class="btn btn-p mt-3" data-act="save" ${U.dirty ? '' : 'disabled'}>Save Auto-Reply</button>`;
   }
-  $('#tab-ghost').innerHTML = `<h1 style="font-size:22px;font-weight:800;margin:0 0 14px">Automation Studio</h1><div class="seg mb-3">${pt('telegram', 'Telegram', 'tg', false)}${pt('whatsapp', 'WhatsApp', 'wa', !pro)}${pt('webhooks', 'Webhooks', 'hook', !pro)}</div>${body}`;
+  $('#tab-ghost').innerHTML = `<h1 class="t" style="margin-bottom:14px">Automation Studio</h1><div class="seg mb-3">${pt('telegram', 'Telegram', 'tg', false)}${pt('whatsapp', 'WhatsApp', 'wa', !pro)}${pt('webhooks', 'Webhooks', 'hook', !pro)}</div>${body}`;
 }
 function ruleHtml(r, i) {
-  return `<div style="margin-top:12px;padding:12px;border-radius:14px;background:rgba(255,255,255,.03);border:1px solid var(--line)"><div class="flex gap-2 items-center"><input class="inp" data-rk="${i}" maxlength="100" placeholder="If message contains..." value="${esc(r.keyword)}"><button class="btn btn-d btn-s" onclick="delRule(${i})" style="padding:12px">${ic('trash', 'w-4 h-4')}</button></div><textarea class="inp mt-2" data-rr="${i}" maxlength="1000" placeholder="Reply with..." style="min-height:64px">${esc(r.reply)}</textarea></div>`;
+  return `<div style="margin-top:12px;padding:12px;border-radius:15px;background:rgba(255,255,255,.03);border:1px solid var(--line)"><div class="flex gap-2 items-center"><input class="inp" data-rk="${i}" maxlength="100" placeholder="If message contains..." value="${esc(r.keyword)}"><button class="btn btn-d btn-s" data-act="delrule" data-i="${i}" style="padding:12px">${ic('trash', 'w-4 h-4')}</button></div><textarea class="inp mt-2" data-rr="${i}" maxlength="1000" placeholder="Reply with..." style="min-height:64px">${esc(r.reply)}</textarea></div>`;
 }
 async function saveSettings() {
   if (!U.dirty) return;
   const d = U.draft; const rules = d.keyword_rules.filter(r => r.keyword.trim() && r.reply.trim());
   if (!d.default_reply.trim()) { H.err(); return toast('Default reply cannot be empty'); }
   const b = $('#saveBtn'); if (b) { b.disabled = true; b.textContent = 'Saving...'; }
-  const r = await api('/api/settings', { template: d.template, default_reply: d.default_reply, keyword_rules: rules, cooldown_seconds: d.cooldown_seconds });
+  const r = await api('/api/settings', { template: d.template, default_reply: d.default_reply, only_when_offline: d.only_when_offline, keyword_rules: rules, cooldown_seconds: d.cooldown_seconds });
   if (r._ok) { S.settings = r.settings; U.dirty = false; U.draft = null; mb.hide(); H.ok(); toast('Auto-reply saved ✓'); }
   else { H.err(); toast(r.error || 'Could not save'); if (r.code === 'rules_limit') go('plans'); }
   renderGhost();
@@ -607,8 +349,7 @@ async function verifyCode() {
   const w = U.wiz; if (w.busy) return; const code = ($('#cd') ? $('#cd').value : w.code).replace(/\D/g, ''); w.code = code;
   if (code.length < 5) { w.err = 'Enter the 5-digit code.'; return renderGhost(); }
   w.busy = true; w.err = ''; renderGhost();
-  const r = await api('/api/telegram/verify-code', { phone: w.full, code }); w.busy = false;
-  await afterConnect(r);
+  const r = await api('/api/telegram/verify-code', { phone: w.full, code }); w.busy = false; await afterConnect(r);
 }
 async function verify2fa() {
   const w = U.wiz; if (w.busy) return; w.pw = $('#pw') ? $('#pw').value : w.pw; w.busy = true; w.err = ''; renderGhost();
@@ -619,299 +360,231 @@ async function afterConnect(r) {
   if (r._ok && r.status === '2fa_required') { w.step = '2fa'; w.pw = ''; H.light(); return renderGhost(); }
   if (r._ok && r.status === 'connected') { clearInterval(wizTimer); Object.assign(w, { step: 'phone', code: '', pw: '', err: '', phone: '' }); H.ok(); toast('Telegram connected 🎉'); await loadState(); return; }
   w.err = r.error || 'Verification failed.'; H.err();
-  if (r.code === 'code_expired') { w.step = 'code'; } if (r.code === 'trial_account_used') { Object.assign(w, { step: 'phone' }); }
+  if (r.code === 'code_expired') w.step = 'code'; if (r.code === 'trial_account_used') w.step = 'phone';
   renderGhost();
 }
 
-const planBy = k => {
-  const list = (S && Array.isArray(S.plans) && S.plans.length) ? S.plans : FALLBACK_PLANS;
-  return list.find(p => p.key === k) || FALLBACK_PLANS.find(p => p.key === k) || FALLBACK_PLANS[0];
-};
-function setBill(b) {
-  U.billing = b;
-  H.sel();
-  renderPlans();
-}
+/* ===================== PLANS ===================== */
 function renderPlans() {
   const y = U.billing === 'yearly', st = planBy('starter_' + (y ? 'yearly' : 'monthly')), pr = planBy('pro_' + (y ? 'yearly' : 'monthly'));
   const f = (t, ok = true) => `<div class="feat ${ok ? '' : 'no'}">${ic(ok ? 'check' : 'x', 'w-4 h-4')}<span>${t}</span></div>`;
-  const price = (p) => `<div class="flex items-end gap-1 mt-2"><span style="font-size:34px;font-weight:800;line-height:1">₹${p.inr.toLocaleString('en-IN')}</span><span class="mut" style="font-size:13px;padding-bottom:4px">/${y ? 'yr' : 'mo'}</span></div><div class="mut mono" style="font-size:12px;margin-top:4px">or $${p.usdt} USDT (BEP20)</div>`;
+  const price = p => `<div class="flex items-end gap-1 mt-2"><span style="font-size:36px;font-weight:800;line-height:1;letter-spacing:-.02em">₹${p.inr.toLocaleString('en-IN')}</span><span class="mut" style="font-size:13px;padding-bottom:4px">/${y ? 'yr' : 'mo'}</span></div><div class="mut mono" style="font-size:12px;margin-top:4px">or $${p.usdt} USDT (BEP20)</div>`;
   $('#tab-plans').innerHTML = `
-  <div class="flex items-center justify-between mb-3"><h1 style="font-size:22px;font-weight:800;margin:0">Plans</h1><span class="pill pill-ok">Save up to 37%</span></div>
-  <div class="seg mb-5"><button class="${y ? '' : 'on'}" onclick="setBill('monthly')">Monthly</button><button class="${y ? 'on' : ''}" onclick="setBill('yearly')">Yearly</button></div>
-  ${S.trial_eligible !== false ? `<div class="price-card mb-5" onclick="confirmGenerateQR('trial')"><div class="flex items-center justify-between"><div><div style="font-weight:800;font-size:16px">₹2 1-Day Starter Trial</div><div class="mut" style="font-size:12.5px;margin-top:3px">24 hours · Telegram only · UPI</div></div><div style="font-size:28px;font-weight:800;color:var(--acc)">₹2</div></div><button type="button" class="btn btn-g mt-3">Try for ₹2</button></div>` : ''}
-  <div class="price-card mb-6" onclick="confirmGenerateQR('${st.key}')">${y ? `<span class="badge save">${st.badge}</span>` : ''}<div style="font-weight:800;font-size:17px">Starter</div><div class="mut" style="font-size:12.5px">Telegram only</div>${price(st)}<div class="mt-3">${f('24/7 Telegram auto-reply')}${f('Keyword rules (up to 10)')}${f('Per-user cooldown timer')}${f('WhatsApp Bridge', false)}${f('Custom Webhooks', false)}</div><button type="button" class="btn btn-g mt-3">Choose Starter</button></div>
-  <div class="price-card pro mb-5" onclick="confirmGenerateQR('${pr.key}')"><span class="badge">MOST POPULAR</span>${y ? `<span class="badge save">${pr.badge.split('|')[1].trim()}</span>` : ''}<div style="font-weight:800;font-size:17px;margin-top:4px">Pro All-In-One</div><div class="mut" style="font-size:12.5px">Telegram + WhatsApp + Webhooks</div>${price(pr)}<div class="mt-3">${f('Everything in Starter')}${f('WhatsApp Bridge')}${f('Custom Webhooks')}${f('Priority speed')}${f('Unlimited keyword rules')}</div><button type="button" class="btn btn-p mt-3">Go Pro</button></div>
-  <div class="glass pad mt-6"><p class="lbl">Compare features</p><table class="mx"><tr><th></th><th>Starter</th><th style="color:var(--acc)">Pro</th></tr>
-  ${[['Telegram auto-reply', '✓', '✓'], ['Keyword rules', '10', '∞'], ['Per-user cooldown', '✓', '✓'], ['WhatsApp Bridge', '—', '✓'], ['Custom Webhooks', '—', '✓'], ['Priority speed', '—', '✓']].map(r => `<tr><td>${r[0]}</td><td ${r[1] === '—' ? 'class="mut"' : ''}>${r[1]}</td><td style="color:var(--acc);font-weight:700">${r[2]}</td></tr>`).join('')}</table></div>
+  <div class="flex items-center justify-between mb-3"><h1 class="t">Plans</h1><span class="pill pill-ok shine">Save up to 37%</span></div>
+  <div class="seg mb-5"><button class="${y ? '' : 'on'}" data-act="bill" data-b="monthly">Monthly</button><button class="${y ? 'on' : ''}" data-act="bill" data-b="yearly">Yearly</button></div>
+  ${S.trial_eligible ? `<div class="price-card mb-5" data-act="pay" data-k="trial"><div class="flex items-center justify-between"><div><div style="font-weight:800;font-size:16px">₹2 1-Day Starter Trial</div><div class="mut" style="font-size:12.5px;margin-top:3px">24 hours · Telegram only · UPI</div></div><div style="font-size:30px;font-weight:800">₹2</div></div><button class="btn btn-g mt-3">Try for ₹2</button></div>` : ''}
+  <div class="price-card mb-6" data-act="pay" data-k="${st.key}">${y ? `<span class="badge save">${st.badge}</span>` : ''}<div style="font-weight:800;font-size:17px">Starter</div><div class="mut" style="font-size:12.5px">Telegram only</div>${price(st)}<div class="mt-3">${f('24/7 Telegram auto-reply')}${f('Smart offline-only mode')}${f('Keyword rules (up to 10)')}${f('Smart per-contact cooldown')}${f('WhatsApp Bridge', false)}${f('Custom Webhooks', false)}</div><button class="btn btn-g mt-3">Choose Starter</button></div>
+  <div class="price-card pro mb-5" data-act="pay" data-k="${pr.key}"><span class="badge">MOST POPULAR</span>${y ? `<span class="badge save">${pr.badge.split('|')[1].trim()}</span>` : ''}<div style="font-weight:800;font-size:17px;margin-top:4px">Pro All-In-One</div><div class="mut" style="font-size:12.5px">Telegram + WhatsApp + Webhooks</div>${price(pr)}<div class="mt-3">${f('Everything in Starter')}${f('WhatsApp Bridge')}${f('Custom Webhooks')}${f('Priority speed')}${f('Unlimited keyword rules')}</div><button class="btn btn-p mt-3 shine">Go Pro</button></div>
+  <div class="glass pad mt-6"><p class="lbl">Compare features</p><table class="mx"><tr><th></th><th>Starter</th><th style="color:#C4B5FD">Pro</th></tr>
+  ${[['Telegram auto-reply', '✓', '✓'], ['Smart offline mode', '✓', '✓'], ['Keyword rules', '10', '∞'], ['Smart cooldown', '✓', '✓'], ['WhatsApp Bridge', '—', '✓'], ['Custom Webhooks', '—', '✓'], ['Priority speed', '—', '✓']].map(r => `<tr><td>${r[0]}</td><td ${r[1] === '—' ? 'class="mut"' : ''}>${r[1]}</td><td style="color:var(--em);font-weight:700">${r[2]}</td></tr>`).join('')}</table></div>
   <p class="mut" style="font-size:12px;text-align:center;margin-top:14px">Renewing adds time on top of your remaining days.</p>`;
 }
 
-function qrFallbackSrc(text) {
-  const enc = encodeURIComponent(text || 'Profitix Ghost');
-  return `https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=4&data=${enc}`;
-}
-function openSheet(html) {
-  const body = $('#sheetBody');
-  const modal = $('#payModal');
-  if (body) body.innerHTML = html;
-  if (modal) {
-    modal.style.display = 'flex';
-    modal.classList.add('open');
-  }
-  updatePendingBanner();
-}
-function closeModalOnly() {
-  const modal = $('#payModal');
-  if (modal) {
-    modal.classList.remove('open');
-    modal.style.display = 'none';
-  }
-}
-function minimizeOrCloseSheet() {
-  closeModalOnly();
-  if (P) {
-    // Keep pendingPay active if not completed and within 5-minute window
-    if (!P.done && pendingPay && pendingPay.expiresAt > Date.now()) {
-      pendingPay.state = P;
-      toast('Payment minimized — tap Pending Payment at top to return');
-    }
-    P = null;
-    if (U.tab === 'ghost' && U.dirty) mb.set('Save Auto-Reply', saveSettings);
-    else mb.hide();
-  }
-  updatePendingBanner();
-}
-function cancelPaymentCompletely() {
-  pendingPay = null;
-  P = null;
-  closeModalOnly();
-  if (U.tab === 'ghost' && U.dirty) mb.set('Save Auto-Reply', saveSettings);
-  else mb.hide();
-  updatePendingBanner();
-  toast('Payment cancelled');
-}
-function resumePendingPay() {
-  if (!pendingPay || pendingPay.expiresAt <= Date.now()) {
-    pendingPay = null;
-    updatePendingBanner();
-    return toast('Pending payment session expired');
-  }
-  H.light();
-  P = pendingPay.state;
-  renderPay();
-  mb.set('Verify Payment', doVerify);
-}
-
-/* Step 1: Confirmation Dialog before generating QR */
-function confirmGenerateQR(key) {
-  const plan = planBy(key);
-  H.light();
-  // If same plan is already pending & active within 5 mins, resume directly
-  if (pendingPay && pendingPay.plan.key === key && pendingPay.expiresAt > Date.now()) {
-    return resumePendingPay();
-  }
-  openSheet(`
-    <div style="text-align:center;padding:8px 4px 4px">
-      <div class="okc" style="width:62px;height:62px">${ic('plans', 'w-7 h-7')}</div>
-      <h3 style="font-size:20px;font-weight:800;margin:16px 0 6px">Generate Payment QR?</h3>
-      <p class="mut" style="font-size:13.5px;line-height:1.55;margin:0 0 16px">You are about to generate a 5-minute payment QR for <b style="color:#F8FAFC">${esc(plan.name)}</b> (<b style="color:var(--acc)">₹${plan.inr.toLocaleString('en-IN')}</b>).</p>
-      <div class="glass pad mb-4" style="text-align:left;background:rgba(0,229,168,.06);border-color:rgba(0,229,168,.25)">
-        <div class="flex justify-between text-xs mb-1.5"><span class="mut">Selected Plan</span><span style="font-weight:700">${esc(plan.name)}</span></div>
-        <div class="flex justify-between text-xs mb-1.5"><span class="mut">Validity</span><span style="font-weight:700">${plan.days === 1 ? '24 Hours' : plan.days + ' Days'}</span></div>
-        <div class="flex justify-between text-xs"><span class="mut">QR Session Timer</span><span class="mono" style="color:var(--acc);font-weight:700">05:00 Minutes</span></div>
-      </div>
-      <button type="button" class="btn btn-p" onclick="openPay('${esc(plan.key)}')">Yes, Generate QR</button>
-      <button type="button" class="btn btn-g mt-2" onclick="closeModalOnly()">Cancel</button>
-    </div>
-  `);
-}
-
+/* ===================== PAYMENT SHEET ===================== */
+function openSheet(html) { $('#sheetBody').innerHTML = html; $('#bd').classList.add('on'); $('#sheet').classList.add('on'); }
+function closeSheet() { $('#bd').classList.remove('on'); $('#sheet').classList.remove('on'); if (P) { P = null; if (U.tab === 'ghost' && U.dirty) mb.set('Save Auto-Reply', saveSettings); else mb.hide(); } }
 function openUpgrade() {
-  openSheet(`<div style="text-align:center;padding:6px 0 4px"><div class="okc" style="width:62px;height:62px">${ic('lock', 'w-7 h-7')}</div><h3 style="font-size:20px;font-weight:800;margin:16px 0 6px">Upgrade to Pro</h3><p class="mut" style="font-size:14px;line-height:1.6;margin:0 0 18px">WhatsApp Bridge and Custom Webhooks are part of the Pro All-In-One plan, along with priority speed and unlimited rules.</p><button class="btn btn-p" onclick="closeModalOnly();go('plans')">See Pro plans</button><button class="btn btn-g mt-2" onclick="closeModalOnly()">Maybe later</button></div>`);
-}
-function switchMethod(m) {
-  if (!P) return;
-  P.method = m;
-  P.err = '';
-  H.sel();
-  renderPay();
-  loadPayInfo();
-}
-function payDoneClick() {
-  pendingPay = null;
-  P = null;
-  closeModalOnly();
-  updatePendingBanner();
-  go(S && S.account ? 'home' : 'ghost');
+  openSheet(`<div style="text-align:center;padding:6px 0 4px"><div class="okc" style="animation:none;width:62px;height:62px">${ic('lock', 'w-7 h-7')}</div><h3 style="font-size:20px;font-weight:800;margin:16px 0 6px">Upgrade to Pro</h3><p class="mut" style="font-size:14px;line-height:1.6;margin:0 0 18px">WhatsApp Bridge and Custom Webhooks are part of the Pro All-In-One plan, along with priority speed and unlimited rules.</p><button class="btn btn-p" data-act="toplans">See Pro plans</button><button class="btn btn-g mt-2" data-act="closesheet">Maybe later</button></div>`);
 }
 async function openPay(key) {
-  const plan = planBy(key);
-  H.ok();
-  const upiLink = `upi://pay?pa=profitix@upi&pn=${encodeURIComponent('Profitix Ghost')}&am=${plan.inr}&cu=INR`;
-  P = {
-    plan,
-    method: 'upi',
-    info: {
-      upi: { upi_id: 'profitix@upi', deep_link: upiLink, qr_svg: qrFallbackSrc(upiLink) },
-      usdt: { wallet: DEFAULT_USDT_WALLET, qr_svg: qrFallbackSrc(DEFAULT_USDT_WALLET) }
-    },
-    utr: '', tx: '', busy: false, err: '', done: null
-  };
-  pendingPay = {
-    plan,
-    expiresAt: Date.now() + 5 * 60 * 1000,
-    state: P
-  };
-  renderPay();
-  mb.set('Verify Payment', doVerify);
-  await loadPayInfo();
+  const plan = planBy(key); if (!plan) return; H.light();
+  P = { plan, method: 'upi', info: {}, utr: '', tx: '', busy: false, err: '', done: null };
+  renderPay(); mb.set('Verify Payment', doVerify); await loadPayInfo();
 }
 async function loadPayInfo() {
-  if (!P) return;
-  const m = P.method;
-  const r = await api(`/api/payment/info?plan_key=${encodeURIComponent(P.plan.key)}&method=${encodeURIComponent(m)}`, undefined, 8000);
-  if (!P) return;
-  if (r._ok) {
-    P.info[m] = Object.assign({}, P.info[m] || {}, r);
-    if (!P.info[m].qr_svg) {
-      P.info[m].qr_svg = qrFallbackSrc(m === 'upi' ? (P.info[m].deep_link || P.info[m].upi_id) : P.info[m].wallet);
-    }
-    P.err = '';
-  } else if (r.error) {
-    P.err = r.error;
-  }
-  renderPay();
+  const m = P.method; if (P.info[m]) return renderPay();
+  const r = await api(`/api/payment/info?plan_key=${P.plan.key}&method=${m}`);
+  if (!P) return; if (r._ok) P.info[m] = r; else P.err = r.error || 'Could not load payment details.'; renderPay();
 }
 function renderPay() {
-  if (!P) return;
-  const p = P.plan, m = P.method, i = P.info[m] || {};
-  const leftMs = pendingPay ? Math.max(0, pendingPay.expiresAt - Date.now()) : 5 * 60 * 1000;
-  if (P.busy) {
-    openSheet(`<div style="text-align:center;padding:34px 0">${ghostLoaderHtml(m === 'upi' ? 'Checking your bank credit alert...' : 'Confirming on BNB Smart Chain...')}<p class="mut" style="font-size:12.5px;margin-top:6px">This can take up to 30 seconds.</p></div>`);
-    return;
-  }
-  if (P.done) {
-    pendingPay = null;
-    updatePendingBanner();
-    openSheet(`<div style="text-align:center;padding:24px 0 8px"><div class="okc">${ic('check', 'w-10 h-10').replace('<svg', '<svg stroke-width="3"')}</div><h3 style="font-size:22px;font-weight:800;margin:20px 0 6px">Payment verified! 🎉</h3><p class="mut" style="font-size:14px;margin:0 0 4px">${esc(p.name)} is now active</p><p style="font-size:13px;margin:0 0 20px;color:var(--acc)" class="mono">Valid until ${esc(fmtDate(P.done))}</p><button class="btn btn-p" onclick="payDoneClick()">${S && S.account ? 'Back to Home' : 'Connect Telegram now'}</button></div>`);
-    return;
-  }
+  if (!P) return; const p = P.plan, m = P.method, i = P.info[m];
+  if (P.busy) { $('#sheetBody').innerHTML = `<div style="text-align:center;padding:40px 0"><div class="spin"></div><h3 style="font-weight:800;margin:20px 0 6px">Verifying payment...</h3><p class="mut" style="font-size:13px">${m === 'upi' ? 'Checking your bank credit alert.' : 'Confirming on BNB Smart Chain.'} This can take up to 30 seconds.</p></div>`; return; }
+  if (P.done) { $('#sheetBody').innerHTML = `<div style="text-align:center;padding:24px 0 8px"><div class="okc">${ic('check', 'w-10 h-10').replace('<svg', '<svg stroke-width="3"')}</div><h3 style="font-size:22px;font-weight:800;margin:20px 0 6px">Payment verified! 🎉</h3><p class="mut" style="font-size:14px;margin:0 0 4px">${esc(p.name)} is now active</p><p style="font-size:13px;margin:0 0 20px;color:var(--cyan)" class="mono">Valid until ${esc(fmtDate(P.done))}</p><button class="btn btn-p" data-act="paydone">${S.account ? 'Back to Home' : 'Connect Telegram now'}</button></div>`; return; }
   const usdtOk = p.usdt != null, amt = m === 'upi' ? '₹' + p.inr.toLocaleString('en-IN') : p.usdt + ' USDT';
-  const qrSrc = i.qr_svg || qrFallbackSrc(m === 'upi' ? (i.deep_link || i.upi_id || '') : (i.wallet || DEFAULT_USDT_WALLET));
   let body = '';
-  if (m === 'upi') {
-    const upiId = i.upi_id || 'profitix@upi';
-    const deep = i.deep_link || `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent('Profitix Ghost')}&am=${p.inr}&cu=INR`;
-    body = `<a class="btn btn-p" href="${esc(deep)}" onclick="H.light()">Open UPI App · ${amt}</a>
-      <div class="mut" style="text-align:center;font-size:12px;margin:14px 0 10px">or scan with any UPI app</div>
-      <div class="qr"><img alt="UPI QR" src="${esc(qrSrc)}" onerror="this.src='${esc(qrFallbackSrc(deep))}'"></div>
-      <div class="flex items-center gap-2 mt-4" style="padding:11px 12px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid var(--line)"><div style="flex:1;min-width:0"><div class="lbl" style="margin:0 0 2px">UPI ID</div><div class="mono" style="font-size:13.5px;overflow:hidden;text-overflow:ellipsis">${esc(upiId)}</div></div><button type="button" class="btn btn-g btn-s" onclick="copy('${esc(upiId)}','UPI ID')">${ic('copy', 'w-4 h-4')} Copy</button></div>
-      <p class="lbl" style="margin-top:16px">After paying, enter the 12-digit UTR</p>
-      <input id="utr" class="inp mono" inputmode="numeric" maxlength="12" placeholder="123456789012" value="${esc(P.utr)}">`;
-  } else {
-    const wallet = i.wallet || DEFAULT_USDT_WALLET;
-    body = `<div class="qr"><img alt="USDT QR" src="${esc(qrSrc)}" onerror="this.src='${esc(qrFallbackSrc(wallet))}'"></div>
-      <div class="flex items-center justify-between mt-4" style="padding:12px;border-radius:12px;background:rgba(0,229,168,.08);border:1px solid rgba(0,229,168,.25)"><span class="mut" style="font-size:13px">Send exactly</span><span class="mono" style="font-weight:700;color:var(--acc);font-size:16px">${p.usdt} USDT</span></div>
-      <div class="mut" style="font-size:12px;margin:8px 0 0">Network: <b style="color:#E2E8F0">BEP20 (BNB Smart Chain)</b>. Other networks will be lost.</div>
-      <div class="flex items-center gap-2 mt-3" style="padding:11px 12px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid var(--line)"><div style="flex:1;min-width:0"><div class="lbl" style="margin:0 0 2px">Wallet address</div><div class="mono" style="font-size:11px;word-break:break-all">${esc(wallet)}</div></div><button type="button" class="btn btn-g btn-s" onclick="copy('${esc(wallet)}','Address')">${ic('copy', 'w-4 h-4')} Copy</button></div>
-      <p class="lbl" style="margin-top:16px">After sending, paste the TxHash</p>
-      <input id="txh" class="inp mono" placeholder="0x..." style="font-size:12px" value="${esc(P.tx)}">`;
-  }
-  openSheet(`
-  <div class="flex items-center justify-between mb-2">
-    <div><div style="font-weight:800;font-size:18px">${esc(p.name)}</div><div class="mut" style="font-size:12px">${p.days === 1 ? '24 hours' : p.days + ' days'} access</div></div>
-    <div style="text-align:right">
-      <div style="font-size:22px;font-weight:800;color:var(--acc)">${amt}</div>
-      <div class="inline-flex items-center gap-1 mono" style="font-size:11.5px;color:#FCD34D;background:rgba(245,158,11,.14);padding:2px 8px;border-radius:999px;margin-top:2px">⏱ <span id="qrTimerText">${fmt5Min(leftMs)}</span></div>
-    </div>
-  </div>
-  <div class="seg mb-4"><button type="button" class="${m === 'upi' ? 'on' : ''}" onclick="switchMethod('upi')">UPI</button>${usdtOk ? `<button type="button" class="${m === 'usdt' ? 'on' : ''}" onclick="switchMethod('usdt')">USDT BEP20</button>` : ''}</div>
+  if (!i) body = `<div style="padding:40px 0;text-align:center"><div class="spin"></div></div>`;
+  else if (m === 'upi') body = `<a class="btn btn-p" href="${esc(i.deep_link)}">Open UPI App · ${amt}</a>
+    <div class="mut" style="text-align:center;font-size:12px;margin:14px 0 10px">or scan with any UPI app</div><div class="qr"><img alt="UPI QR" src="${esc(i.qr_svg)}"></div>
+    <div class="flex items-center gap-2 mt-4" style="padding:11px 12px;border-radius:13px;background:rgba(255,255,255,.04);border:1px solid var(--line)"><div style="flex:1;min-width:0"><div class="lbl" style="margin:0 0 2px">UPI ID</div><div class="mono" style="font-size:13.5px;overflow:hidden;text-overflow:ellipsis">${esc(i.upi_id)}</div></div><button class="btn btn-g btn-s" data-act="copy" data-v="${esc(i.upi_id)}" data-l="UPI ID">${ic('copy', 'w-4 h-4')} Copy</button></div>
+    <p class="lbl" style="margin-top:16px">After paying, enter the 12-digit UTR</p><input id="utr" class="inp mono" inputmode="numeric" maxlength="12" placeholder="123456789012" value="${esc(P.utr)}">`;
+  else body = `<div class="qr"><img alt="USDT QR" src="${esc(i.qr_svg)}"></div>
+    <div class="flex items-center justify-between mt-4" style="padding:12px;border-radius:13px;background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.25)"><span class="mut" style="font-size:13px">Send exactly</span><span class="mono" style="font-weight:700;color:var(--cyan);font-size:16px">${p.usdt} USDT</span></div>
+    <div class="mut" style="font-size:12px;margin:8px 0 0">Network: <b style="color:#E2E8F0">BEP20 (BNB Smart Chain)</b>. Other networks will be lost.</div>
+    <div class="flex items-center gap-2 mt-3" style="padding:11px 12px;border-radius:13px;background:rgba(255,255,255,.04);border:1px solid var(--line)"><div style="flex:1;min-width:0"><div class="lbl" style="margin:0 0 2px">Wallet address</div><div class="mono" style="font-size:11px;word-break:break-all">${esc(i.wallet)}</div></div><button class="btn btn-g btn-s" data-act="copy" data-v="${esc(i.wallet)}" data-l="Address">${ic('copy', 'w-4 h-4')} Copy</button></div>
+    <p class="lbl" style="margin-top:16px">After sending, paste the TxHash</p><input id="txh" class="inp mono" placeholder="0x..." style="font-size:12px" value="${esc(P.tx)}">`;
+  $('#sheetBody').innerHTML = `<div class="flex items-center justify-between mb-3"><div><div style="font-weight:800;font-size:19px">${esc(p.name)}</div><div class="mut" style="font-size:12.5px">${p.days === 1 ? '24 hours' : p.days + ' days'} access</div></div><div style="font-size:24px;font-weight:800">${amt}</div></div>
+  <div class="seg mb-4"><button class="${m === 'upi' ? 'on' : ''}" data-act="method" data-m="upi">UPI</button>${usdtOk ? `<button class="${m === 'usdt' ? 'on' : ''}" data-act="method" data-m="usdt">USDT BEP20</button>` : ''}</div>
   ${body}${P.err ? `<div class="err">${esc(P.err)}</div>` : ''}
-  <button type="button" class="btn btn-p mt-4" onclick="doVerify()">Verify Payment</button>
-  <div class="grid grid-cols-2 gap-2 mt-2">
-    <button type="button" class="btn btn-g" style="font-size:13px;padding:11px" onclick="minimizeOrCloseSheet()">Pay Later (Minimize)</button>
-    <button type="button" class="btn btn-d" style="font-size:13px;padding:11px" onclick="cancelPaymentCompletely()">Cancel QR</button>
-  </div>`);
+  <button class="btn btn-p mt-4" data-act="verify" ${i ? '' : 'disabled'}>Verify Payment</button><button class="btn btn-g mt-2" data-act="closesheet">Cancel</button>`;
 }
 async function doVerify() {
-  if (!P || P.busy || P.done) return;
-  const m = P.method; let url, body;
-  if (m === 'upi') {
-    const elUtr = $('#utr');
-    const rawUtr = elUtr ? elUtr.value : P.utr;
-    const utr = (rawUtr || '').replace(/\D/g, '');
-    P.utr = utr;
-    if (utr.length !== 12) { P.err = 'Enter the 12-digit UTR from your payment app.'; H.err(); return renderPay(); }
-    url = '/api/payment/verify-upi'; body = { plan_key: P.plan.key, utr };
-  } else {
-    const elTx = $('#txh');
-    const tx = ((elTx ? elTx.value : P.tx) || '').trim();
-    P.tx = tx;
-    if (!/^0x[0-9a-fA-F]{64}$/.test(tx)) { P.err = 'Enter a valid transaction hash (0x + 64 characters).'; H.err(); return renderPay(); }
-    url = '/api/payment/verify-usdt'; body = { plan_key: P.plan.key, tx_hash: tx };
-  }
-  P.busy = true; P.err = ''; renderPay();
-  if (tg) tg.MainButton.showProgress && tg.MainButton.showProgress();
-  const r = await api(url, body, 35000);
-  if (tg) tg.MainButton.hideProgress && tg.MainButton.hideProgress();
-  if (!P) return;
-  P.busy = false;
-  if (r._ok && r.status === 'ok') { P.done = r.expires_at; pendingPay = null; H.ok(); mb.hide(); U.history = null; renderPay(); confetti(); loadState(); }
+  if (!P || P.busy || P.done) return; const m = P.method; let url, body;
+  if (m === 'upi') { const utr = (P.utr || '').replace(/\D/g, ''); if (utr.length !== 12) { P.err = 'Enter the 12-digit UTR from your payment app.'; H.err(); return renderPay(); } url = '/api/payment/verify-upi'; body = { plan_key: P.plan.key, utr }; }
+  else { const tx = (P.tx || '').trim(); if (!/^0x[0-9a-fA-F]{64}$/.test(tx)) { P.err = 'Enter a valid transaction hash (0x + 64 characters).'; H.err(); return renderPay(); } url = '/api/payment/verify-usdt'; body = { plan_key: P.plan.key, tx_hash: tx }; }
+  P.busy = true; P.err = ''; renderPay(); if (tg && tg.MainButton.showProgress) tg.MainButton.showProgress();
+  const r = await api(url, body); if (tg && tg.MainButton.hideProgress) tg.MainButton.hideProgress();
+  if (!P) return; P.busy = false;
+  if (r._ok && r.status === 'ok') { P.done = r.expires_at; H.ok(); mb.hide(); U.history = null; renderPay(); confetti(); loadState(); }
   else { P.err = r.error || 'Verification failed.'; H.err(); renderPay(); }
 }
 function confetti() {
-  const cols = ['#00E5A8', '#00B4D8', '#38BDF8', '#10B981', '#F59E0B', '#F8FAFC'];
-  for (let n = 0; n < 50; n++) {
-    const e = document.createElement('i'); e.className = 'cf'; e.style.left = Math.random() * 100 + 'vw';
-    e.style.background = cols[n % cols.length]; e.style.animationDuration = 1.6 + Math.random() * 1.4 + 's';
-    e.style.animationDelay = Math.random() * .4 + 's'; document.body.appendChild(e);
-    setTimeout(() => e.remove(), 3800);
-  }
+  const cols = ['#6366F1', '#8B5CF6', '#38BDF8', '#10B981', '#F59E0B', '#F8FAFC'];
+  for (let n = 0; n < 60; n++) { const e = document.createElement('i'); e.className = 'cf'; e.style.left = Math.random() * 100 + 'vw'; e.style.background = cols[n % cols.length]; e.style.animationDuration = 1.6 + Math.random() * 1.6 + 's'; e.style.animationDelay = Math.random() * .5 + 's'; document.body.appendChild(e); setTimeout(() => e.remove(), 4000); }
 }
 
-function toggleFaq(n) {
-  U.faq = U.faq === n ? -1 : n;
-  H.light();
-  renderProfile();
-}
-function openSupport() {
-  const url = 'https://t.me/' + ((S && S.support) || 'Profitix00');
-  if (tg && tg.openTelegramLink) tg.openTelegramLink(url);
-  else window.open(url, '_blank');
-}
+/* ===================== PROFILE ===================== */
 async function loadHistory() { const r = await api('/api/payments'); U.history = r._ok ? r.payments : []; if (U.tab === 'profile') renderProfile(); }
 function renderProfile() {
   const u = S.user, st = S.status, active = st.status === 'active';
   const av = u.photo_url ? `<img src="${esc(u.photo_url)}" style="width:100%;height:100%;border-radius:50%;object-fit:cover" referrerpolicy="no-referrer" onerror="this.remove()">` : '';
-  const hist = U.history === null ? `<div style="text-align:center;padding:18px">${ghostLoaderHtml('Loading history...')}</div>` : U.history.length === 0 ? '<p class="mut" style="font-size:13px;margin:6px 0 0">No payments yet.</p>' : U.history.map(h => { const p = planBy(h.plan_key); const cls = h.status === 'success' ? 'pill-ok' : h.status === 'rejected' ? 'pill-bad' : 'pill-warn'; return `<div class="flex items-center justify-between" style="padding:12px 0;border-bottom:1px solid var(--line)"><div><div style="font-weight:700;font-size:14px">${esc(p ? p.name : h.plan_key)}</div><div class="mut" style="font-size:11.5px;margin-top:2px">${esc(h.method.toUpperCase())} · ${esc(fmtDate(h.created_at))}</div></div><div style="text-align:right"><div class="mono" style="font-weight:700;font-size:14px">${h.currency === 'INR' ? '₹' + Number(h.amount).toLocaleString('en-IN') : Number(h.amount) + ' USDT'}</div><span class="pill ${cls}" style="margin-top:3px">${esc(h.status.toUpperCase())}</span></div></div>`; }).join('');
+  const hist = U.history === null ? skel(2) : U.history.length === 0 ? '<p class="mut" style="font-size:13px;margin:6px 0 0">No payments yet.</p>' : U.history.map(h => { const cls = h.status === 'success' ? 'pill-ok' : h.status === 'rejected' ? 'pill-bad' : 'pill-warn'; return `<div class="flex items-center justify-between" style="padding:12px 0;border-bottom:1px solid var(--line)"><div><div style="font-weight:700;font-size:14px">${esc(planName(h.plan_key))}</div><div class="mut" style="font-size:11.5px;margin-top:2px">${esc(h.method.toUpperCase())} · ${esc(fmtDate(h.created_at))}</div></div><div style="text-align:right"><div class="mono" style="font-weight:700;font-size:14px">${h.currency === 'INR' ? '₹' + Number(h.amount).toLocaleString('en-IN') : Number(h.amount) + ' USDT'}</div><span class="pill ${cls}" style="margin-top:3px">${esc(h.status.toUpperCase())}</span></div></div>`; }).join('');
   $('#tab-profile').innerHTML = `
-  <div class="glass pad" style="text-align:center"><div style="width:76px;height:76px;border-radius:50%;background:var(--grad);color:var(--acc-txt);display:grid;place-items:center;margin:0 auto;font-size:30px;font-weight:800;overflow:hidden;position:relative"><span style="position:absolute">${esc((u.first_name || 'G')[0].toUpperCase())}</span>${av ? `<div style="position:absolute;inset:0">${av}</div>` : ''}</div>
+  <div class="glass pad" style="text-align:center"><div style="width:78px;height:78px;border-radius:50%;background:var(--grad);display:grid;place-items:center;margin:0 auto;font-size:30px;font-weight:800;box-shadow:0 0 36px rgba(99,102,241,.45);overflow:hidden;position:relative"><span style="position:absolute">${esc((u.first_name || 'G')[0].toUpperCase())}</span>${av ? `<div style="position:absolute;inset:0">${av}</div>` : ''}</div>
     <h2 style="font-size:20px;font-weight:800;margin:12px 0 2px">${esc(u.first_name || 'Ghost User')}</h2><div class="mut mono" style="font-size:12px">ID ${u.id}${u.username ? ' · @' + esc(u.username) : ''}</div>
     <div class="flex items-center justify-center gap-2 mt-3"><span class="pill ${active ? 'pill-ok' : 'pill-bad'}">${esc(TIER[active ? st.plan : 'none'])}</span><span class="mut" style="font-size:12.5px">${active ? 'Expires ' + esc(fmtDate(st.expires_at)) : st.status === 'expired' ? 'Expired ' + esc(fmtDate(st.expires_at)) : 'No active plan'}</span></div></div>
   <div class="glass pad mt-3"><p class="lbl">Payment history</p>${hist}</div>
-  <div class="glass pad mt-3"><p class="lbl">FAQ</p>${FAQ.map((f, n) => `<div class="faq ${U.faq === n ? 'on' : ''}"><button type="button" onclick="toggleFaq(${n})"><span>${esc(f[0])}</span>${ic('chev', 'w-4 h-4')}</button><div class="a">${esc(f[1])}</div></div>`).join('')}</div>
-  <button type="button" class="btn btn-p mt-3" onclick="openSupport()">Contact Support</button>`;
+  <div class="glass pad mt-3"><p class="lbl">FAQ</p>${FAQ.map((f, n) => `<div class="faq ${U.faq === n ? 'on' : ''}"><button data-act="faq" data-n="${n}"><span>${esc(f[0])}</span>${ic('chev', 'w-4 h-4')}</button><div class="a">${esc(f[1])}</div></div>`).join('')}</div>
+  <button class="btn btn-p mt-3" data-act="support">Contact Support</button>`;
 }
 
+/* ===================== ADMIN PANEL ===================== */
+const fmtAmt = m => m.currency === 'USDT' ? (m.amount + ' USDT') : ('₹' + Number(m.amount || 0).toLocaleString('en-IN'));
+const EV = {
+  app_open: ['👀', 'opened the app', 'c-cyan'],
+  qr_generated: ['🔳', m => `generated ${m.method === 'usdt' ? 'USDT' : 'UPI'} QR · ${planName(m.plan)}`, 'c-vio'],
+  pay_attempt: ['⏳', m => `submitted ${m.method === 'usdt' ? 'TxHash' : 'UTR'} · ${planName(m.plan)}`, 'c-amb'],
+  pay_success: ['✅', m => `PAID ${fmtAmt(m)} · ${planName(m.plan)}`, 'c-em'],
+  pay_failed: ['❌', m => `payment failed (${m.code || 'error'}) · ${planName(m.plan)}`, 'c-rose'],
+  tg_code_sent: ['📲', 'requested a Telegram login code', 'c-cyan'],
+  tg_connected: ['🔗', 'connected a Telegram account', 'c-em'],
+  tg_connect_failed: ['⚠️', m => `login failed at ${m.step || 'step'} (${m.code || 'error'})`, 'c-rose'],
+  tg_disconnected: ['✂️', 'disconnected the Telegram account', 'c-amb'],
+  reply_toggled: ['🔘', m => `turned auto-reply ${m.on ? 'ON' : 'OFF'}`, 'c-vio'],
+  settings_saved: ['💾', 'saved auto-reply settings', 'c-cyan'],
+  plan_expired: ['⌛', m => `plan expired (${m.plan || '-'})`, 'c-rose'],
+  expiry_notified: ['🔔', 'expiry reminder sent', 'c-amb']
+};
+const nm = x => x.first_name || (x.username ? '@' + x.username : 'User ' + (x.user_id || x.telegram_user_id));
+const kpi = (l, v, s, tone = '') => `<div class="kpi ${tone}"><div class="kl">${l}</div><div class="kv">${v}</div><div class="ks">${s || '&nbsp;'}</div></div>`;
+function feedRow(e) {
+  const d = EV[e.kind] || ['•', e.kind, 'c-cyan']; const txt = typeof d[1] === 'function' ? d[1](e.meta || {}) : d[1];
+  return `<div class="fr ${d[2]} ${A.fresh.has(e.id) ? 'fresh' : ''}"><div class="fi">${d[0]}</div><div class="fb"><div><b>${esc(nm(e))}</b> <span class="mut">${esc(txt)}</span></div><div class="ft">${ago(e.created_at)}${e.user_id ? ' · ID ' + e.user_id : ''}</div></div></div>`;
+}
+function userRow(x) {
+  const pc = x.status === 'active' ? 'pill-ok' : x.status === 'expired' ? 'pill-bad' : 'pill-warn';
+  return `<div style="padding:13px 0;border-bottom:1px solid var(--line)"><div class="flex items-center gap-3"><div style="position:relative;width:40px;height:40px;border-radius:50%;background:var(--grad);display:grid;place-items:center;font-weight:800;flex:none">${esc((nm(x)[0] || 'U').toUpperCase())}${x.online ? '<span class="livedot" style="position:absolute;right:-1px;bottom:-1px;border:2px solid var(--card)"></span>' : ''}</div>
+  <div style="flex:1;min-width:0"><div style="font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(nm(x))}</div><div class="mut mono" style="font-size:11px">${x.username ? '@' + esc(x.username) + ' · ' : ''}ID ${x.telegram_user_id}</div></div>
+  <span class="pill ${pc}">${x.status === 'none' ? 'FREE' : esc((TIER[x.plan] || x.plan) + (x.status === 'expired' ? ' · EXP' : ''))}</span></div>
+  <div class="flex flex-wrap gap-x-4 gap-y-1 mt-2 mut" style="font-size:11.5px"><span>💬 ${Number(x.total_replies_sent).toLocaleString()} replies</span><span>${x.connected ? '🔗 ' + esc(x.tg_phone) : '⚪ not connected'}</span><span>${x.connected ? (x.reply_on ? '🟢 auto-reply ON' : '🔴 auto-reply OFF') : ''}</span><span>👁 ${x.online ? '<b style="color:var(--em)">online now</b>' : ago(x.last_seen_at)}</span>${x.plan_expires_at && x.status === 'active' ? `<span>⏳ ends ${fmtDate(x.plan_expires_at)}</span>` : ''}</div></div>`;
+}
+function renderAdmin() {
+  const subs = [['overview', 'Overview'], ['live', 'Live'], ['users', 'Users'], ['payments', 'Payments']];
+  let body = '';
+  if (A.sub === 'overview') body = adminOverview();
+  else if (A.sub === 'live') body = `<div class="glass pad"><div class="flex items-center justify-between mb-1"><p class="lbl" style="margin:0">Live activity</p><span class="flex items-center gap-2 mut" style="font-size:11px"><span class="livedot"></span>auto-refresh 4s</span></div>${A.feed.length ? A.feed.map(feedRow).join('') : '<p class="mut" style="font-size:13px">No activity yet.</p>'}</div>`;
+  else if (A.sub === 'users') body = `<input id="uq" class="inp" placeholder="Search name, @username or ID" value="${esc(A.uq)}"><div class="glass pad mt-3"><p class="lbl">${A.users ? A.users.total + ' users' : 'Users'}</p>${A.users ? (A.users.users.map(userRow).join('') || '<p class="mut" style="font-size:13px">No users found.</p>') : skel(3)}${A.users && A.users.users.length < A.users.total ? '<button class="btn btn-g mt-3" data-act="moreusers">Load more</button>' : ''}</div>`;
+  else body = `<div class="glass pad"><p class="lbl">Latest payments</p>${A.pays ? (A.pays.map(p => { const cls = p.status === 'success' ? 'pill-ok' : p.status === 'rejected' ? 'pill-bad' : 'pill-warn'; return `<div class="flex items-center justify-between" style="padding:12px 0;border-bottom:1px solid var(--line)"><div style="min-width:0"><div style="font-weight:700;font-size:14px">${esc(nm(p))}</div><div class="mut" style="font-size:11.5px;margin-top:2px">${esc(planName(p.plan_key))} · ${esc(p.method.toUpperCase())} · ${ago(p.created_at)}</div></div><div style="text-align:right"><div class="mono" style="font-weight:700">${p.currency === 'INR' ? '₹' + Number(p.amount).toLocaleString('en-IN') : p.amount + ' USDT'}</div><span class="pill ${cls}" style="margin-top:3px">${esc(p.status.toUpperCase())}</span></div></div>`; }).join('') || '<p class="mut" style="font-size:13px">No payments yet.</p>') : skel(3)}</div>`;
+  const keep = A.sub === 'users' && $('#uq') === document.activeElement;
+  if (keep) { return; }
+  $('#tab-admin').innerHTML = `<div class="flex items-center justify-between mb-3"><h1 class="t">Command Center</h1><span class="pill pill-ok"><span class="livedot"></span>LIVE</span></div><div class="seg mb-3">${subs.map(([k, l]) => `<button class="${A.sub === k ? 'on' : ''}" data-act="asub" data-s="${k}">${l}</button>`).join('')}</div>${body}`;
+}
+function adminOverview() {
+  const o = A.ov; if (!o) return skel(5);
+  const u = o.users, a = o.accounts, m = o.money || {}, t = o.today || {}, w = o.worker || {};
+  const g = k => t[k] || { n: 0, users: 0 }; const inr = m.INR || { today: 0, total: 0, count: 0 }, usd = m.USDT || { today: 0, total: 0, count: 0 };
+  const tot = Math.max(1, u.total); const bar = (l, n, c) => `<div style="margin:10px 0"><div class="flex justify-between" style="font-size:12.5px"><span>${l}</span><b>${n}</b></div><div class="bar2" style="margin-top:5px"><i style="width:${Math.round(n / tot * 100)}%;${c ? 'background:' + c : ''}"></i></div></div>`;
+  return `
+  <div class="glass pad flex items-center gap-3" style="${w.online ? 'border-color:rgba(16,185,129,.3)' : 'border-color:rgba(251,113,133,.35)'}"><div class="dot ${w.online ? 'on' : ''}"></div><div style="flex:1"><div style="font-weight:800;font-size:14px">Auto-reply engine ${w.online ? 'ONLINE' : 'OFFLINE'}</div><div class="mut" style="font-size:12px">${w.clients || 0} accounts live · mode: ${esc(w.mode || '-')}</div></div></div>
+  <p class="lbl mt-4">Right now</p>
+  <div class="grid grid-cols-2 gap-3">${kpi('Online now', u.online_now, 'inside the app', 'em')}${kpi('Opened today', u.seen_today, g('app_open').n + ' opens', 'cy')}${kpi('QR generated', g('qr_generated').n, g('qr_generated').users + ' users today', 'vi')}${kpi('Paid today', g('pay_success').n, g('pay_failed').n + ' failed · ' + g('pay_attempt').n + ' tries', 'em')}</div>
+  <p class="lbl mt-4">Users</p>
+  <div class="grid grid-cols-2 gap-3">${kpi('Total users', u.total, '+' + u.new_today + ' today · +' + u.new_7d + ' this week')}${kpi('Active plans', u.active_total, u.expiring_24h + ' ending in 24h', 'em')}${kpi('Expired', u.expired, 'need renewal', 'ro')}${kpi('Never paid', u.never_paid, 'free users', 'am')}</div>
+  <div class="glass pad mt-3"><p class="lbl" style="margin-bottom:2px">Plan mix</p>${bar('Trial (₹2)', u.active_trial)}${bar('Starter', u.active_starter)}${bar('Pro', u.active_pro)}${bar('Expired', u.expired, '#FB7185')}</div>
+  <p class="lbl mt-4">Auto-reply</p>
+  <div class="grid grid-cols-2 gap-3">${kpi('Connected', a.connected, 'Telegram accounts', 'cy')}${kpi('Auto-reply ON', a.reply_on, a.reply_off + ' switched OFF', 'em')}${kpi('Smart mode', a.smart_mode, 'offline-only users', 'vi')}${kpi('Replies sent', Number(u.replies_total).toLocaleString(), 'all time')}</div>
+  <p class="lbl mt-4">Money</p>
+  <div class="grid grid-cols-2 gap-3">${kpi('Today (INR)', '₹' + inr.today.toLocaleString('en-IN'), inr.count + ' payments total', 'em')}${kpi('Total (INR)', '₹' + inr.total.toLocaleString('en-IN'), '')}${kpi('Today (USDT)', usd.today, usd.count + ' payments total', 'cy')}${kpi('Total (USDT)', usd.total, '')}</div>`;
+}
+async function adminLoad() {
+  if (A.busy) return; A.busy = true;
+  try {
+    if (A.sub === 'overview') { const r = await api('/api/admin/overview'); if (r._ok) A.ov = r; }
+    else if (A.sub === 'live') await loadFeed(!A.feed.length);
+    else if (A.sub === 'users') { A.upage = 0; const r = await api('/api/admin/users?q=' + encodeURIComponent(A.uq) + '&offset=0'); if (r._ok) A.users = r; }
+    else { const r = await api('/api/admin/payments'); if (r._ok) A.pays = r.payments; }
+  } finally { A.busy = false; }
+  if (U.tab === 'admin') renderAdmin();
+}
+async function loadFeed(initial) {
+  const r = await api('/api/admin/feed?after=' + (initial ? 0 : A.lastId) + '&limit=' + (initial ? 60 : 40)); if (!r._ok) return;
+  const ev = r.events || []; if (!ev.length) return;
+  A.fresh = initial ? new Set() : new Set(ev.map(e => e.id));
+  A.feed = initial ? ev : ev.concat(A.feed).slice(0, 150);
+  A.lastId = Math.max(A.lastId, ...ev.map(e => e.id));
+}
+function startAdmin() {
+  adminLoad(); clearInterval(A.timer);
+  A.timer = setInterval(() => {
+    if (document.hidden || U.tab !== 'admin') return; A.n++;
+    if (A.sub === 'live') adminLoad(); else if (A.sub === 'overview' && A.n % 3 === 0) adminLoad(); else if (A.sub === 'payments' && A.n % 4 === 0) adminLoad();
+  }, 4000);
+}
+async function moreUsers() {
+  A.upage++; const r = await api('/api/admin/users?q=' + encodeURIComponent(A.uq) + '&offset=' + (A.upage * 30));
+  if (r._ok) { A.users.users = A.users.users.concat(r.users); A.users.total = r.total; renderAdmin(); }
+}
+
+/* ===================== Events ===================== */
+const ACTIONS = {
+  go: el => { H.sel(); go(el.dataset.t); },
+  retry: () => location.reload(),
+  master: toggleMaster,
+  smart: () => { const d = ensureDraft(); d.only_when_offline = !d.only_when_offline; H.sel(); markDirty(); renderGhost(); },
+  platform: el => { const p = el.dataset.p; H.sel(); if (p !== 'telegram' && !S.features.whatsapp) return openUpgrade(); U.platform = p; renderGhost(); },
+  toplans: () => { closeSheet(); go('plans'); },
+  closesheet: closeSheet,
+  paydone: () => { closeSheet(); go(S.account ? 'home' : 'ghost'); },
+  tpl: el => { const d = ensureDraft(), k = el.dataset.k; d.template = k; if (TEMPLATES[k]) d.default_reply = TEMPLATES[k]; H.sel(); markDirty(); renderGhost(); },
+  cool: el => { ensureDraft().cooldown_seconds = +el.dataset.c; H.sel(); markDirty(); renderGhost(); },
+  addrule: () => { const d = ensureDraft(); if (d.keyword_rules.length >= S.max_rules) { H.err(); toast(S.features.whatsapp ? 'Rule limit reached' : `Starter allows ${S.max_rules} rules. Upgrade to Pro for unlimited.`); return; } d.keyword_rules.push({ keyword: '', reply: '' }); H.light(); markDirty(); renderGhost(); },
+  delrule: el => { ensureDraft().keyword_rules.splice(+el.dataset.i, 1); H.light(); markDirty(); renderGhost(); },
+  save: saveSettings, sendcode: () => sendCode(false), resend: () => sendCode(true), verifycode: verifyCode, verify2fa: verify2fa,
+  editphone: () => { clearInterval(wizTimer); Object.assign(U.wiz, { step: 'phone', err: '', code: '' }); renderGhost(); },
+  disconnect: () => { const run = async () => { const r = await api('/api/telegram/disconnect', {}); if (r._ok) { H.ok(); toast('Account disconnected'); await loadState(); } else toast(r.error || 'Failed'); }; if (tg && tg.showConfirm) tg.showConfirm('Disconnect this Telegram account? Auto-reply will stop.', ok => ok && run()); else if (confirm('Disconnect this account?')) run(); },
+  bill: el => { U.billing = el.dataset.b; H.sel(); renderPlans(); },
+  pay: el => openPay(el.dataset.k),
+  method: el => { if (!P) return; P.method = el.dataset.m; P.err = ''; H.sel(); renderPay(); loadPayInfo(); },
+  verify: doVerify, copy: el => copy(el.dataset.v, el.dataset.l),
+  faq: el => { const n = +el.dataset.n; U.faq = U.faq === n ? -1 : n; H.light(); renderProfile(); },
+  support: () => { const url = 'https://t.me/' + S.support; if (tg && tg.openTelegramLink) tg.openTelegramLink(url); else window.open(url, '_blank'); },
+  asub: el => { A.sub = el.dataset.s; H.sel(); renderAdmin(); adminLoad(); },
+  moreusers: moreUsers
+};
+document.addEventListener('click', e => { const el = e.target.closest('[data-act]'); if (!el) return; if (el.tagName === 'A') { H.light(); return; } const f = ACTIONS[el.dataset.act]; if (f) f(el); });
+let uqT = null;
 document.addEventListener('input', e => {
   const t = e.target;
   if (t.id === 'ph') U.wiz.phone = t.value;
   else if (t.id === 'cd') { U.wiz.code = t.value.replace(/\D/g, ''); t.value = U.wiz.code; if (U.wiz.code.length === 5 && !U.wiz.busy) verifyCode(); }
   else if (t.id === 'pw') U.wiz.pw = t.value;
-  else if (t.id === 'dr') { ensureDraft().default_reply = t.value; ensureDraft().template = 'custom'; markDirty(); }
+  else if (t.id === 'dr') { const d = ensureDraft(); d.default_reply = t.value; d.template = 'custom'; markDirty(); }
   else if (t.dataset && t.dataset.rk !== undefined) { ensureDraft().keyword_rules[+t.dataset.rk].keyword = t.value; markDirty(); }
   else if (t.dataset && t.dataset.rr !== undefined) { ensureDraft().keyword_rules[+t.dataset.rr].reply = t.value; markDirty(); }
   else if (t.id === 'utr' && P) { P.utr = t.value.replace(/\D/g, ''); t.value = P.utr; }
   else if (t.id === 'txh' && P) P.tx = t.value.trim();
+  else if (t.id === 'uq') { A.uq = t.value.trim(); clearTimeout(uqT); uqT = setTimeout(async () => { const r = await api('/api/admin/users?q=' + encodeURIComponent(A.uq) + '&offset=0'); if (r._ok) { A.users = r; A.upage = 0; const box = $('#uq'); const pos = box ? box.selectionStart : 0; document.activeElement && document.activeElement.blur(); renderAdmin(); const nb = $('#uq'); if (nb) { nb.focus(); try { nb.setSelectionRange(pos, pos); } catch (x) {} } } }, 350); }
 });
 document.addEventListener('change', e => { if (e.target.id === 'cc') U.wiz.cc = e.target.value; });
+$('#bd').addEventListener('click', closeSheet);
 
+/* ===================== Boot ===================== */
 (async function () {
-  if (!INIT) return showTelegramLoginScreen();
+  if (!INIT) return showFatal('');
   const q = new URLSearchParams(location.search).get('tab');
-  if (['home', 'ghost', 'plans', 'profile'].includes(q)) U.tab = q;
-  if (await loadState()) go(U.tab);
+  const ok = await loadState(true);
+  if (!ok) return;
+  if (['home', 'ghost', 'plans', 'profile'].includes(q) || (q === 'admin' && S.is_admin)) U.tab = q;
+  go(U.tab); hideSplash();
 })();
 </script>
 </body>
