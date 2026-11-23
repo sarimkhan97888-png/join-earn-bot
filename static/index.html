@@ -104,10 +104,25 @@ table.mx{width:100%;border-collapse:collapse;font-size:12.5px}table.mx td,table.
 .fb{min-width:0;font-size:13.5px;line-height:1.45}.ft{font-size:11px;color:var(--mut2);margin-top:2px}
 .bar2{height:8px;border-radius:9px;background:rgba(255,255,255,.07);overflow:hidden}.bar2 i{display:block;height:100%;border-radius:9px;background:var(--grad)}
 .livedot{width:8px;height:8px;border-radius:50%;background:var(--em);animation:ring2 1.4s infinite}@keyframes ring2{0%{box-shadow:0 0 0 0 rgba(16,185,129,.6)}100%{box-shadow:0 0 0 10px rgba(16,185,129,0)}}
+.eye{animation:blink 3.6s infinite;transform-box:fill-box;transform-origin:center}
+.tab.on>*{animation:rise .6s cubic-bezier(.2,.8,.2,1) both}
+.tab.on>*:nth-child(1){animation-delay:.02s}.tab.on>*:nth-child(2){animation-delay:.07s}.tab.on>*:nth-child(3){animation-delay:.12s}.tab.on>*:nth-child(4){animation-delay:.17s}.tab.on>*:nth-child(5){animation-delay:.22s}.tab.on>*:nth-child(6){animation-delay:.27s}.tab.on>*:nth-child(7){animation-delay:.32s}.tab.on>*:nth-child(8){animation-delay:.37s}
+@keyframes rise{from{opacity:0;transform:translateY(18px) scale(.985)}to{opacity:1;transform:none}}
+#fl{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden}
+.fl{position:absolute;bottom:-70px;color:#C4B5FD;opacity:.06;animation:up linear infinite}
+@keyframes up{0%{transform:translateY(0) translateX(0) rotate(-6deg)}50%{transform:translateY(-60vh) translateX(22px) rotate(6deg)}100%{transform:translateY(-125vh) translateX(-14px) rotate(-4deg)}}
+#nav button.on svg{animation:bump .45s cubic-bezier(.3,1.6,.5,1)}
+@keyframes bump{0%{transform:scale(.6) translateY(4px)}100%{transform:none}}
+.btn-p.shine{animation:glow 3.2s ease-in-out infinite}
+@keyframes glow{50%{box-shadow:0 10px 34px rgba(139,92,246,.7)}}
+.sfxb{width:38px;height:38px;border-radius:50%;border:1px solid var(--line2);background:rgba(255,255,255,.05);color:var(--txt);font-size:16px;cursor:pointer;display:grid;place-items:center}
+.sfxb:active{transform:scale(.9)}
+.hero.live .hg .eye{animation-duration:2.8s}
 </style>
 </head>
 <body>
 <div id="aurora"></div>
+<div id="fl"></div>
 <div id="toast"></div>
 
 <div id="splash">
@@ -162,7 +177,7 @@ const ICONS = {
   hook: '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>'
 };
 const ic = (n, c = 'w-5 h-5') => `<svg class="${c}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICONS[n]}</svg>`;
-const GHOST = c => `<svg class="${c}" viewBox="0 0 120 130"><defs><linearGradient id="hg${c}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#818CF8"/><stop offset=".55" stop-color="#8B5CF6"/><stop offset="1" stop-color="#C084FC"/></linearGradient></defs><path d="M60 8C34 8 16 28 16 54v58l14-10 15 12 15-12 15 12 15-12 14 10V54C104 28 86 8 60 8z" fill="url(#hg${c})"/><ellipse cx="46" cy="54" rx="7" ry="9" fill="#0B1020"/><ellipse cx="74" cy="54" rx="7" ry="9" fill="#0B1020"/><path d="M52 76q8 7 16 0" stroke="#0B1020" stroke-width="4" fill="none" stroke-linecap="round"/></svg>`;
+const GHOST = c => `<svg class="${c}" viewBox="0 0 120 130"><defs><linearGradient id="hg${c}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#818CF8"/><stop offset=".55" stop-color="#8B5CF6"/><stop offset="1" stop-color="#C084FC"/></linearGradient></defs><path d="M60 8C34 8 16 28 16 54v58l14-10 15 12 15-12 15 12 15-12 14 10V54C104 28 86 8 60 8z" fill="url(#hg${c})"/><ellipse class="eye" cx="46" cy="54" rx="7" ry="9" fill="#0B1020"/><ellipse class="eye" cx="74" cy="54" rx="7" ry="9" fill="#0B1020"/><path d="M52 76q8 7 16 0" stroke="#0B1020" stroke-width="4" fill="none" stroke-linecap="round"/></svg>`;
 const skel = (n = 3) => Array.from({ length: n }, () => '<div class="sk" style="height:84px;margin-top:12px"></div>').join('');
 function toast(m) { const t = $('#toast'); t.textContent = m; t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on'), 2800); }
 async function api(path, body) {
@@ -190,7 +205,7 @@ const mb = {
 const TIPS = ['Waking up your Ghost...', 'Syncing your plan...', 'Checking your auto-reply...', 'Almost there...'];
 let tipN = 0; const tipTimer = setInterval(() => { const t = $('#tip'); if (!t) return; t.style.opacity = 0; setTimeout(() => { tipN = (tipN + 1) % TIPS.length; t.textContent = TIPS[tipN]; t.style.opacity = 1; }, 220); }, 1500);
 const splashT0 = Date.now();
-function hideSplash() { const wait = Math.max(0, 900 - (Date.now() - splashT0)); setTimeout(() => { clearInterval(tipTimer); const s = $('#splash'); s.classList.add('out'); setTimeout(() => s.remove(), 600); }, wait); }
+function hideSplash() { const wait = Math.max(0, 900 - (Date.now() - splashT0)); setTimeout(() => { SFX.play('woo'); clearInterval(tipTimer); const s = $('#splash'); s.classList.add('out'); setTimeout(() => s.remove(), 600); }, wait); }
 function showFatal(msg) {
   clearInterval(tipTimer); const inTg = !!INIT;
   $('#splash').innerHTML = `<div class="gh" style="animation:none;filter:grayscale(1) opacity(.7)">${GHOST('fx')}</div><h2 style="font-weight:800;font-size:20px;margin:18px 0 6px">${inTg ? 'Something went wrong' : 'Open inside Telegram'}</h2><p class="mut" style="font-size:14px;line-height:1.6;max-width:280px;text-align:center;margin:0">${esc(inTg ? msg : 'Profitix Ghost is a Telegram Mini App. Open it from the bot with the Open Ghost button.')}</p>${inTg ? '<button class="btn btn-p" style="margin-top:20px;width:200px" data-act="retry">Try again</button>' : ''}`;
@@ -232,13 +247,14 @@ async function loadState(first) {
 function tabs() { const t = [['home', 'Home'], ['ghost', 'Ghost'], ['plans', 'Plans'], ['profile', 'Profile']]; if (S && S.is_admin) t.push(['admin', 'Admin']); return t; }
 function renderNav() { $('#nav').innerHTML = tabs().map(([k, l]) => `<button class="${U.tab === k ? 'on' : ''}" data-act="go" data-t="${k}">${ic(k, 'w-5 h-5')}<span>${l}</span></button>`).join(''); }
 function go(t) {
-  clearInterval(W.timer); W.timer = null;
+  clearInterval(W.timer); W.timer = null; clearInterval(D.timer); D.timer = null;
   if (U.tab === 'admin' && t !== 'admin') { clearInterval(A.timer); A.timer = null; }
   U.tab = t; document.querySelectorAll('.tab').forEach(e => e.classList.toggle('on', e.id === 'tab-' + t));
   renderNav(); renderTab(t); window.scrollTo({ top: 0 });
   if (t === 'ghost' && U.dirty) mb.set('Save Auto-Reply', saveSettings); else if (!P) mb.hide();
   if (t === 'profile' && U.history === null) loadHistory();
   if (t === 'admin') startAdmin();
+  if (t === 'ghost') startDiag();
 }
 function renderAll() { renderNav(); renderTab(U.tab); }
 function renderTab(t) { ({ home: renderHome, ghost: renderGhost, plans: renderPlans, profile: renderProfile, admin: renderAdmin })[t](); }
@@ -259,7 +275,7 @@ function renderHome() {
   const sub = !active ? (st.status === 'expired' ? 'Your plan has expired. Resume in one tap.' : 'No active plan yet.') : !S.account ? 'Connect your Telegram account to go live.' : !S.settings.is_active ? 'Auto-reply is switched off.' : (S.settings.only_when_offline ? 'Smart mode: replies only when you are offline.' : 'Replying to every new chat, 24/7.');
   const a = S.account;
   $('#tab-home').innerHTML = `
-  ${engineBanner()}<div class="flex items-center justify-between mb-4"><div><p class="mut" style="font-size:13px;margin:0">Welcome back</p><h1 class="t" style="margin-top:2px">${esc(S.user.first_name || 'Ghost User')}</h1></div><span class="pill ${active ? 'pill-ok' : 'pill-bad'}">${esc(TIER[active ? st.plan : 'none'])}</span></div>
+  ${engineBanner()}<div class="flex items-center justify-between mb-4"><div><p class="mut" style="font-size:13px;margin:0">Welcome back</p><h1 class="t" style="margin-top:2px">${esc(S.user.first_name || 'Ghost User')}</h1></div><div class="flex items-center gap-2"><button class="sfxb" data-act="sfx" aria-label="Sound">${SFX.on ? '🔊' : '🔇'}</button><span class="pill ${active ? 'pill-ok' : 'pill-bad'}">${esc(TIER[active ? st.plan : 'none'])}</span></div></div>
   <div class="glass pad hero ${on ? 'live' : ''}">
     <div class="flex items-center gap-3">
       ${GHOST('hg')}
@@ -272,7 +288,7 @@ function renderHome() {
       : `<div style="width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.06);display:grid;place-items:center;flex:none" class="mut">${ic('tg')}</div><div style="flex:1"><div style="font-weight:700;font-size:14px">No Telegram account connected</div><div class="mut" style="font-size:12.5px">Link it to start auto-replying</div></div><button class="btn btn-p btn-s" data-act="go" data-t="ghost">Connect</button>`}
   </div>
   <div class="grid grid-cols-2 gap-3 mt-3">
-    <div class="glass pad"><p class="lbl" style="margin-bottom:6px">Replies Sent</p><div class="hn mono" style="font-size:28px">${Number(st.replies_sent).toLocaleString()}</div></div>
+    <div class="glass pad"><p class="lbl" style="margin-bottom:6px">Replies Sent</p><div class="hn mono" style="font-size:28px" data-count="${st.replies_sent}">${Number(st.replies_sent).toLocaleString()}</div></div>
     <div class="glass pad"><p class="lbl" style="margin-bottom:6px">Plan Time Left</p><div class="mono cd" style="font-size:${active ? 19 : 28}px;font-weight:700;padding-top:${active ? 5 : 0}px;color:${active ? 'var(--cyan)' : '#64748B'}">${cdText()}</div></div>
   </div>
   ${S.trial_eligible ? `<div class="price-card pro shine mt-4" data-act="pay" data-k="trial"><div class="flex items-center gap-3"><div style="width:48px;height:48px;border-radius:15px;background:var(--grad);display:grid;place-items:center;flex:none">${ic('bolt', 'w-6 h-6')}</div><div style="flex:1"><div style="font-weight:800;font-size:16px">Unlock 24h Starter Ghost for ₹2</div><div class="mut" style="font-size:12.5px;margin-top:3px">Telegram auto-reply · one-time trial · UPI</div></div>${ic('chev', 'w-5 h-5').replace('<svg', '<svg style="transform:rotate(-90deg)"')}</div></div>` : ''}
@@ -286,7 +302,7 @@ setInterval(() => { if (document.hidden || !S) return; api('/api/ping'); }, 4500
 setInterval(() => { if (document.hidden || !S || U.tab !== 'home' || P || $('#sheet').classList.contains('on')) return; loadState(); }, 30000);  // live reply counter
 async function toggleMaster() {
   if (S.status.status !== 'active') { H.err(); toast('Activate a plan to turn Ghost on'); return go('plans'); }
-  const next = !S.settings.is_active; S.settings.is_active = next; H.sel(); renderHome();
+  const next = !S.settings.is_active; S.settings.is_active = next; H.sel(); SFX.play(next ? 'wake' : 'sleep'); toast(next ? '👻 Ghost is awake' : '😴 Ghost is sleeping'); renderHome();
   const r = await api('/api/settings', { is_active: next });
   if (!r._ok) { S.settings.is_active = !next; toast(r.error || 'Could not update'); } else { S.settings = r.settings; S.monitoring = r.monitoring; U.draft = null; }
   renderHome();
@@ -318,13 +334,14 @@ function renderGhost() {
     }
     const max = S.max_rules;
     body = wiz + `
-    <div class="glass pad mt-3"><div class="flex items-center gap-3"><div style="font-size:26px">🛡️</div><div style="flex:1"><div style="font-weight:800;font-size:15px">Smart mode</div><div class="mut" style="font-size:12.5px;line-height:1.5;margin-top:2px">Reply only when I'm offline. Ghost stays silent while you're active in Telegram.</div></div><button class="sw ${d.only_when_offline ? 'on' : ''}" data-act="smart" aria-label="Smart mode"></button></div></div>
+    <div class="glass pad mt-3"><div class="flex items-center gap-3"><div style="font-size:26px">🛡️</div><div style="flex:1"><div style="font-weight:800;font-size:15px">Smart mode</div><div class="mut" style="font-size:12.5px;line-height:1.5;margin-top:2px">Reply only when I'm offline. Ghost stays silent while you're active in Telegram. Testing? Close Telegram on your phone first, or switch this off.</div></div><button class="sw ${d.only_when_offline ? 'on' : ''}" data-act="smart" aria-label="Smart mode"></button></div></div>
+    <div class="glass pad mt-3" id="diagBox">${diagBox()}</div>
     <div class="glass pad mt-3"><p class="lbl">Quick templates</p><div class="flex gap-2" style="overflow-x:auto;padding-bottom:2px">${[['busy', 'Busy / AFK'], ['hours', 'Business Hours'], ['sleep', 'Sleeping'], ['custom', 'Custom']].map(([k, l]) => `<button class="chip ${d.template === k ? 'on' : ''}" data-act="tpl" data-k="${k}">${l}</button>`).join('')}</div>
       <p class="lbl" style="margin-top:16px">Default reply</p><textarea id="dr" class="inp" maxlength="1000" placeholder="What should Ghost reply?">${esc(d.default_reply)}</textarea></div>
     <div class="glass pad mt-3"><div class="flex items-center justify-between"><p class="lbl" style="margin:0">Keyword rules</p><span class="mut mono" style="font-size:11px">${d.keyword_rules.length}/${S.features.whatsapp ? '∞' : max}</span></div>
       <div id="rules">${d.keyword_rules.map((r, i) => ruleHtml(r, i)).join('') || '<p class="mut" style="font-size:13px;margin:12px 0 0">No rules yet. Add one to reply differently when a message contains a word.</p>'}</div>
       <button class="btn btn-g mt-3" data-act="addrule">${ic('plus')} Add rule</button></div>
-    <div class="glass pad mt-3"><p class="lbl">Per-contact cooldown</p><div class="seg">${S.allowed_cooldowns.map(c => `<button class="${d.cooldown_seconds === c ? 'on' : ''}" data-act="cool" data-c="${c}">${c === 300 ? '5m' : c === 900 ? '15m' : '1h'}</button>`).join('')}</div><p class="mut" style="font-size:12px;margin:10px 0 0">Ghost replies once per contact in this window, so nobody gets spammed.</p></div>
+    <div class="glass pad mt-3"><p class="lbl">Per-contact cooldown</p><div class="seg">${S.allowed_cooldowns.map(c => `<button class="${d.cooldown_seconds === c ? 'on' : ''}" data-act="cool" data-c="${c}">${c === 60 ? '1m' : c === 300 ? '5m' : c === 900 ? '15m' : '1h'}</button>`).join('')}</div><p class="mut" style="font-size:12px;margin:10px 0 0">Ghost replies once per contact in this window, so nobody gets spammed.</p></div>
     <button id="saveBtn" class="btn btn-p mt-3" data-act="save" ${U.dirty ? '' : 'disabled'}>Save Auto-Reply</button>`;
   }
   $('#tab-ghost').innerHTML = `<h1 class="t" style="margin-bottom:14px">Automation Studio</h1><div class="seg mb-3">${pt('telegram', 'Telegram', 'tg', false)}${pt('whatsapp', 'WhatsApp', 'wa', !pro)}${pt('webhooks', 'Webhooks', 'hook', !pro)}</div>${body}`;
@@ -367,7 +384,7 @@ async function verify2fa() {
 async function afterConnect(r) {
   const w = U.wiz;
   if (r._ok && r.status === '2fa_required') { w.step = '2fa'; w.pw = ''; H.light(); return renderGhost(); }
-  if (r._ok && r.status === 'connected') { clearInterval(wizTimer); Object.assign(w, { step: 'phone', code: '', pw: '', err: '', phone: '' }); H.ok(); toast('Telegram connected 🎉'); await loadState(); return; }
+  if (r._ok && r.status === 'connected') { clearInterval(wizTimer); Object.assign(w, { step: 'phone', code: '', pw: '', err: '', phone: '' }); H.ok(); SFX.play('woo'); toast('Telegram connected 🎉'); await loadState(); return; }
   w.err = r.error || 'Verification failed.'; H.err();
   if (r.code === 'code_expired') w.step = 'code'; if (r.code === 'trial_account_used') w.step = 'phone';
   renderGhost();
@@ -433,7 +450,7 @@ async function doVerify() {
   P.busy = true; P.err = ''; renderPay(); if (tg && tg.MainButton.showProgress) tg.MainButton.showProgress();
   const r = await api(url, body); if (tg && tg.MainButton.hideProgress) tg.MainButton.hideProgress();
   if (!P) return; P.busy = false;
-  if (r._ok && r.status === 'ok') { P.done = r.expires_at; H.ok(); mb.hide(); U.history = null; renderPay(); confetti(); loadState(); }
+  if (r._ok && r.status === 'ok') { P.done = r.expires_at; H.ok(); SFX.play('chime'); mb.hide(); U.history = null; renderPay(); confetti(); loadState(); }
   else { P.err = r.error || 'Verification failed.'; H.err(); renderPay(); }
 }
 function confetti() {
@@ -549,6 +566,118 @@ async function moreUsers() {
   if (r._ok) { A.users.users = A.users.users.concat(r.users); A.users.total = r.total; renderAdmin(); }
 }
 
+/* ===================== SOUND (synthesised ghost voice, no audio files) ===================== */
+const SFX = {
+  ctx: null, on: true,
+  init() { try { this.on = localStorage.getItem('ghost_sfx') !== '0'; } catch (e) {} },
+  set(v) { this.on = v; try { localStorage.setItem('ghost_sfx', v ? '1' : '0'); } catch (e) {} },
+  c() { try { if (!this.ctx) { const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return null; this.ctx = new AC(); } if (this.ctx.state === 'suspended') this.ctx.resume(); return this.ctx; } catch (e) { return null; } },
+  play(kind) {
+    if (!this.on) return; const c = this.c(); if (!c || c.state !== 'running') return;
+    const t = c.currentTime, out = c.createGain(), dly = c.createDelay(), fb = c.createGain();
+    out.gain.value = 0.9; dly.delayTime.value = 0.23; fb.gain.value = 0.38;
+    dly.connect(fb); fb.connect(dly); out.connect(c.destination); out.connect(dly); dly.connect(c.destination);   // spooky echo
+    const woo = (from, to, dur, vol, at = 0) => {
+      const o = c.createOscillator(), o2 = c.createOscillator(), g = c.createGain(), f = c.createBiquadFilter(), lfo = c.createOscillator(), lg = c.createGain(), s0 = t + at;
+      o.type = 'sine'; o2.type = 'triangle'; f.type = 'lowpass'; f.frequency.value = 1100; o2.detune.value = 8;
+      o.frequency.setValueAtTime(from, s0); o.frequency.exponentialRampToValueAtTime(to, s0 + dur);
+      o2.frequency.setValueAtTime(from * 1.5, s0); o2.frequency.exponentialRampToValueAtTime(to * 1.5, s0 + dur);
+      lfo.frequency.value = 6; lg.gain.value = from * 0.04; lfo.connect(lg); lg.connect(o.frequency); lg.connect(o2.frequency);   // wobble
+      g.gain.setValueAtTime(0.0001, s0); g.gain.exponentialRampToValueAtTime(vol, s0 + dur * 0.25); g.gain.exponentialRampToValueAtTime(0.0001, s0 + dur);
+      o.connect(f); o2.connect(f); f.connect(g); g.connect(out);
+      [o, o2, lfo].forEach(x => { x.start(s0); x.stop(s0 + dur + 0.05); });
+    };
+    const blip = (freq, at, dur, vol, type = 'sine') => {
+      const o = c.createOscillator(), g = c.createGain(), s0 = t + at; o.type = type; o.frequency.value = freq;
+      g.gain.setValueAtTime(0.0001, s0); g.gain.exponentialRampToValueAtTime(vol, s0 + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, s0 + dur);
+      o.connect(g); g.connect(out); o.start(s0); o.stop(s0 + dur + 0.05);
+    };
+    switch (kind) {
+      case 'woo': woo(300, 620, 1.2, 0.3); break;
+      case 'wake': woo(260, 720, 0.9, 0.28); break;
+      case 'sleep': woo(540, 190, 1.0, 0.25); break;
+      case 'boo': woo(170, 110, 0.5, 0.4); break;
+      case 'chime': blip(784, 0, 0.35, 0.18); blip(1175, 0.12, 0.5, 0.18); woo(330, 660, 0.9, 0.14, 0.1); break;
+      case 'tick': blip(660, 0, 0.05, 0.05, 'triangle'); break;
+      case 'err': blip(180, 0, 0.25, 0.18, 'sawtooth'); break;
+    }
+    setTimeout(() => { try { out.disconnect(); dly.disconnect(); fb.disconnect(); } catch (e) {} }, 3800);
+  }
+};
+SFX.init();
+document.addEventListener('pointerdown', () => SFX.c(), { once: true });   // browsers only allow audio after a tap
+
+/* ===================== GHOST ACTIVITY (why did / didn't it reply) ===================== */
+const D = { events: [], engine: true, plan: true, account: true, on: true, smart: true, testing: false, timer: null };
+const DIAG = {
+  sent: ['✅', 'Replied to a contact'],
+  owner_status_online: ['🟢', 'Skipped: Telegram shows you ONLINE'],
+  owner_active: ['🟢', 'Skipped: you were active a moment ago'],
+  owner_read: ['👀', 'Skipped: you already read that message'],
+  owner_replied: ['💬', 'Skipped: you already replied yourself'],
+  cooldown: ['⏱️', 'Skipped: that contact is in cooldown'],
+  paused: ['⏸️', 'Skipped: auto-reply is switched OFF'],
+  no_reply_text: ['📝', 'Skipped: no reply text is set'],
+  webhook_skip: ['🔗', 'Skipped: your webhook said skip'],
+  sent_to_saved_messages: ['🧪', 'Test message delivered to your Saved Messages'],
+  not_running: ['⚠️', 'Test failed: Ghost is not running for your account yet'],
+  session_invalid: ['⚠️', 'Telegram session expired, reconnect your account']
+};
+function diagText(e) {
+  if (DIAG[e.reason] && e.outcome !== 'error') return DIAG[e.reason];
+  if (e.outcome === 'error') return ['⚠️', 'Send failed: ' + e.reason];
+  if (e.outcome === 'test_failed') return ['⚠️', 'Test failed: ' + e.reason];
+  return ['•', e.reason];
+}
+function diagBox() {
+  const chip = (ok, t) => `<span class="pill ${ok ? 'pill-ok' : 'pill-bad'}">${t}</span>`;
+  const rows = D.events.length ? D.events.map(e => { const t = diagText(e); return `<div class="fr"><div class="fi">${t[0]}</div><div class="fb"><div>${esc(t[1])}</div><div class="ft">${ago(e.created_at)}${e.platform === 'whatsapp' ? ' · WhatsApp' : ''}</div></div></div>`; }).join('') : '<p class="mut" style="font-size:12.5px;margin:12px 0 0;line-height:1.6">Nothing yet. Message your account from another Telegram account and Ghost shows here why it replied or stayed silent.</p>';
+  return `<div class="flex items-center justify-between"><p class="lbl" style="margin:0">Ghost activity</p><span class="flex items-center gap-2 mut" style="font-size:11px"><span class="livedot"></span>live</span></div>
+  <div class="flex flex-wrap gap-2 mt-3">${chip(D.engine, D.engine ? 'ENGINE ONLINE' : 'ENGINE OFFLINE')}${chip(D.plan, D.plan ? 'PLAN ACTIVE' : 'NO PLAN')}${chip(D.account, D.account ? 'ACCOUNT LINKED' : 'NOT LINKED')}${chip(D.on, D.on ? 'AUTO-REPLY ON' : 'AUTO-REPLY OFF')}</div>
+  <div style="margin-top:6px">${rows}</div>
+  <button class="btn btn-g mt-3" data-act="testreply" ${D.testing ? 'disabled' : ''}>${D.testing ? 'Sending test...' : '🧪 Send test to my Saved Messages'}</button>`;
+}
+function paintDiag() { const b = $('#diagBox'); if (b) b.innerHTML = diagBox(); }
+async function loadDiag() {
+  const r = await api('/api/diagnostics'); if (!r._ok) return;
+  D.events = r.events; D.engine = r.engine_online; D.plan = r.plan_active; D.account = r.account; D.on = r.auto_reply_on; D.smart = r.smart; paintDiag();
+}
+function startDiag() { clearInterval(D.timer); loadDiag(); D.timer = setInterval(() => { if (document.hidden || U.tab !== 'ghost' || U.platform !== 'telegram') return; loadDiag(); }, 5000); }
+async function testReply() {
+  if (D.testing) return; D.testing = true; paintDiag();
+  const r = await api('/api/test-reply', {});
+  if (!r._ok) { D.testing = false; paintDiag(); H.err(); SFX.play('err'); return toast(r.error || 'Could not start the test'); }
+  toast(r.engine_online ? 'Test queued...' : 'Engine is offline, the test runs when it is back');
+  for (const wait of [3000, 3000, 4000]) {
+    await new Promise(res => setTimeout(res, wait)); await loadDiag();
+    if (D.events[0] && (D.events[0].outcome === 'test_ok' || D.events[0].outcome === 'test_failed') && Date.now() - new Date(D.events[0].created_at).getTime() < 30000) break;
+  }
+  D.testing = false; paintDiag();
+  if (D.events[0] && D.events[0].outcome === 'test_ok') { H.ok(); SFX.play('boo'); toast('👻 Test delivered, check Saved Messages'); }
+}
+
+/* ===================== MOTION: count-up + floating ghosts ===================== */
+let lastCount = 0;
+function animateCounts() {
+  document.querySelectorAll('[data-count]').forEach(el => {
+    const to = Number(el.dataset.count) || 0, from = lastCount; lastCount = to; if (from === to) return;
+    const t0 = performance.now(), dur = 800;
+    const step = now => { const k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 3); el.textContent = Math.round(from + (to - from) * e).toLocaleString(); if (k < 1) requestAnimationFrame(step); };
+    requestAnimationFrame(step);
+  });
+}
+const _renderHome = renderHome; renderHome = function () { _renderHome(); animateCounts(); };
+(function floaters() {
+  const box = $('#fl'); if (!box) return;
+  for (let n = 0; n < 7; n++) {
+    const e = document.createElement('div'), size = 26 + Math.random() * 34;
+    e.className = 'fl'; e.style.left = (6 + n * 13 + Math.random() * 6) + 'vw'; e.style.width = size + 'px';
+    e.style.animationDuration = (20 + Math.random() * 18) + 's'; e.style.animationDelay = (-Math.random() * 30) + 's';
+    e.innerHTML = '<svg viewBox="0 0 120 130"><path d="M60 8C34 8 16 28 16 54v58l14-10 15 12 15-12 15 12 15-12 14 10V54C104 28 86 8 60 8z" fill="currentColor"/></svg>';
+    box.appendChild(e);
+  }
+})();
+
 /* ===================== WHATSAPP + WEBHOOKS (Pro) ===================== */
 async function ensurePlatformData() {
   if (W.loading) return; W.loading = true;
@@ -647,7 +776,9 @@ async function hookTest() {
 
 /* ===================== Events ===================== */
 const ACTIONS = {
-  go: el => { H.sel(); go(el.dataset.t); },
+  go: el => { H.sel(); SFX.play('tick'); go(el.dataset.t); },
+  sfx: () => { SFX.set(!SFX.on); if (SFX.on) SFX.play('woo'); H.sel(); renderHome(); },
+  testreply: testReply,
   retry: () => location.reload(),
   master: toggleMaster,
   smart: () => { const d = ensureDraft(); d.only_when_offline = !d.only_when_offline; H.sel(); markDirty(); renderGhost(); },
