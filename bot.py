@@ -5,7 +5,10 @@ Opens the Mini App and sends the "Pay Rs.49/mo to Resume Instantly" message on e
 import logging
 from typing import Optional
 
-from aiogram import Bot, Dispatcher, Router
+import html
+import re
+
+from aiogram import Bot, Dispatcher, F, Router
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.exceptions import TelegramAPIError, TelegramForbiddenError
@@ -91,7 +94,7 @@ async def cmd_status(message: Message) -> None:
 async def cmd_help(message: Message) -> None:
     await message.answer(
         "<b>Commands</b>\n/start - open the app\n/status - plan and reply stats\n/help - this message\n\n"
-        f"Support: @{config.SUPPORT_USERNAME}",
+        + ("Support: open the app and tap Contact Support." if not config.SUPPORT_USERNAME else f"Support: @{config.SUPPORT_USERNAME}"),
         reply_markup=open_app_keyboard(),
     )
 
@@ -164,3 +167,59 @@ async def close_bot() -> None:
             await _bot.session.close()
         finally:
             _bot = None
+
+
+# ------------------------------------------------------------------ receipts + admin alerts
+async def _send(chat_id: int, text: str, keyboard: Optional[InlineKeyboardMarkup] = None) -> bool:
+    bot = get_bot()
+    if not bot or not chat_id:
+        return False
+    try:
+        await bot.send_message(chat_id, text, reply_markup=keyboard)
+        return True
+    except TelegramAPIError:
+        return False
+
+
+async def notify_payment(user_id: int, plan_name: str, expires_iso: Optional[str]) -> bool:
+    """Instant receipt after a verified payment."""
+    until = ""
+    if expires_iso:
+        try:
+            from datetime import datetime
+            until = f"\nActive until <b>{datetime.fromisoformat(expires_iso).strftime('%d %b %Y')}</b>."
+        except ValueError:
+            until = ""
+    return await _send(
+        user_id,
+        f"✅ <b>Payment received</b>\n{plan_name} is now active.{until}\n\nThank you for choosing Profitix Ghost!",
+        open_app_keyboard("Open Profitix Ghost"),
+    )
+
+
+async def notify_admin(text: str) -> bool:
+    return await _send(config.ADMIN_ID, text, open_app_keyboard("Open Admin Panel", "admin"))
+
+
+# ------------------------------------------------------------------ support inbox (user -> admin -> user)
+async def send_admin(text: str) -> bool:
+    return await _send(config.ADMIN_ID, text)
+
+
+@router.message(F.reply_to_message)
+async def admin_reply_relay(message: Message) -> None:
+    """The admin replies to a "Support" message and the bot delivers the answer to that user."""
+    if not message.from_user or not config.ADMIN_ID or message.from_user.id != config.ADMIN_ID:
+        return
+    original = message.reply_to_message
+    raw = (original.text or original.caption or "") if original else ""
+    match = re.search(r"ID:\s*(\d{5,})", raw)
+    text = message.text or message.caption or ""
+    if "Support" not in raw or not match or not text or text.startswith("/"):
+        return
+    delivered = await _send(
+        int(match.group(1)),
+        f"💬 <b>Support reply</b>\n\n{html.escape(text)}",
+        open_app_keyboard("Open Profitix Ghost"),
+    )
+    await message.reply("✅ Sent to the user." if delivered else "❌ Could not deliver (the user may have blocked the bot).")

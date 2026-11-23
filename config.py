@@ -47,7 +47,7 @@ DATABASE_URL = _env("DATABASE_URL")
 WEBAPP_URL = _env("WEBAPP_URL").rstrip("/")
 PORT = _env_int("PORT", 7860)
 ADMIN_ID = _env_int("ADMIN_ID", 0)
-SUPPORT_USERNAME = _env("SUPPORT_USERNAME", "support").lstrip("@")
+SUPPORT_USERNAME = _env("SUPPORT_USERNAME", "").lstrip("@")  # optional: direct chat link in the support popup
 
 # Set ENABLE_WORKER=false on Render (512MB) when Kaggle (30GB) runs worker.py
 ENABLE_WORKER = _env_bool("ENABLE_WORKER", True)

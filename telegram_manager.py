@@ -14,6 +14,8 @@ from collections import defaultdict
 from dataclasses import dataclass
 from typing import Dict, Optional
 
+import telethon.errors as _tg_errors
+from telethon.tl.functions.auth import ResendCodeRequest
 from telethon.errors import (
     ApiIdInvalidError,
     FloodWaitError,
@@ -36,6 +38,20 @@ import worker
 log = logging.getLogger("telegram_manager")
 
 MIN_RESEND_GAP = 25  # seconds; the UI enforces 60s, this is the server-side guard
+
+
+_SEND_UNAVAILABLE = getattr(_tg_errors, "SendCodeUnavailableError", ())
+
+
+def _delivery(sent) -> str:
+    name = sent.type.__class__.__name__ if getattr(sent, "type", None) else ""
+    if "App" in name:
+        return "app"
+    if "Sms" in name:
+        return "sms"
+    if "Call" in name:
+        return "call"
+    return "other"
 
 
 class TGError(Exception):
@@ -95,9 +111,13 @@ def _map_error(exc: Exception) -> TGError:
         return TGError("not_registered", "This number is not registered on Telegram.")
     if isinstance(exc, ApiIdInvalidError):
         return TGError("server_config", "Server Telegram API credentials are invalid.", 500)
+    if _SEND_UNAVAILABLE and isinstance(exc, _SEND_UNAVAILABLE):
+        return TGError("no_more_methods", "No more ways to send the code right now. Wait a few minutes and try again.", 429)
+    if isinstance(exc, (asyncio.TimeoutError, ConnectionError, OSError)):
+        return TGError("network", "Could not reach Telegram right now. Please try again in a moment.", 503)
     if isinstance(exc, RPCError):
         return TGError("telegram_error", f"Telegram error: {exc.__class__.__name__}", 502)
-    return TGError("server_error", "Something went wrong. Please try again.", 500)
+    return TGError("server_error", f"Could not complete this step ({exc.__class__.__name__}). Please try again.", 500)
 
 
 async def _safe_disconnect(client) -> None:
@@ -123,31 +143,48 @@ async def _require_active_plan(user_id: int) -> dict:
 
 
 # ------------------------------------------------------------------ public API
-async def send_code(user_id: int, raw_phone: str) -> dict:
+async def send_code(user_id: int, raw_phone: str, resend: bool = False) -> dict:
     phone = normalize_phone(raw_phone)
     await _require_active_plan(user_id)
     if not config.API_ID or not config.API_HASH:
         raise TGError("server_config", "Telegram API credentials are not configured.", 500)
 
     async with _user_locks[user_id]:
-        existing = _pending.get(_key(user_id, phone))
+        key = _key(user_id, phone)
+        existing = _pending.get(key)
         if existing and time.time() - existing.created < MIN_RESEND_GAP:
             raise TGError("too_fast", "Please wait a few seconds before requesting another code.", 429)
+
+        if resend and existing:  # ask Telegram for the NEXT delivery method (app -> SMS -> call)
+            try:
+                sent = await asyncio.wait_for(
+                    existing.client(ResendCodeRequest(phone, existing.phone_code_hash)), 25
+                )
+                existing.phone_code_hash = sent.phone_code_hash
+                existing.created = time.time()
+                return {
+                    "status": "code_sent", "phone": phone, "delivery": _delivery(sent),
+                    "expires_in": config.OTP_CACHE_TTL_SECONDS, "resend_after": 60,
+                }
+            except Exception as exc:
+                log.info("ResendCodeRequest failed (%s), requesting a fresh code", exc.__class__.__name__)
 
         await _drop_user_pending(user_id)
         client = worker.new_client()
         try:
-            await client.connect()
-            sent = await client.send_code_request(phone)
+            await asyncio.wait_for(client.connect(), 20)
+            sent = await asyncio.wait_for(client.send_code_request(phone), 25)
         except Exception as exc:
             await _safe_disconnect(client)
             err = _map_error(exc)
-            if err.code in ("server_error", "telegram_error"):
-                log.exception("send_code failed for user %s", user_id)
+            log.warning("send_code failed for user %s: %s (%s)", user_id, exc.__class__.__name__, err.code)
             raise err from exc
 
-        _pending[_key(user_id, phone)] = Pending(client, sent.phone_code_hash, phone, time.time())
-    return {"status": "code_sent", "phone": phone, "expires_in": config.OTP_CACHE_TTL_SECONDS, "resend_after": 60}
+        _pending[key] = Pending(client, sent.phone_code_hash, phone, time.time())
+    return {
+        "status": "code_sent", "phone": phone, "delivery": _delivery(sent),
+        "expires_in": config.OTP_CACHE_TTL_SECONDS, "resend_after": 60,
+    }
 
 
 async def verify_code(user_id: int, raw_phone: str, code: str) -> dict:

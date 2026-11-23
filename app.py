@@ -10,6 +10,7 @@ import asyncio
 import hashlib
 import hmac
 import json
+import html as _html
 import logging
 import re
 import secrets
@@ -24,7 +25,7 @@ from urllib.parse import parse_qsl
 import uvicorn
 from fastapi import Depends, FastAPI, Header, Query, Request
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -247,6 +248,11 @@ async def _monitoring(uid: int, settings: dict, status: Optional[dict] = None, h
 # ------------------------------------------------------------------ request models
 class PhoneIn(BaseModel):
     phone: str = Field(min_length=5, max_length=25)
+    resend: bool = False
+
+
+class SupportIn(BaseModel):
+    message: str = Field(min_length=3, max_length=800)
 
 
 class CodeIn(PhoneIn):
@@ -355,6 +361,7 @@ async def api_state(opened: int = Query(0, alias="open"), user: dict = Depends(c
         "max_rules": MAX_RULES_PRO if config.tier_has(tier, "unlimited_rules") else config.MAX_RULES_LIMITED,
         "trial_eligible": eligible,
         "support": config.SUPPORT_USERNAME,
+        "support_ready": bool(config.ADMIN_ID and config.BOT_TOKEN),
         "allowed_cooldowns": list(config.ALLOWED_COOLDOWNS),
     }
 
@@ -405,7 +412,7 @@ async def api_settings(body: SettingsIn, user: dict = Depends(current_user)):
 async def api_send_code(body: PhoneIn, user: dict = Depends(current_user)):
     uid = int(user["id"])
     try:
-        result = await telegram_manager.send_code(uid, body.phone)
+        result = await telegram_manager.send_code(uid, body.phone, body.resend)
     except TGError as exc:
         await track(uid, "tg_connect_failed", step="send_code", code=exc.code)
         raise
@@ -529,6 +536,66 @@ async def api_verify_usdt(body: UsdtVerifyIn, user: dict = Depends(current_user)
 @app.get("/api/payments")
 async def api_payments(user: dict = Depends(current_user)):
     return {"status": "ok", "payments": await db.list_payments(int(user["id"]), 20)}
+
+
+# ------------------------------------------------------------------ UPI launcher page (opens in the phone's real browser)
+_PAY_PAGE = """<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>Pay __AMOUNT__ - Profitix Ghost</title>
+<style>*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;background:#060912;color:#F8FAFC;font-family:system-ui,sans-serif;padding:18px}
+.c{width:100%;max-width:380px;background:#0E1424;border:1px solid rgba(255,255,255,.1);border-radius:24px;padding:26px 20px;text-align:center}
+.g{font-size:44px}h1{margin:6px 0 2px;font-size:26px}p{color:#94A3B8;margin:4px 0 16px;font-size:14px;line-height:1.5}
+a,button{display:block;width:100%;border:0;border-radius:14px;padding:14px;margin-top:10px;font-weight:700;font-size:15px;color:#fff;text-decoration:none;background:rgba(255,255,255,.08);cursor:pointer}
+a.m{background:linear-gradient(135deg,#6366F1,#8B5CF6)}.r{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}.r a{margin-top:10px;padding:12px 4px;font-size:13px}
+.i{margin-top:16px;font-family:monospace;font-size:13px;word-break:break-all;color:#C4B5FD}</style></head><body><div class="c">
+<div class="g">&#128123;</div><h1>Pay __AMOUNT__</h1><p>__PLAN__ &middot; Profitix Ghost<br>Opening your UPI app...</p>
+<a class="m" href="__UPI__">Open my UPI app</a>
+<div class="r"><a href="__GPAY__">GPay</a><a href="__PHONEPE__">PhonePe</a><a href="__PAYTM__">Paytm</a></div>
+<div class="i" id="id">__ID__</div><button onclick="navigator.clipboard&&navigator.clipboard.writeText(document.getElementById('id').textContent);this.textContent='Copied'">Copy UPI ID</button>
+<p style="margin-top:18px">After paying, go back to Telegram and enter the 12-digit UTR from your payment app.</p></div>
+<script>setTimeout(function(){location.href=__JSLINK__},450)</script></body></html>"""
+
+
+@app.get("/pay", include_in_schema=False)
+async def pay_page(plan: str = Query(..., max_length=30)):
+    data = payment.build_upi_apps(plan)
+    if not data:
+        return HTMLResponse("<h3 style='font-family:sans-serif'>This payment link is not available.</h3>", status_code=404)
+    esc = lambda value: _html.escape(value, quote=True)
+    links = data["links"]
+    page = (
+        _PAY_PAGE.replace("__AMOUNT__", f"&#8377;{data['amount']}").replace("__PLAN__", esc(data["plan_name"]))
+        .replace("__UPI__", esc(links["upi"])).replace("__GPAY__", esc(links["gpay"]))
+        .replace("__PHONEPE__", esc(links["phonepe"])).replace("__PAYTM__", esc(links["paytm"]))
+        .replace("__ID__", esc(data["upi_id"])).replace("__JSLINK__", json.dumps(links["upi"]))
+    )
+    return HTMLResponse(page, headers={"Cache-Control": "no-store"})
+
+
+# ------------------------------------------------------------------ support inbox
+_last_support: Dict[int, float] = {}
+
+
+@app.post("/api/support")
+async def api_support(body: SupportIn, user: dict = Depends(current_user)):
+    """Forwards the user's message to the admin through the bot (the admin answers by replying to it)."""
+    uid = int(user["id"])
+    if not (config.ADMIN_ID and config.BOT_TOKEN):
+        raise ApiError(503, "The support inbox is not set up yet.", "not_configured")
+    if time.time() - _last_support.get(uid, 0) < 30:
+        raise ApiError(429, "Please wait a few seconds before sending another message.", "rate_limited")
+    status = await db.get_status(uid)
+    name = _html.escape(user.get("first_name") or "User")
+    handle = ("@" + user["username"]) if user.get("username") else "no username"
+    sent = await bot_module.send_admin(
+        f"🆘 <b>Support</b>\nFrom: {name} ({_html.escape(handle)})\n"
+        f"ID: <code>{uid}</code> · Plan: {status['plan']} ({status['status']})\n\n"
+        f"{_html.escape(body.message.strip())}\n\n<i>Reply to this message to answer the user.</i>"
+    )
+    if not sent:
+        raise ApiError(502, "Could not reach support right now. Please try again in a moment.", "send_failed")
+    _last_support[uid] = time.time()
+    await track(uid, "support_message")
+    return {"status": "ok"}
 
 
 # ------------------------------------------------------------------ diagnostics ("why did / didn't Ghost reply?")

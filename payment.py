@@ -78,6 +78,28 @@ def upi_deep_link(amount: int, note: str = "Profitix Ghost") -> str:
     )
 
 
+def build_upi_apps(plan_key: str) -> Optional[dict]:
+    """Deep links for the https /pay page (a real browser launches UPI apps; Telegram's webview cannot)."""
+    plan = config.get_plan(plan_key)
+    if not plan or not config.UPI_ID:
+        return None
+    query = (
+        f"pa={quote(config.UPI_ID, safe='@.')}&pn={quote(config.UPI_PAYEE_NAME)}"
+        f"&am={plan.inr}.00&cu=INR&tn={quote('Profitix ' + plan.name)}"
+    )
+    return {
+        "plan_name": plan.name,
+        "amount": plan.inr,
+        "upi_id": config.UPI_ID,
+        "links": {
+            "upi": f"upi://pay?{query}",
+            "gpay": f"tez://upi/pay?{query}",
+            "phonepe": f"phonepe://pay?{query}",
+            "paytm": f"paytmmp://pay?{query}",
+        },
+    }
+
+
 def build_upi_payload(plan_key: str) -> Optional[dict]:
     plan = config.get_plan(plan_key)
     if not plan:
