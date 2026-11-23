@@ -201,6 +201,7 @@ let S = null, P = null, endTs = 0, wizTimer = null;
 const U = { tab: 'home', platform: 'telegram', billing: 'monthly', draft: null, dirty: false, history: null, faq: -1,
   wiz: { step: 'phone', cc: '+91', phone: '', code: '', pw: '', full: '', err: '', busy: false, resend: 0 } };
 const A = { sub: 'overview', ov: null, feed: [], lastId: 0, fresh: new Set(), users: null, uq: '', upage: 0, pays: null, timer: null, n: 0, busy: false };
+const W = { loaded: false, loading: false, wa: null, hook: null, hd: null, engine: true, cc: '+91', phone: '', busy: false, err: '', timer: null, test: null, saving: false };
 const COUNTRIES = [['🇮🇳 India', '+91'], ['🇺🇸 USA / Canada', '+1'], ['🇬🇧 UK', '+44'], ['🇦🇪 UAE', '+971'], ['🇸🇦 Saudi Arabia', '+966'], ['🇵🇰 Pakistan', '+92'], ['🇧🇩 Bangladesh', '+880'], ['🇳🇵 Nepal', '+977'], ['🇱🇰 Sri Lanka', '+94'], ['🇮🇩 Indonesia', '+62'], ['🇲🇾 Malaysia', '+60'], ['🇸🇬 Singapore', '+65'], ['🇳🇬 Nigeria', '+234'], ['🇿🇦 South Africa', '+27'], ['🇧🇷 Brazil', '+55'], ['🇷🇺 Russia', '+7'], ['🇹🇷 Turkey', '+90'], ['🇩🇪 Germany', '+49'], ['🇫🇷 France', '+33'], ['🇦🇺 Australia', '+61']];
 const TEMPLATES = {
   busy: "Hi! I'm busy / away from my phone right now and will get back to you as soon as I can. 🙏",
@@ -212,6 +213,8 @@ const FAQ = [
   ['When does Ghost reply?', 'With Smart mode ON, Ghost waits a few seconds and replies only if you are offline: it stays silent when you are active in Telegram, read the message, or already answered it.'],
   ['How does the ₹2 trial work?', 'You get 24 hours of Telegram auto-reply for ₹2 via UPI. It can be claimed once per Telegram user, once per payer UPI ID and once per connected Telegram account.'],
   ['My payment is not detected', 'Bank alerts can take 1-2 minutes. Make sure you paid the exact plan amount, typed the correct 12-digit UTR, and for USDT used the BEP20 network with the exact amount.'],
+  ['Is WhatsApp safe to use?', 'WhatsApp linking uses the unofficial linked-device protocol (like WhatsApp Web). Automation can put a number at risk of restrictions, so keep replies short, avoid bulk messaging and use a number you can afford to lose.'],
+  ['How do webhooks work?', 'Ghost POSTs every new message to your URL as signed JSON. If you enable "Let my webhook decide the reply", answer with {"reply":"text"} to send it or {"skip":true} to stay silent.'],
   ['How do I stop or remove it?', 'Use the master switch on Home to pause, or press Disconnect in the Ghost tab to log the session out completely.']
 ];
 const planBy = k => (S && S.plans.find(p => p.key === k)) || null;
@@ -229,6 +232,7 @@ async function loadState(first) {
 function tabs() { const t = [['home', 'Home'], ['ghost', 'Ghost'], ['plans', 'Plans'], ['profile', 'Profile']]; if (S && S.is_admin) t.push(['admin', 'Admin']); return t; }
 function renderNav() { $('#nav').innerHTML = tabs().map(([k, l]) => `<button class="${U.tab === k ? 'on' : ''}" data-act="go" data-t="${k}">${ic(k, 'w-5 h-5')}<span>${l}</span></button>`).join(''); }
 function go(t) {
+  clearInterval(W.timer); W.timer = null;
   if (U.tab === 'admin' && t !== 'admin') { clearInterval(A.timer); A.timer = null; }
   U.tab = t; document.querySelectorAll('.tab').forEach(e => e.classList.toggle('on', e.id === 'tab-' + t));
   renderNav(); renderTab(t); window.scrollTo({ top: 0 });
@@ -245,13 +249,17 @@ function cdText() {
   const s = Math.floor(ms / 1000), d = Math.floor(s / 86400), h = Math.floor(s % 86400 / 3600), m = Math.floor(s % 3600 / 60), x = s % 60, p = n => String(n).padStart(2, '0');
   return d > 0 ? `${d}d ${p(h)}h ${p(m)}m` : `${p(h)}:${p(m)}:${p(x)}`;
 }
+function engineBanner() {
+  if (!S || S.engine_online !== false || S.status.status !== 'active' || !(S.account || false)) return '';
+  return `<div class="glass pad mb-3" style="border-color:rgba(251,191,36,.4)"><div style="font-size:13px;line-height:1.5">⚠️ <b>Auto-reply engine is restarting.</b> Replies resume automatically in a moment, you do not need to do anything.</div></div>`;
+}
 function renderHome() {
   const st = S.status, active = st.status === 'active', on = active && S.settings.is_active && !!S.account;
   const label = on ? 'ONLINE & MONITORING' : 'PAUSED / EXPIRED';
   const sub = !active ? (st.status === 'expired' ? 'Your plan has expired. Resume in one tap.' : 'No active plan yet.') : !S.account ? 'Connect your Telegram account to go live.' : !S.settings.is_active ? 'Auto-reply is switched off.' : (S.settings.only_when_offline ? 'Smart mode: replies only when you are offline.' : 'Replying to every new chat, 24/7.');
   const a = S.account;
   $('#tab-home').innerHTML = `
-  <div class="flex items-center justify-between mb-4"><div><p class="mut" style="font-size:13px;margin:0">Welcome back</p><h1 class="t" style="margin-top:2px">${esc(S.user.first_name || 'Ghost User')}</h1></div><span class="pill ${active ? 'pill-ok' : 'pill-bad'}">${esc(TIER[active ? st.plan : 'none'])}</span></div>
+  ${engineBanner()}<div class="flex items-center justify-between mb-4"><div><p class="mut" style="font-size:13px;margin:0">Welcome back</p><h1 class="t" style="margin-top:2px">${esc(S.user.first_name || 'Ghost User')}</h1></div><span class="pill ${active ? 'pill-ok' : 'pill-bad'}">${esc(TIER[active ? st.plan : 'none'])}</span></div>
   <div class="glass pad hero ${on ? 'live' : ''}">
     <div class="flex items-center gap-3">
       ${GHOST('hg')}
@@ -292,7 +300,7 @@ function renderGhost() {
   const pt = (k, l, i, lock) => `<button class="${U.platform === k ? 'on' : ''}" data-act="platform" data-p="${k}">${ic(i, 'w-4 h-4')}${l}${lock ? '<span class="pill pill-pro" style="padding:2px 6px">PRO</span>' : ''}</button>`;
   let body = '';
   if (U.platform !== 'telegram') {
-    body = `<div class="glass pad" style="text-align:center"><div class="okc" style="width:56px;height:56px;animation:none">${ic(U.platform === 'whatsapp' ? 'wa' : 'hook', 'w-6 h-6')}</div><h3 style="font-weight:800;margin:14px 0 6px">${U.platform === 'whatsapp' ? 'WhatsApp Bridge' : 'Custom Webhooks'} is unlocked</h3><p class="mut" style="font-size:13.5px;line-height:1.6;margin:0">Your Pro plan includes this module. Setup is being rolled out to your dashboard.</p></div>`;
+    body = U.platform === 'whatsapp' ? waPanel() : hookPanel(); if (!W.loaded) ensurePlatformData();
   } else {
     let wiz = '';
     if (S.account) {
@@ -320,6 +328,7 @@ function renderGhost() {
     <button id="saveBtn" class="btn btn-p mt-3" data-act="save" ${U.dirty ? '' : 'disabled'}>Save Auto-Reply</button>`;
   }
   $('#tab-ghost').innerHTML = `<h1 class="t" style="margin-bottom:14px">Automation Studio</h1><div class="seg mb-3">${pt('telegram', 'Telegram', 'tg', false)}${pt('whatsapp', 'WhatsApp', 'wa', !pro)}${pt('webhooks', 'Webhooks', 'hook', !pro)}</div>${body}`;
+  if (U.platform === 'whatsapp' && W.wa && W.wa.status === 'pairing' && !W.timer) startWaPoll();
 }
 function ruleHtml(r, i) {
   return `<div style="margin-top:12px;padding:12px;border-radius:15px;background:rgba(255,255,255,.03);border:1px solid var(--line)"><div class="flex gap-2 items-center"><input class="inp" data-rk="${i}" maxlength="100" placeholder="If message contains..." value="${esc(r.keyword)}"><button class="btn btn-d btn-s" data-act="delrule" data-i="${i}" style="padding:12px">${ic('trash', 'w-4 h-4')}</button></div><textarea class="inp mt-2" data-rr="${i}" maxlength="1000" placeholder="Reply with..." style="min-height:64px">${esc(r.reply)}</textarea></div>`;
@@ -462,7 +471,12 @@ const EV = {
   reply_toggled: ['🔘', m => `turned auto-reply ${m.on ? 'ON' : 'OFF'}`, 'c-vio'],
   settings_saved: ['💾', 'saved auto-reply settings', 'c-cyan'],
   plan_expired: ['⌛', m => `plan expired (${m.plan || '-'})`, 'c-rose'],
-  expiry_notified: ['🔔', 'expiry reminder sent', 'c-amb']
+  expiry_notified: ['🔔', 'expiry reminder sent', 'c-amb'],
+  wa_pair_requested: ['📱', 'asked for a WhatsApp pairing code', 'c-cyan'],
+  wa_connected: ['🟢', 'linked WhatsApp', 'c-em'],
+  wa_disconnected: ['⚪', 'unlinked WhatsApp', 'c-amb'],
+  webhook_saved: ['🔗', m => `saved webhook (${m.enabled ? 'ON' : 'OFF'}${m.reply ? ', decides replies' : ''})`, 'c-vio'],
+  webhook_test: ['🧪', m => `tested webhook · ${m.ok ? 'OK' : 'failed'}`, 'c-cyan']
 };
 const nm = x => x.first_name || (x.username ? '@' + x.username : 'User ' + (x.user_id || x.telegram_user_id));
 const kpi = (l, v, s, tone = '') => `<div class="kpi ${tone}"><div class="kl">${l}</div><div class="kv">${v}</div><div class="ks">${s || '&nbsp;'}</div></div>`;
@@ -502,6 +516,7 @@ function adminOverview() {
   <div class="glass pad mt-3"><p class="lbl" style="margin-bottom:2px">Plan mix</p>${bar('Trial (₹2)', u.active_trial)}${bar('Starter', u.active_starter)}${bar('Pro', u.active_pro)}${bar('Expired', u.expired, '#FB7185')}</div>
   <p class="lbl mt-4">Auto-reply</p>
   <div class="grid grid-cols-2 gap-3">${kpi('Connected', a.connected, 'Telegram accounts', 'cy')}${kpi('Auto-reply ON', a.reply_on, a.reply_off + ' switched OFF', 'em')}${kpi('Smart mode', a.smart_mode, 'offline-only users', 'vi')}${kpi('Replies sent', Number(u.replies_total).toLocaleString(), 'all time')}</div>
+  <div class="grid grid-cols-2 gap-3 mt-3">${kpi('WhatsApp linked', a.wa_connected || 0, 'Pro bridge', 'em')}${kpi('Webhooks ON', a.webhooks_on || 0, 'Pro integrations', 'vi')}</div>
   <p class="lbl mt-4">Money</p>
   <div class="grid grid-cols-2 gap-3">${kpi('Today (INR)', '₹' + inr.today.toLocaleString('en-IN'), inr.count + ' payments total', 'em')}${kpi('Total (INR)', '₹' + inr.total.toLocaleString('en-IN'), '')}${kpi('Today (USDT)', usd.today, usd.count + ' payments total', 'cy')}${kpi('Total (USDT)', usd.total, '')}</div>`;
 }
@@ -534,13 +549,109 @@ async function moreUsers() {
   if (r._ok) { A.users.users = A.users.users.concat(r.users); A.users.total = r.total; renderAdmin(); }
 }
 
+/* ===================== WHATSAPP + WEBHOOKS (Pro) ===================== */
+async function ensurePlatformData() {
+  if (W.loading) return; W.loading = true;
+  const r = await api('/api/integrations'); W.loading = false; W.loaded = true;
+  if (r._ok) { W.wa = r.whatsapp; W.hook = r.webhook; W.engine = r.engine_online; if (!W.hd || !W.hd.dirty) W.hd = { url: r.webhook.url || '', enabled: !!r.webhook.enabled, reply: !!r.webhook.reply, dirty: false }; }
+  else toast(r.error || 'Could not load');
+  if (U.tab === 'ghost' && U.platform !== 'telegram') renderGhost();
+}
+function startWaPoll() {
+  clearInterval(W.timer);
+  W.timer = setInterval(async () => {
+    if (U.tab !== 'ghost' || U.platform !== 'whatsapp') { clearInterval(W.timer); W.timer = null; return; }
+    const r = await api('/api/whatsapp/status'); if (!r._ok) return;
+    const was = W.wa ? W.wa.status : ''; W.wa = r.whatsapp; W.engine = r.engine_online;
+    if (W.wa.status === 'connected' && was !== 'connected') { H.ok(); toast('WhatsApp connected 🎉'); }
+    if (W.wa.status !== 'pairing') { clearInterval(W.timer); W.timer = null; }
+    renderGhost();
+  }, 2500);
+}
+function waPanel() {
+  if (!W.loaded) return skel(2);
+  const s = W.wa || { status: 'none' };
+  const off = W.engine ? '' : `<div class="glass pad mb-3" style="border-color:rgba(251,191,36,.4)"><div style="font-size:13px;line-height:1.5">⚠️ The auto-reply engine is offline right now. Pairing continues as soon as it is back.</div></div>`;
+  let inner;
+  if (s.status === 'connected') {
+    inner = `<div class="flex items-center gap-3"><div style="width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,#10B981,#059669);display:grid;place-items:center">${ic('wa', 'w-6 h-6')}</div><div style="flex:1;min-width:0"><div style="font-weight:800">${esc(s.wa_name || 'WhatsApp')}</div><div class="mut mono" style="font-size:12px">+${esc(s.wa_number || '')}</div></div><span class="pill pill-ok">LIVE</span></div>
+    <p class="mut" style="font-size:12.5px;line-height:1.6;margin:14px 0 0">Ghost answers your WhatsApp chats with the same reply, rules, cooldown and Smart mode you set in the Telegram tab. Groups and broadcasts are ignored.</p>
+    <button class="btn btn-d mt-3" data-act="wadisc">Disconnect WhatsApp</button>`;
+  } else if (s.status === 'pairing') {
+    inner = s.pairing_code
+      ? `<p class="lbl">Your pairing code</p><div class="mono" style="font-size:34px;font-weight:700;letter-spacing:.12em;text-align:center;padding:16px 0;border-radius:16px;background:rgba(255,255,255,.04);border:1px solid var(--line2)">${esc(String(s.pairing_code).replace(/(.{4})(?=.)/g, '$1-'))}</div>
+        <ol class="mut" style="font-size:13px;line-height:1.8;margin:14px 0 0;padding-left:18px"><li>Open <b style="color:#E2E8F0">WhatsApp</b> on your phone</li><li>Settings → <b style="color:#E2E8F0">Linked devices</b> → Link a device</li><li>Tap <b style="color:#E2E8F0">Link with phone number instead</b></li><li>Enter the code above</li></ol>
+        <div class="flex items-center gap-2 mut mt-3" style="font-size:12px"><span class="livedot"></span>Waiting for you to confirm on your phone...</div>
+        <button class="btn btn-g mt-3" data-act="wadisc">Cancel</button>`
+      : `<div style="text-align:center;padding:26px 0"><div class="spin"></div><p class="mut" style="font-size:13px;margin:16px 0 0">Generating your pairing code...</p></div><button class="btn btn-g" data-act="wadisc">Cancel</button>`;
+  } else {
+    inner = `<p class="lbl">Link your WhatsApp</p><p class="mut" style="font-size:13px;line-height:1.6;margin:0 0 12px">Enter the number of the WhatsApp account you want Ghost to answer for. You will confirm with a code on your phone, no QR scan needed.</p>
+      <div class="flex gap-2"><select id="wcc" class="inp" style="width:44%">${COUNTRIES.map(c => `<option value="${c[1]}" ${c[1] === W.cc ? 'selected' : ''}>${c[0]} ${c[1]}</option>`).join('')}</select><input id="wph" class="inp mono" inputmode="tel" placeholder="98765 43210" value="${esc(W.phone)}"></div>
+      <button class="btn btn-p mt-3" data-act="wapair" ${W.busy ? 'disabled' : ''}>${W.busy ? 'Requesting...' : 'Get pairing code'}</button>
+      ${(W.err || s.error) ? `<div class="err">${esc(W.err || s.error)}</div>` : ''}
+      <p class="mut" style="font-size:11.5px;line-height:1.6;margin:14px 0 0">⚠️ Uses WhatsApp's unofficial linked-device protocol. Automation can put an account at risk of restrictions, so avoid spamming and prefer a number you can afford to lose.</p>`;
+  }
+  return off + `<div class="glass pad">${inner}</div>`;
+}
+async function waPair() {
+  if (W.busy) return; const raw = (W.phone || '').trim(); const phone = raw.startsWith('+') ? raw : W.cc + raw.replace(/\D/g, '').replace(/^0+/, '');
+  if (phone.replace(/\D/g, '').length < 8) { W.err = 'Enter a valid number.'; return renderGhost(); }
+  W.busy = true; W.err = ''; renderGhost();
+  const r = await api('/api/whatsapp/pair', { phone }); W.busy = false;
+  if (r._ok) { W.wa = { status: 'pairing', pairing_code: null }; W.engine = r.engine_online; H.ok(); renderGhost(); startWaPoll(); }
+  else { W.err = r.error || 'Could not start pairing.'; H.err(); if (r.code === 'pro_required') go('plans'); renderGhost(); }
+}
+async function waDisconnect() {
+  const run = async () => { const r = await api('/api/whatsapp/disconnect', {}); if (r._ok) { W.wa = { status: 'none' }; clearInterval(W.timer); W.timer = null; H.ok(); toast('WhatsApp disconnected'); renderGhost(); } else toast(r.error || 'Failed'); };
+  if (tg && tg.showConfirm) tg.showConfirm('Disconnect WhatsApp? Auto-reply on WhatsApp will stop.', ok => ok && run()); else if (confirm('Disconnect WhatsApp?')) run();
+}
+function hookPanel() {
+  if (!W.loaded) return skel(2);
+  const h = W.hook || {}, d = W.hd || { url: '', enabled: false, reply: false }, t = W.test;
+  const stat = h.last_at ? `Last: ${h.last_status ? 'HTTP ' + h.last_status : esc(h.last_error || 'error')} · ${ago(h.last_at)}` : 'No deliveries yet';
+  return `
+  <div class="glass pad"><div class="flex items-center gap-3"><div style="font-size:26px">🔗</div><div style="flex:1"><div style="font-weight:800;font-size:15px">Webhook</div><div class="mut" style="font-size:12.5px;line-height:1.5;margin-top:2px">Every new message is sent as signed JSON to your server, n8n, Zapier or Make.</div></div><button class="sw ${d.enabled ? 'on' : ''}" data-act="hooktoggle" aria-label="Webhook"></button></div>
+    <p class="lbl" style="margin-top:16px">Endpoint URL</p><input id="hurl" class="inp mono" style="font-size:13px" inputmode="url" placeholder="https://example.com/ghost-hook" value="${esc(d.url)}">
+    <div class="flex items-center gap-3 mt-4"><div style="flex:1"><div style="font-weight:700;font-size:14px">Let my webhook decide the reply</div><div class="mut" style="font-size:12px;line-height:1.5;margin-top:2px">Answer with {"reply":"..."} to send that text, or {"skip":true} to stay silent. Perfect for AI bots.</div></div><button class="sw ${d.reply ? 'on' : ''}" data-act="hookreply" aria-label="Webhook reply"></button></div>
+    ${h.secret ? `<p class="lbl" style="margin-top:16px">Signing secret</p><div class="flex items-center gap-2" style="padding:11px 12px;border-radius:13px;background:rgba(255,255,255,.04);border:1px solid var(--line)"><div class="mono" style="flex:1;min-width:0;font-size:11px;word-break:break-all">${esc(h.secret)}</div><button class="btn btn-g btn-s" data-act="copy" data-v="${esc(h.secret)}" data-l="Secret">${ic('copy', 'w-4 h-4')}</button><button class="btn btn-g btn-s" data-act="hookrotate">New</button></div>` : '<p class="mut" style="font-size:12px;margin:14px 0 0">A signing secret is created when you save.</p>'}
+    <button id="hookSave" class="btn btn-p mt-4" data-act="hooksave" ${W.saving ? 'disabled' : ''}>${W.saving ? 'Saving...' : 'Save webhook'}</button>
+    <button class="btn btn-g mt-2" data-act="hooktest" ${h.url ? '' : 'disabled'}>Send test event</button>
+    ${t ? `<div class="${t.ok ? '' : 'err'}" style="font-size:13px;margin-top:10px;line-height:1.5;${t.ok ? 'color:#6EE7B7' : ''}">${t.ok ? '✅ Delivered (HTTP ' + t.http_status + ')' + (t.reply ? ' · reply: ' + esc(t.reply) : '') : '❌ ' + esc(t.error || 'Failed')}</div>` : ''}
+    <div class="flex gap-4 mut mt-4" style="font-size:12px"><span>✅ ${Number(h.delivered || 0).toLocaleString()} delivered</span><span>❌ ${Number(h.failed || 0).toLocaleString()} failed</span></div><div class="mut" style="font-size:11.5px;margin-top:4px">${stat}</div>
+  </div>
+  <div class="glass pad mt-3"><p class="lbl">Payload</p><pre class="mono" style="font-size:11px;line-height:1.55;margin:0;overflow-x:auto;color:#CBD5E1">{
+  "event": "message.incoming",
+  "platform": "telegram" | "whatsapp",
+  "message": { "id": 1, "text": "hi",
+               "chat_id": 123, "date": "ISO" },
+  "from": { "id": 123, "name": "Sam",
+            "username": "sam" }
+}</pre><p class="mut" style="font-size:12px;line-height:1.6;margin:12px 0 0">Header <span class="mono">X-Ghost-Signature: sha256=&lt;HMAC-SHA256(secret, raw body)&gt;</span>. Only public https endpoints are allowed.</p></div>`;
+}
+async function hookSave(rotate) {
+  if (W.saving || !W.hd) return; const d = W.hd;
+  W.saving = true; renderGhost();
+  const r = await api('/api/integrations/webhook', { url: d.url, enabled: d.enabled, reply: d.reply, rotate: !!rotate }); W.saving = false;
+  if (r._ok) { W.hook = r.webhook; W.hd = { url: r.webhook.url, enabled: r.webhook.enabled, reply: r.webhook.reply, dirty: false }; W.test = null; H.ok(); toast(rotate ? 'New secret created' : 'Webhook saved ✓'); }
+  else { H.err(); toast(r.error || 'Could not save'); if (r.code === 'pro_required') go('plans'); }
+  renderGhost();
+}
+async function hookTest() {
+  W.test = null; toast('Sending test event...');
+  const r = await api('/api/integrations/webhook/test', {});
+  W.test = r._ok ? { ok: r.ok, http_status: r.http_status, error: r.error, reply: r.reply } : { ok: false, error: r.error || 'Failed' };
+  if (W.test.ok) H.ok(); else H.err();
+  const h = await api('/api/integrations'); if (h._ok) W.hook = h.webhook;
+  renderGhost();
+}
+
 /* ===================== Events ===================== */
 const ACTIONS = {
   go: el => { H.sel(); go(el.dataset.t); },
   retry: () => location.reload(),
   master: toggleMaster,
   smart: () => { const d = ensureDraft(); d.only_when_offline = !d.only_when_offline; H.sel(); markDirty(); renderGhost(); },
-  platform: el => { const p = el.dataset.p; H.sel(); if (p !== 'telegram' && !S.features.whatsapp) return openUpgrade(); U.platform = p; renderGhost(); },
+  platform: el => { const p = el.dataset.p; H.sel(); if (p !== 'telegram' && !S.features.whatsapp) return openUpgrade(); U.platform = p; if (p !== 'telegram') W.loaded = false; clearInterval(W.timer); W.timer = null; renderGhost(); },
   toplans: () => { closeSheet(); go('plans'); },
   closesheet: closeSheet,
   paydone: () => { closeSheet(); go(S.account ? 'home' : 'ghost'); },
@@ -557,6 +668,10 @@ const ACTIONS = {
   verify: doVerify, copy: el => copy(el.dataset.v, el.dataset.l),
   faq: el => { const n = +el.dataset.n; U.faq = U.faq === n ? -1 : n; H.light(); renderProfile(); },
   support: () => { const url = 'https://t.me/' + S.support; if (tg && tg.openTelegramLink) tg.openTelegramLink(url); else window.open(url, '_blank'); },
+  wapair: waPair, wadisc: waDisconnect,
+  hooktoggle: () => { if (!W.hd) return; W.hd.enabled = !W.hd.enabled; W.hd.dirty = true; H.sel(); renderGhost(); },
+  hookreply: () => { if (!W.hd) return; W.hd.reply = !W.hd.reply; W.hd.dirty = true; H.sel(); renderGhost(); },
+  hooksave: () => hookSave(false), hookrotate: () => hookSave(true), hooktest: hookTest,
   asub: el => { A.sub = el.dataset.s; H.sel(); renderAdmin(); adminLoad(); },
   moreusers: moreUsers
 };
@@ -572,9 +687,11 @@ document.addEventListener('input', e => {
   else if (t.dataset && t.dataset.rr !== undefined) { ensureDraft().keyword_rules[+t.dataset.rr].reply = t.value; markDirty(); }
   else if (t.id === 'utr' && P) { P.utr = t.value.replace(/\D/g, ''); t.value = P.utr; }
   else if (t.id === 'txh' && P) P.tx = t.value.trim();
+  else if (t.id === 'wph') W.phone = t.value;
+  else if (t.id === 'hurl' && W.hd) { W.hd.url = t.value; W.hd.dirty = true; }
   else if (t.id === 'uq') { A.uq = t.value.trim(); clearTimeout(uqT); uqT = setTimeout(async () => { const r = await api('/api/admin/users?q=' + encodeURIComponent(A.uq) + '&offset=0'); if (r._ok) { A.users = r; A.upage = 0; const box = $('#uq'); const pos = box ? box.selectionStart : 0; document.activeElement && document.activeElement.blur(); renderAdmin(); const nb = $('#uq'); if (nb) { nb.focus(); try { nb.setSelectionRange(pos, pos); } catch (x) {} } } }, 350); }
 });
-document.addEventListener('change', e => { if (e.target.id === 'cc') U.wiz.cc = e.target.value; });
+document.addEventListener('change', e => { if (e.target.id === 'cc') U.wiz.cc = e.target.value; if (e.target.id === 'wcc') W.cc = e.target.value; });
 $('#bd').addEventListener('click', closeSheet);
 
 /* ===================== Boot ===================== */
