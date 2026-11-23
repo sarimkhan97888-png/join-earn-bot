@@ -25,8 +25,8 @@ const {
   Browsers,
 } = require('@whiskeysockets/baileys');
 
-const GRACE_MS = (Number(process.env.OFFLINE_GRACE_SECONDS) || 12) * 1000;
-const ACTIVE_MS = (Number(process.env.OWNER_ACTIVE_WINDOW_SECONDS) || 240) * 1000;
+const GRACE_MS = (Number(process.env.OFFLINE_GRACE_SECONDS) || 8) * 1000;
+const ACTIVE_MS = (Number(process.env.OWNER_ACTIVE_WINDOW_SECONDS) || 90) * 1000;
 const logger = pino({ level: process.env.WA_LOG_LEVEL || 'warn' });
 const log = (...a) => console.log(new Date().toISOString().slice(11, 19), ...a);
 const logErr = (e) => console.error('ERR', e && e.stack ? e.stack.split('\n').slice(0, 3).join(' | ') : e);
@@ -52,6 +52,16 @@ async function logActivity(userId, kind) {
   try {
     await pool.query('INSERT INTO activity_log (user_id, kind, meta) VALUES ($1, $2, $3)', [userId, kind, {}]);
   } catch (e) { /* activity log is best effort */ }
+}
+
+const diagLast = new Map();
+function decide(userId, outcome, reason) { // feeds the "Ghost activity" card in the Mini App
+  const key = `${userId}:${reason}`;
+  const now = Date.now();
+  if (outcome !== 'sent' && now - (diagLast.get(key) || 0) < 30000) return;
+  diagLast.set(key, now);
+  pool.query("INSERT INTO reply_log (user_id, outcome, reason, platform) VALUES ($1, $2, $3, 'whatsapp')",
+    [userId, outcome, String(reason).slice(0, 80)]).catch(() => {});
 }
 
 const purgeAuth = (userId) => pool.query('DELETE FROM wa_auth WHERE user_id = $1', [userId]);
@@ -217,7 +227,12 @@ function pickReply(st, text) {
   return String(st.default_reply || '').trim();
 }
 
-const ownerBusy = (ctx, jid, since) => (ctx.replied.get(jid) || 0) >= since || Date.now() - ctx.ownerActive < ACTIVE_MS;
+const ownerBlock = (ctx, jid, since) => {
+  if ((ctx.replied.get(jid) || 0) >= since) return 'owner_replied';
+  if (Date.now() - ctx.ownerActive < ACTIVE_MS) return 'owner_active';
+  return null;
+};
+const ownerBusy = (ctx, jid, since) => !!ownerBlock(ctx, jid, since);
 
 async function handleMessage(ctx, m) {
   if (!m.message || !m.key) return;
@@ -250,10 +265,11 @@ async function handleMessage(ctx, m) {
   }
   const hookDecides = !!(hook && st.webhook_reply);
 
-  if (!st.is_active) return;
-  if (now - (ctx.lastReply.get(jid) || 0) < (Number(st.cooldown_seconds) || 600) * 1000) return;
+  if (!st.is_active) { decide(ctx.userId, 'skipped', 'paused'); return; }
+  if (now - (ctx.lastReply.get(jid) || 0) < (Number(st.cooldown_seconds) || 600) * 1000) { decide(ctx.userId, 'skipped', 'cooldown'); return; }
   const onlyOffline = st.only_when_offline !== false;
-  if (onlyOffline && ownerBusy(ctx, jid, now)) return;
+  const why = onlyOffline ? ownerBlock(ctx, jid, now) : null;
+  if (why) { decide(ctx.userId, 'skipped', why); return; }
 
   const reply = pickReply(st, text);
   if (!reply && !hookDecides) return;
@@ -266,7 +282,8 @@ async function sendReply(ctx, jid, incomingTs, reply, st, onlyOffline, hookPromi
   try {
     if (onlyOffline) {
       await sleep(GRACE_MS); // give the owner a chance to answer first
-      if (ownerBusy(ctx, jid, incomingTs)) return release();
+      const why = ownerBlock(ctx, jid, incomingTs);
+      if (why) { decide(ctx.userId, 'skipped', why); return release(); }
     }
     if (hookPromise) {
       const answer = await Promise.race([hookPromise, sleep(8000).then(() => null)]);
@@ -284,7 +301,9 @@ async function sendReply(ctx, jid, incomingTs, reply, st, onlyOffline, hookPromi
       await sock.presenceSubscribe(jid).catch(() => {});
       await sock.sendPresenceUpdate('composing', jid).catch(() => {}); // human typing simulation
       await sleep(wait);
-      if (onlyOffline && ownerBusy(ctx, jid, incomingTs)) {
+      const why2 = onlyOffline ? ownerBlock(ctx, jid, incomingTs) : null;
+      if (why2) {
+        decide(ctx.userId, 'skipped', why2);
         release();
         await sock.sendPresenceUpdate('paused', jid).catch(() => {});
         return;
@@ -293,9 +312,10 @@ async function sendReply(ctx, jid, incomingTs, reply, st, onlyOffline, hookPromi
       await sock.sendMessage(jid, { text: reply });
       await sock.sendPresenceUpdate('paused', jid).catch(() => {});
       ctx.sending.set(jid, Date.now() + 5000);
+      decide(ctx.userId, 'sent', 'sent');
       await pool.query('UPDATE users SET total_replies_sent = total_replies_sent + 1 WHERE telegram_user_id = $1', [ctx.userId]);
     });
-  } catch (e) { release(); logErr(e); }
+  } catch (e) { release(); decide(ctx.userId, 'error', (e && e.message) || 'error'); logErr(e); }
 }
 
 /* ------------------------------------------------------------------ sessions */

@@ -164,6 +164,28 @@ CREATE TABLE IF NOT EXISTS integrations (
     delivered       BIGINT NOT NULL DEFAULT 0,
     failed          BIGINT NOT NULL DEFAULT 0
 );
+
+-- Why did (or didn't) Ghost reply? Shown in the Ghost tab so nothing is a mystery
+CREATE TABLE IF NOT EXISTS reply_log (
+    id          BIGSERIAL PRIMARY KEY,
+    user_id     BIGINT NOT NULL,
+    outcome     TEXT NOT NULL,
+    reason      TEXT NOT NULL,
+    platform    TEXT NOT NULL DEFAULT 'telegram',
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_reply_log_user ON reply_log (user_id, id DESC);
+
+-- Commands from the web gateway to the Telegram engine (e.g. "send me a test reply")
+CREATE TABLE IF NOT EXISTS engine_commands (
+    id          BIGSERIAL PRIMARY KEY,
+    user_id     BIGINT NOT NULL,
+    cmd         TEXT NOT NULL,
+    payload     JSONB NOT NULL DEFAULT '{}'::jsonb,
+    status      TEXT NOT NULL DEFAULT 'pending',
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_engine_commands_pending ON engine_commands (status, id);
 """
 
 
@@ -624,6 +646,8 @@ async def prune_activity(days: int = 30) -> None:
         await conn.execute(
             "DELETE FROM activity_log WHERE created_at < NOW() - make_interval(days => $1::int)", days
         )
+        await conn.execute("DELETE FROM reply_log WHERE created_at < NOW() - INTERVAL '7 days'")
+        await conn.execute("DELETE FROM engine_commands WHERE created_at < NOW() - INTERVAL '1 day'")
 
 
 # ------------------------------------------------------------------ admin panel queries
@@ -909,3 +933,52 @@ async def count_live_users() -> int:
                    OR EXISTS (SELECT 1 FROM wa_sessions w WHERE w.user_id = u.telegram_user_id AND w.status = 'connected'))
             """
         ))
+
+
+# ------------------------------------------------------------------ decision log + engine commands
+async def log_decision(user_id: int, outcome: str, reason: str, platform: str = "telegram") -> None:
+    """Never raises."""
+    try:
+        async with pool().acquire() as conn:
+            await conn.execute(
+                "INSERT INTO reply_log (user_id, outcome, reason, platform) VALUES ($1, $2, $3, $4)",
+                user_id, outcome, (reason or "")[:80], platform,
+            )
+    except Exception:
+        log.warning("decision log write failed")
+
+
+async def get_decisions(user_id: int, limit: int = 10) -> list:
+    async with pool().acquire() as conn:
+        rows = await conn.fetch(
+            "SELECT outcome, reason, platform, created_at FROM reply_log WHERE user_id = $1 ORDER BY id DESC LIMIT $2",
+            user_id, limit,
+        )
+    out = []
+    for r in rows:
+        d = dict(r)
+        d["created_at"] = d["created_at"].isoformat()
+        out.append(d)
+    return out
+
+
+async def enqueue_engine_command(user_id: int, cmd: str, payload: Optional[dict] = None) -> None:
+    async with pool().acquire() as conn:
+        await conn.execute(
+            "INSERT INTO engine_commands (user_id, cmd, payload) VALUES ($1, $2, $3)", user_id, cmd, payload or {}
+        )
+
+
+async def claim_engine_commands(limit: int = 10) -> list:
+    async with pool().acquire() as conn:
+        rows = await conn.fetch(
+            """
+            UPDATE engine_commands SET status = 'done'
+            WHERE id IN (SELECT id FROM engine_commands
+                         WHERE status = 'pending' AND created_at > NOW() - INTERVAL '5 minutes'
+                         ORDER BY id LIMIT $1 FOR UPDATE SKIP LOCKED)
+            RETURNING id, user_id, cmd, payload
+            """,
+            limit,
+        )
+    return [dict(r) for r in rows]

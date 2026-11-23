@@ -76,14 +76,15 @@ REPLY_CONCURRENCY = 10            # asyncio.Semaphore(10) for outgoing auto-repl
 CLEANUP_INTERVAL_SECONDS = 600    # RAM cleanup scheduler: every 10 minutes
 DB_SYNC_INTERVAL_SECONDS = 20     # Sync newly connected/paid users from Neon DB every 20s
 # Smart "reply only when I'm offline" mode
-OFFLINE_GRACE_SECONDS = 12            # wait so the owner can read / answer first
-OWNER_ACTIVE_WINDOW_SECONDS = 240     # owner activity (sent / read) inside this window = online
+OFFLINE_GRACE_SECONDS = 8             # wait so the owner can read / answer first
+OWNER_ACTIVE_WINDOW_SECONDS = 90      # owner activity (sent / read) inside this window = online
 OFFLINE_STATUS_CHECK = _env_bool("OFFLINE_STATUS_CHECK", True)  # also check Telegram "online" status
+WA_BRIDGE_ENABLED = _env_bool("WA_BRIDGE_ENABLED", True)  # run the Node/Baileys WhatsApp bridge next to the engine
 OTP_CACHE_TTL_SECONDS = 600       # pending Telegram login state lifetime
 DEFAULT_COOLDOWN_SECONDS = 600    # reply once per sender every 10 minutes
 REPLY_DELAY_MIN = 2
 REPLY_DELAY_MAX = 5
-ALLOWED_COOLDOWNS = (300, 900, 3600)  # 5m / 15m / 1h
+ALLOWED_COOLDOWNS = (60, 300, 900, 3600)  # 1m (testing) / 5m / 15m / 1h
 
 
 # ---------------------------------------------------------------- plans

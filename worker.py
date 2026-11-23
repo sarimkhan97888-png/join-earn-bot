@@ -88,6 +88,7 @@ _lease_held = False
 _http: Optional[httpx.AsyncClient] = None
 _status_cache: Tuple[float, bool, int] = (0.0, False, 0)
 _tier: Dict[int, str] = {}
+_diag_last: Dict[Tuple[int, str], float] = {}
 _integ_cache: Dict[int, Tuple[float, Optional[dict]]] = {}
 BRIDGE_DIR = Path(__file__).resolve().parent / "wa_bridge"
 
@@ -255,37 +256,56 @@ async def _on_read(user_id: int, event) -> None:
 
 
 async def _self_online(user_id: int) -> bool:
+    """Telegram's own view of the owner: UserStatusOnline (app open / active) vs offline."""
     if not config.OFFLINE_STATUS_CHECK:
         return False
     now = time.time()
     if now - _last_self_send.get(user_id, 0) < 330:
         return False  # our own send can flash "online"; ignore the status shortly after it
     cached = _self_status.get(user_id)
-    if cached and now - cached[0] < SELF_STATUS_TTL:
+    if cached and now - cached[0] < 8:
         return cached[1]
     online = False
     client = _clients.get(user_id)
     if client:
         try:
             result = await client(GetUsersRequest([InputUserSelf()]))
-            online = bool(result) and isinstance(getattr(result[0], "status", None), UserStatusOnline)
+            status = getattr(result[0], "status", None) if result else None
+            if isinstance(status, UserStatusOnline):
+                expires = getattr(status, "expires", None)
+                online = expires is None or expires.timestamp() > now
         except Exception:
             online = False
     _self_status[user_id] = (now, online)
     return online
 
 
-async def _owner_busy(user_id: int, chat_id: int, msg_id: int, since: float) -> bool:
+async def _owner_block(user_id: int, chat_id: int, msg_id: int, since: float) -> Optional[str]:
+    """None => the owner is OFFLINE (safe to reply). Otherwise the reason Ghost must stay silent."""
     now = time.time()
     key = (user_id, chat_id)
     if _owner_replied.get(key, 0) >= since:
-        return True
+        return "owner_replied"
     read = _owner_read.get(key)
     if read and read[0] >= msg_id:
-        return True
+        return "owner_read"
     if now - _owner_active.get(user_id, 0) < config.OWNER_ACTIVE_WINDOW_SECONDS:
-        return True
-    return await _self_online(user_id)
+        return "owner_active"
+    if await _self_online(user_id):
+        return "owner_status_online"
+    return None
+
+
+def _decide(user_id: int, outcome: str, reason: str, throttle: float = 30.0) -> None:
+    """Records why Ghost replied / stayed silent (throttled per reason) for the Ghost-tab activity card."""
+    now = time.time()
+    if outcome != "sent":
+        if now - _diag_last.get((user_id, reason), 0) < throttle:
+            return
+        _diag_last[(user_id, reason)] = now
+    task = asyncio.create_task(db.log_decision(user_id, outcome, reason))
+    _tasks.add(task)
+    task.add_done_callback(_tasks.discard)
 
 
 # ------------------------------------------------------------------ incoming messages
@@ -363,25 +383,32 @@ async def _on_message(user_id: int, event) -> None:
 
     cfg = await _get_settings(user_id)
     if not cfg.get("is_active"):
+        _decide(user_id, "skipped", "paused")
         return
 
     now = time.time()
     key = (user_id, sender_id)
     cooldown = int(cfg.get("cooldown_seconds") or config.DEFAULT_COOLDOWN_SECONDS)
     if now - _last_reply.get(key, 0.0) < cooldown:
+        _decide(user_id, "skipped", "cooldown")
         return
 
     only_offline = bool(cfg.get("only_when_offline", True))
-    if only_offline and await _owner_busy(user_id, chat_id, msg_id, now):
-        return  # owner is online right now: stay silent (cooldown NOT consumed)
+    if only_offline:
+        why = await _owner_block(user_id, chat_id, msg_id, now)
+        if why:  # owner is online right now: stay silent (cooldown NOT consumed)
+            _decide(user_id, "skipped", why)
+            return
 
     reply = _pick_reply(cfg, text)
     if not reply and not hook_decides:
+        _decide(user_id, "skipped", "no_reply_text")
         return
 
+    peer = await event.get_input_chat()  # exact peer + access hash from this very update (no entity lookup needed)
     _last_reply[key] = now
     task = asyncio.create_task(
-        _send_reply(user_id, chat_id, sender_id, msg_id, now, reply, cfg, only_offline,
+        _send_reply(user_id, peer, chat_id, sender_id, msg_id, now, reply, cfg, only_offline,
                     hook_task if hook_decides else None)
     )
     _tasks.add(task)
@@ -389,7 +416,7 @@ async def _on_message(user_id: int, event) -> None:
 
 
 async def _send_reply(
-    user_id: int, chat_id: int, sender_id: int, msg_id: int, incoming_ts: float,
+    user_id: int, peer, chat_id: int, sender_id: int, msg_id: int, incoming_ts: float,
     reply: str, cfg: dict, only_offline: bool, hook_task: Optional[asyncio.Task] = None,
 ) -> None:
     key = (user_id, sender_id)
@@ -403,7 +430,9 @@ async def _send_reply(
     try:
         if only_offline:
             await asyncio.sleep(config.OFFLINE_GRACE_SECONDS)  # give the owner a chance to answer first
-            if await _owner_busy(user_id, chat_id, msg_id, incoming_ts):
+            why = await _owner_block(user_id, chat_id, msg_id, incoming_ts)
+            if why:
+                _decide(user_id, "skipped", why)
                 _last_reply.pop(key, None)
                 return
         if hook_task is not None:  # the user's webhook decides the reply
@@ -413,6 +442,7 @@ async def _send_reply(
                 answer = None
             if isinstance(answer, dict):
                 if answer.get("skip"):
+                    _decide(user_id, "skipped", "webhook_skip")
                     _last_reply.pop(key, None)
                     return
                 override = answer.get("reply")
@@ -422,24 +452,31 @@ async def _send_reply(
             _last_reply.pop(key, None)
             return
         async with _sem:
-            async with client.action(chat_id, "typing"):  # human typing simulation
+            async with client.action(peer, "typing"):  # human typing simulation
                 await asyncio.sleep(delay)
-                if only_offline and await _owner_busy(user_id, chat_id, msg_id, incoming_ts):
-                    _last_reply.pop(key, None)
-                    return
+                if only_offline:
+                    why = await _owner_block(user_id, chat_id, msg_id, incoming_ts)
+                    if why:
+                        _decide(user_id, "skipped", why)
+                        _last_reply.pop(key, None)
+                        return
                 _bot_sending[(user_id, chat_id)] = time.time() + 30
-                await client.send_message(chat_id, reply)
+                await client.send_message(peer, reply)
             _last_self_send[user_id] = time.time()
             _bot_sending[(user_id, chat_id)] = time.time() + 5
+        _decide(user_id, "sent", "sent")
         await db.increment_replies(user_id)
     except FloodWaitError as exc:
         log.warning("FloodWait %ss for user %s", exc.seconds, user_id)
+        _decide(user_id, "error", f"FloodWait {exc.seconds}s")
         _last_reply.pop(key, None)
     except DEAD_SESSION_ERRORS:
         log.warning("Session for user %s is no longer valid", user_id)
+        _decide(user_id, "error", "session_invalid")
         await _drop_dead_session(user_id)
-    except Exception:
+    except Exception as exc:
         log.exception("Reply failed for user %s", user_id)
+        _decide(user_id, "error", exc.__class__.__name__)
         _last_reply.pop(key, None)
 
 
@@ -549,7 +586,7 @@ async def _stop_locked(user_id: int, log_out: bool = False) -> None:
     specs = _handlers.pop(user_id, [])
     for table in (_self_ids, _stamps, _expiry, _settings_cache, _owner_active, _self_status, _last_self_send, _tier, _integ_cache):
         table.pop(user_id, None)
-    for table in (_last_reply, _owner_replied, _owner_read, _bot_sending):
+    for table in (_last_reply, _owner_replied, _owner_read, _bot_sending, _diag_last):
         for key in [k for k in table if k[0] == user_id]:
             table.pop(key, None)
     if client is None:
@@ -663,6 +700,47 @@ async def sync_loop() -> None:
         await asyncio.sleep(1)
 
 
+# ------------------------------------------------------------------ commands from the web gateway
+async def _run_command(cmd: dict) -> None:
+    uid = int(cmd["user_id"])
+    if cmd["cmd"] != "test_reply":
+        return
+    client = _clients.get(uid)
+    if not client:
+        await db.log_decision(uid, "test_failed", "not_running")
+        return
+    try:
+        settings = await db.get_settings(uid)
+        me_id = _self_ids.get(uid)
+        _bot_sending[(uid, me_id)] = time.time() + 15  # not "owner activity"
+        await client.send_message(
+            "me",
+            "👻 Ghost test: your auto-reply engine is alive.\n\nThis is what your contacts receive:\n\n"
+            + (settings.get("default_reply") or ""),
+        )
+        _last_self_send[uid] = time.time()
+        await db.log_decision(uid, "test_ok", "sent_to_saved_messages")
+    except DEAD_SESSION_ERRORS:
+        await db.log_decision(uid, "test_failed", "session_invalid")
+        await _drop_dead_session(uid)
+    except Exception as exc:
+        log.exception("Test reply failed for user %s", uid)
+        await db.log_decision(uid, "test_failed", exc.__class__.__name__)
+
+
+async def command_loop() -> None:
+    while True:
+        if _engine_active:
+            try:
+                for cmd in await db.claim_engine_commands(10):
+                    await _run_command(cmd)
+            except asyncio.CancelledError:
+                raise
+            except Exception:
+                log.exception("Command loop failed")
+        await asyncio.sleep(2)
+
+
 # ------------------------------------------------------------------ expiry cleanup + notifications (every 10 min)
 async def _send_bot_message(user_id: int, text: str, button: Optional[str] = None, tab: str = "plans") -> bool:
     """Bot message without aiogram, so the Kaggle worker stays dependency-light."""
@@ -751,6 +829,8 @@ async def cleanup_once() -> None:
     for table in (_owner_replied, _bot_sending):
         for key in [k for k, ts in table.items() if now - ts > 7200]:
             table.pop(key, None)
+    for key in [k for k, ts in _diag_last.items() if now - ts > 3600]:
+        _diag_last.pop(key, None)
     for key in [k for k, (_, ts) in _owner_read.items() if now - ts > 7200]:
         _owner_read.pop(key, None)
 
@@ -859,6 +939,7 @@ async def run_engine(notifier: Optional[Callable[[int, str], Awaitable[bool]]] =
         asyncio.create_task(sync_loop(), name="sync"),
         asyncio.create_task(cleanup_loop(), name="cleanup"),
         asyncio.create_task(_wa_supervisor(), name="wa-bridge"),
+        asyncio.create_task(command_loop(), name="commands"),
     ]
     try:
         done, _ = await asyncio.wait(tasks, return_when=asyncio.FIRST_EXCEPTION)

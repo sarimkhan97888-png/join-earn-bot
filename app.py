@@ -531,6 +531,45 @@ async def api_payments(user: dict = Depends(current_user)):
     return {"status": "ok", "payments": await db.list_payments(int(user["id"]), 20)}
 
 
+# ------------------------------------------------------------------ diagnostics ("why did / didn't Ghost reply?")
+_last_test: Dict[int, float] = {}
+
+
+@app.get("/api/diagnostics")
+async def api_diagnostics(user: dict = Depends(current_user)):
+    uid = int(user["id"])
+    settings = await db.get_settings(uid)
+    status = await db.get_status(uid)
+    account = await telegram_manager.get_account(uid)
+    online, _ = await worker.engine_status()
+    return {
+        "status": "ok",
+        "engine_online": online,
+        "plan_active": status["status"] == "active",
+        "account": account is not None,
+        "auto_reply_on": bool(settings["is_active"]),
+        "smart": bool(settings.get("only_when_offline", True)),
+        "events": await db.get_decisions(uid, 10),
+    }
+
+
+@app.post("/api/test-reply")
+async def api_test_reply(user: dict = Depends(current_user)):
+    """Asks the engine to drop a test message into the user's Saved Messages (proves the pipeline works)."""
+    uid = int(user["id"])
+    if time.time() - _last_test.get(uid, 0) < 10:
+        raise ApiError(429, "Please wait a few seconds before testing again.", "rate_limited")
+    status = await db.get_status(uid)
+    if status["status"] != "active":
+        raise ApiError(403, "Activate a plan first.", "no_plan")
+    if not await db.get_tg_session(uid):
+        raise ApiError(422, "Connect your Telegram account first.", "no_account")
+    _last_test[uid] = time.time()
+    await db.enqueue_engine_command(uid, "test_reply")
+    online, _ = await worker.engine_status()
+    return {"status": "queued", "engine_online": online}
+
+
 # ------------------------------------------------------------------ Pro integrations: webhooks + WhatsApp bridge
 async def _require_pro(uid: int) -> dict:
     status = await db.get_status(uid)
