@@ -11,6 +11,8 @@ import hashlib
 import hmac
 import json
 import logging
+import re
+import secrets
 import time
 from collections import defaultdict
 from contextlib import asynccontextmanager
@@ -33,6 +35,7 @@ import database as db
 import payment
 import payment_usdt
 import telegram_manager
+import webhooks
 import worker
 from telegram_manager import TGError
 
@@ -90,6 +93,32 @@ async def _prune_loop() -> None:
         await asyncio.sleep(6 * 3600)
 
 
+async def _watchdog_loop() -> None:
+    """Alerts the admin when the auto-reply engine (Kaggle) is down while paying users depend on it."""
+    await asyncio.sleep(120)  # let a restarting worker come back first
+    down_since: Optional[float] = None
+    alerted = False
+    while True:
+        try:
+            online, _ = await worker.engine_status()
+            live = await db.count_live_users()
+            if online or live == 0:
+                if alerted:
+                    await bot_module.notify_admin("✅ Auto-reply engine is back ONLINE.")
+                down_since, alerted = None, False
+            else:
+                down_since = down_since or time.time()
+                if not alerted and time.time() - down_since >= 180:
+                    await bot_module.notify_admin(
+                        f"⚠️ <b>Auto-reply engine is OFFLINE</b>\n{live} paying user(s) are not being answered. "
+                        "Restart the Kaggle worker."
+                    )
+                    alerted = True
+        except Exception:
+            log.exception("Watchdog cycle failed")
+        await asyncio.sleep(60)
+
+
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     missing = config.missing_config()
@@ -114,6 +143,8 @@ async def lifespan(_: FastAPI):
 
     tasks.append(asyncio.create_task(_supervise("otp-gc", telegram_manager.gc_loop)))
     tasks.append(asyncio.create_task(_supervise("activity-prune", _prune_loop)))
+    if config.BOT_TOKEN and config.ADMIN_ID:
+        tasks.append(asyncio.create_task(_supervise("watchdog", _watchdog_loop)))
     log.info("Profitix Ghost gateway is up on port %s", config.PORT)
     try:
         yield
@@ -240,6 +271,17 @@ class SettingsIn(BaseModel):
     cooldown_seconds: Optional[int] = None
 
 
+class WebhookIn(BaseModel):
+    url: str = Field(default="", max_length=500)
+    enabled: bool = False
+    reply: bool = False
+    rotate: bool = False
+
+
+class WaPairIn(BaseModel):
+    phone: str = Field(min_length=7, max_length=20)
+
+
 class UpiVerifyIn(BaseModel):
     plan_key: str = Field(max_length=30)
     utr: str = Field(min_length=1, max_length=40)
@@ -307,6 +349,7 @@ async def api_state(opened: int = Query(0, alias="open"), user: dict = Depends(c
         "settings": settings,
         "account": account,
         "monitoring": await _monitoring(uid, settings, status, account is not None),
+        "engine_online": (await worker.engine_status())[0],
         "plans": config.public_plans(),
         "features": {f: config.tier_has(tier, f) for f in ("telegram", "whatsapp", "webhooks")},
         "max_rules": MAX_RULES_PRO if config.tier_has(tier, "unlimited_rules") else config.MAX_RULES_LIMITED,
@@ -404,12 +447,34 @@ async def api_disconnect(user: dict = Depends(current_user)):
     return {"status": "ok"}
 
 
+# ------------------------------------------------------------------ background helpers
+_bg: set = set()
+
+
+def _spawn(coro) -> None:
+    task = asyncio.create_task(coro)
+    _bg.add(task)
+    task.add_done_callback(_bg.discard)
+
+
+async def _after_payment(uid: int, name: str, plan_key: str, method: str, amount, currency: str, expires_iso) -> None:
+    """Receipt for the user + instant alert for the admin."""
+    plan = config.get_plan(plan_key)
+    plan_name = plan.name if plan else plan_key
+    try:
+        await bot_module.notify_payment(uid, plan_name, expires_iso)
+        shown = f"₹{amount}" if currency == "INR" else f"{amount} USDT"
+        await bot_module.notify_admin(f"💰 <b>{shown}</b> · {plan_name} · {method.upper()}\nfrom {name} (ID <code>{uid}</code>)")
+    except Exception:
+        log.exception("Payment notifications failed")
+
+
 # ------------------------------------------------------------------ payments
 _verify_locks: Dict[int, asyncio.Lock] = defaultdict(asyncio.Lock)
 _last_verify: Dict[int, float] = {}
 
 
-async def _guarded_verify(uid: int, plan_key: str, method: str, run: Callable[[], Awaitable[payment.PaymentResult]]):
+async def _guarded_verify(uid: int, plan_key: str, method: str, run: Callable[[], Awaitable[payment.PaymentResult]], name: str = ""):
     plan = config.get_plan(plan_key)
     lock = _verify_locks[uid]
     if lock.locked():
@@ -427,6 +492,7 @@ async def _guarded_verify(uid: int, plan_key: str, method: str, run: Callable[[]
         await track(uid, "pay_failed", plan=plan_key, method=method, code=result.code, amount=amount, currency=currency)
         return _err(400, result.message, result.code)
     await track(uid, "pay_success", plan=plan_key, method=method, amount=amount, currency=currency)
+    _spawn(_after_payment(uid, name or str(uid), plan_key, method, amount, currency, result.expires_at))
     await worker.ensure_running(uid)  # instant resume when this process is the engine; otherwise next sync (<=20s)
     status = await db.get_status(uid)
     return {"status": "ok", "message": result.message, "plan_key": result.plan_key,
@@ -450,19 +516,127 @@ async def api_payment_info(
 async def api_verify_upi(body: UpiVerifyIn, user: dict = Depends(current_user)):
     uid = int(user["id"])
     await db.upsert_user(uid, user.get("first_name", ""), user.get("username", ""))
-    return await _guarded_verify(uid, body.plan_key, "upi", lambda: payment.verify_upi_payment(uid, body.plan_key, body.utr))
+    return await _guarded_verify(uid, body.plan_key, "upi", lambda: payment.verify_upi_payment(uid, body.plan_key, body.utr), user.get("first_name") or user.get("username") or "")
 
 
 @app.post("/api/payment/verify-usdt")
 async def api_verify_usdt(body: UsdtVerifyIn, user: dict = Depends(current_user)):
     uid = int(user["id"])
     await db.upsert_user(uid, user.get("first_name", ""), user.get("username", ""))
-    return await _guarded_verify(uid, body.plan_key, "usdt", lambda: payment_usdt.verify_usdt_payment(uid, body.plan_key, body.tx_hash))
+    return await _guarded_verify(uid, body.plan_key, "usdt", lambda: payment_usdt.verify_usdt_payment(uid, body.plan_key, body.tx_hash), user.get("first_name") or user.get("username") or "")
 
 
 @app.get("/api/payments")
 async def api_payments(user: dict = Depends(current_user)):
     return {"status": "ok", "payments": await db.list_payments(int(user["id"]), 20)}
+
+
+# ------------------------------------------------------------------ Pro integrations: webhooks + WhatsApp bridge
+async def _require_pro(uid: int) -> dict:
+    status = await db.get_status(uid)
+    if status["status"] != "active" or not config.tier_has(status["plan"], "webhooks"):
+        raise ApiError(403, "This feature needs an active Pro plan.", "pro_required")
+    return status
+
+
+def _hook_view(row: dict) -> dict:
+    return {
+        "url": row.get("webhook_url") or "",
+        "enabled": bool(row.get("webhook_enabled")),
+        "reply": bool(row.get("webhook_reply")),
+        "secret": row.get("webhook_secret") or "",
+        "delivered": int(row.get("delivered") or 0),
+        "failed": int(row.get("failed") or 0),
+        "last_status": row.get("last_status"),
+        "last_error": row.get("last_error") or "",
+        "last_at": row["last_at"].isoformat() if row.get("last_at") else None,
+    }
+
+
+def _wa_view(row: Optional[dict]) -> dict:
+    if not row:
+        return {"status": "none", "pairing_code": None, "wa_number": None, "wa_name": None, "error": None, "connected_at": None}
+    return {k: row.get(k) for k in ("status", "pairing_code", "wa_number", "wa_name", "error", "connected_at")}
+
+
+@app.get("/api/integrations")
+async def api_integrations(user: dict = Depends(current_user)):
+    uid = int(user["id"])
+    online, _ = await worker.engine_status()
+    return {
+        "status": "ok", "engine_online": online,
+        "webhook": _hook_view(await db.get_integration(uid)),
+        "whatsapp": _wa_view(await db.get_wa_session(uid)),
+    }
+
+
+@app.post("/api/integrations/webhook")
+async def api_webhook_save(body: WebhookIn, user: dict = Depends(current_user)):
+    uid = int(user["id"])
+    await _require_pro(uid)
+    url = body.url.strip()
+    if body.enabled and not url:
+        raise ApiError(422, "Enter your webhook URL first.", "bad_url")
+    if url:
+        ok, why = await webhooks.validate_url(url)
+        if not ok:
+            raise ApiError(422, why, "bad_url")
+    current = await db.get_integration(uid)
+    secret = current.get("webhook_secret") or ""
+    if body.rotate or not secret:
+        secret = secrets.token_urlsafe(24)
+    row = await db.save_integration(uid, url, secret, body.enabled, body.reply)
+    await track(uid, "webhook_saved", enabled=body.enabled, reply=body.reply)
+    return {"status": "ok", "webhook": _hook_view(row)}
+
+
+@app.post("/api/integrations/webhook/test")
+async def api_webhook_test(user: dict = Depends(current_user)):
+    uid = int(user["id"])
+    await _require_pro(uid)
+    hook = await db.get_integration(uid)
+    if not hook.get("webhook_url"):
+        raise ApiError(422, "Save a webhook URL first.", "bad_url")
+    event = webhooks.build_event(
+        "telegram", uid, 0, 0, 0, "Test event from Profitix Ghost",
+        user.get("first_name"), user.get("username"), event_name="test",
+    )
+    result = await webhooks.post_event(hook["webhook_url"], hook.get("webhook_secret") or "", event)
+    await db.webhook_result(uid, result["ok"], result["status"], result["error"])
+    answer = result["json"].get("reply") if isinstance(result.get("json"), dict) else ""
+    await track(uid, "webhook_test", ok=result["ok"], http=result["status"])
+    return {"status": "ok", "ok": result["ok"], "http_status": result["status"],
+            "error": result["error"], "reply": answer if isinstance(answer, str) else ""}
+
+
+@app.get("/api/whatsapp/status")
+async def api_wa_status(user: dict = Depends(current_user)):
+    online, _ = await worker.engine_status()
+    return {"status": "ok", "engine_online": online, "whatsapp": _wa_view(await db.get_wa_session(int(user["id"])))}
+
+
+@app.post("/api/whatsapp/pair")
+async def api_wa_pair(body: WaPairIn, user: dict = Depends(current_user)):
+    uid = int(user["id"])
+    await _require_pro(uid)
+    digits = re.sub(r"\D", "", body.phone)
+    if not 8 <= len(digits) <= 15:
+        raise ApiError(422, "Enter a valid WhatsApp number with country code.", "bad_phone")
+    current = await db.get_wa_session(uid)
+    if current and current["status"] == "pairing" and (current.get("age") or 999) < 20:
+        raise ApiError(429, "A pairing request is already in progress. Please wait a few seconds.", "busy")
+    await db.wa_request_pair(uid, digits)
+    online, _ = await worker.engine_status()
+    await track(uid, "wa_pair_requested")
+    return {"status": "queued", "engine_online": online}
+
+
+@app.post("/api/whatsapp/disconnect")
+async def api_wa_disconnect(user: dict = Depends(current_user)):
+    uid = int(user["id"])
+    await db.wa_request_logout(uid)
+    await track(uid, "wa_disconnected")
+    return {"status": "ok"}
 
 
 # ------------------------------------------------------------------ admin panel (ADMIN_ID only)

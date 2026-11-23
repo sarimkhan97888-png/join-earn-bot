@@ -21,11 +21,13 @@ import logging
 import os
 import random
 import signal
+import shutil
 import socket
 import time
 import uuid
 from collections import defaultdict
 from datetime import datetime
+from pathlib import Path
 from typing import Awaitable, Callable, Dict, List, Optional, Set, Tuple
 
 import httpx
@@ -44,6 +46,7 @@ from telethon.tl.types import InputUserSelf, User, UserStatusOnline
 
 import config
 import database as db
+import webhooks
 
 log = logging.getLogger("worker")
 
@@ -84,6 +87,9 @@ _engine_active = False
 _lease_held = False
 _http: Optional[httpx.AsyncClient] = None
 _status_cache: Tuple[float, bool, int] = (0.0, False, 0)
+_tier: Dict[int, str] = {}
+_integ_cache: Dict[int, Tuple[float, Optional[dict]]] = {}
+BRIDGE_DIR = Path(__file__).resolve().parent / "wa_bridge"
 
 
 # ------------------------------------------------------------------ public helpers
@@ -303,6 +309,30 @@ def _pick_reply(cfg: dict, text: str) -> str:
     return (cfg.get("default_reply") or "").strip()
 
 
+async def _get_integration(user_id: int) -> Optional[dict]:
+    """Webhook settings (Pro only), cached briefly. None when disabled."""
+    if _tier.get(user_id) != "pro":
+        return None
+    cached = _integ_cache.get(user_id)
+    now = time.time()
+    if cached and now - cached[0] < SETTINGS_TTL:
+        return cached[1]
+    data = await db.get_integration(user_id)
+    hook = data if data.get("webhook_enabled") and data.get("webhook_url") else None
+    _integ_cache[user_id] = (now, hook)
+    return hook
+
+
+async def _deliver_webhook(user_id: int, hook: dict, payload: dict) -> Optional[dict]:
+    try:
+        result = await webhooks.post_event(hook["webhook_url"], hook.get("webhook_secret") or "", payload)
+        await db.webhook_result(user_id, result["ok"], result["status"], result["error"])
+        return result["json"] if result["ok"] else None
+    except Exception:
+        log.exception("Webhook delivery failed for user %s", user_id)
+        return None
+
+
 async def _on_message(user_id: int, event) -> None:
     if not event.is_private or event.out:  # ignore groups, channels and own messages
         return
@@ -315,6 +345,22 @@ async def _on_message(user_id: int, event) -> None:
     if not isinstance(sender, User) or sender.bot or sender.is_self or sender.deleted:
         return
 
+    text = event.raw_text or ""
+    chat_id, msg_id = event.chat_id, int(event.id)
+
+    # Pro webhook: always delivered (even when auto-reply is paused or the owner is online)
+    hook = await _get_integration(user_id)
+    hook_task: Optional[asyncio.Task] = None
+    if hook:
+        payload = webhooks.build_event(
+            "telegram", user_id, sender_id, chat_id, msg_id, text,
+            getattr(sender, "first_name", None), getattr(sender, "username", None),
+        )
+        hook_task = asyncio.create_task(_deliver_webhook(user_id, hook, payload))
+        _tasks.add(hook_task)
+        hook_task.add_done_callback(_tasks.discard)
+    hook_decides = bool(hook and hook.get("webhook_reply"))
+
     cfg = await _get_settings(user_id)
     if not cfg.get("is_active"):
         return
@@ -326,23 +372,25 @@ async def _on_message(user_id: int, event) -> None:
         return
 
     only_offline = bool(cfg.get("only_when_offline", True))
-    chat_id, msg_id = event.chat_id, int(event.id)
     if only_offline and await _owner_busy(user_id, chat_id, msg_id, now):
         return  # owner is online right now: stay silent (cooldown NOT consumed)
 
-    reply = _pick_reply(cfg, event.raw_text or "")
-    if not reply:
+    reply = _pick_reply(cfg, text)
+    if not reply and not hook_decides:
         return
 
     _last_reply[key] = now
-    task = asyncio.create_task(_send_reply(user_id, chat_id, sender_id, msg_id, now, reply, cfg, only_offline))
+    task = asyncio.create_task(
+        _send_reply(user_id, chat_id, sender_id, msg_id, now, reply, cfg, only_offline,
+                    hook_task if hook_decides else None)
+    )
     _tasks.add(task)
     task.add_done_callback(_tasks.discard)
 
 
 async def _send_reply(
     user_id: int, chat_id: int, sender_id: int, msg_id: int, incoming_ts: float,
-    reply: str, cfg: dict, only_offline: bool,
+    reply: str, cfg: dict, only_offline: bool, hook_task: Optional[asyncio.Task] = None,
 ) -> None:
     key = (user_id, sender_id)
     client = _clients.get(user_id)
@@ -358,6 +406,21 @@ async def _send_reply(
             if await _owner_busy(user_id, chat_id, msg_id, incoming_ts):
                 _last_reply.pop(key, None)
                 return
+        if hook_task is not None:  # the user's webhook decides the reply
+            try:
+                answer = await asyncio.wait_for(asyncio.shield(hook_task), 8)
+            except Exception:
+                answer = None
+            if isinstance(answer, dict):
+                if answer.get("skip"):
+                    _last_reply.pop(key, None)
+                    return
+                override = answer.get("reply")
+                if isinstance(override, str) and override.strip():
+                    reply = override.strip()[:1000]
+        if not reply:
+            _last_reply.pop(key, None)
+            return
         async with _sem:
             async with client.action(chat_id, "typing"):  # human typing simulation
                 await asyncio.sleep(delay)
@@ -408,7 +471,8 @@ async def start_user_client(user_id: int, client: Optional[TelegramClient] = Non
     async with _user_locks[user_id]:
         await _stop_locked(user_id)
         row = await db.get_tg_session(user_id)
-        epoch = await _expiry_epoch(user_id)
+        info = await db.get_status(user_id)
+        epoch = datetime.fromisoformat(info["expires_at"]).timestamp() if info["status"] == "active" and info["expires_at"] else None
         settings = await db.get_settings(user_id)
         if not row or not epoch or not settings.get("is_active"):
             if client is not None:
@@ -458,6 +522,7 @@ async def start_user_client(user_id: int, client: Optional[TelegramClient] = Non
         _self_ids[user_id] = me.id
         _stamps[user_id] = row["connected_at"]
         _expiry[user_id] = epoch
+        _tier[user_id] = info["plan"]
         invalidate_settings(user_id)
         log.info("Auto-reply ONLINE for user %s", user_id)
         return True
@@ -482,7 +547,7 @@ async def _remote_logout(user_id: int) -> None:
 async def _stop_locked(user_id: int, log_out: bool = False) -> None:
     client = _clients.pop(user_id, None)
     specs = _handlers.pop(user_id, [])
-    for table in (_self_ids, _stamps, _expiry, _settings_cache, _owner_active, _self_status, _last_self_send):
+    for table in (_self_ids, _stamps, _expiry, _settings_cache, _owner_active, _self_status, _last_self_send, _tier, _integ_cache):
         table.pop(user_id, None)
     for table in (_last_reply, _owner_replied, _owner_read, _bot_sending):
         for key in [k for k in table if k[0] == user_id]:
@@ -530,7 +595,7 @@ async def _fetch_wanted() -> Dict[int, dict]:
     async with db.pool().acquire() as conn:
         rows = await conn.fetch(
             """
-            SELECT s.user_id, s.connected_at, u.plan_expires_at
+            SELECT s.user_id, s.connected_at, u.plan, u.plan_expires_at
             FROM tg_sessions s
             JOIN users u ON u.telegram_user_id = s.user_id
             LEFT JOIN auto_reply_settings a ON a.user_id = s.user_id
@@ -552,6 +617,7 @@ async def sync_once() -> None:
             log.info("Sync: unloaded user %s (paused, expired, disconnected or re-linked)", uid)
         else:
             _expiry[uid] = row["plan_expires_at"].timestamp()
+            _tier[uid] = row["plan"]
 
     # 2) start newly connected / newly paid accounts
     todo = [uid for uid in wanted if uid not in _clients]
@@ -598,35 +664,24 @@ async def sync_loop() -> None:
 
 
 # ------------------------------------------------------------------ expiry cleanup + notifications (every 10 min)
-async def _notify_expired_http(user_id: int, plan: str) -> bool:
+async def _send_bot_message(user_id: int, text: str, button: Optional[str] = None, tab: str = "plans") -> bool:
     """Bot message without aiogram, so the Kaggle worker stays dependency-light."""
     global _http
     if not config.BOT_TOKEN:
         return False
     if _http is None:
         _http = httpx.AsyncClient(timeout=httpx.Timeout(15.0))
-    label = "trial" if plan == "trial" else "subscription"
-    payload: dict = {
-        "chat_id": user_id,
-        "parse_mode": "HTML",
-        "text": (
-            f"<b>Your Ghost has been paused.</b>\n\nYour {label} has expired and auto-replies are switched off. "
-            "Resume instantly in one tap, your settings are saved."
-        ),
-    }
-    if config.WEBAPP_URL:
+    payload: dict = {"chat_id": user_id, "parse_mode": "HTML", "text": text}
+    if button and config.WEBAPP_URL:
         payload["reply_markup"] = {
-            "inline_keyboard": [[{
-                "text": "Pay ₹49/mo to Resume Instantly",
-                "web_app": {"url": f"{config.WEBAPP_URL}/?tab=plans"},
-            }]]
+            "inline_keyboard": [[{"text": button, "web_app": {"url": f"{config.WEBAPP_URL}/?tab={tab}"}}]]
         }
     url = f"https://api.telegram.org/bot{config.BOT_TOKEN}/sendMessage"
     for _ in range(2):
         try:
             resp = await _http.post(url, json=payload)
         except httpx.HTTPError as exc:
-            log.warning("Notify failed: %s", exc.__class__.__name__)
+            log.warning("Bot message failed: %s", exc.__class__.__name__)
             return False
         if resp.status_code == 200:
             return True
@@ -639,6 +694,16 @@ async def _notify_expired_http(user_id: int, plan: str) -> bool:
             continue
         return False  # 403 blocked / 400 chat not found: nothing more to try
     return False
+
+
+async def _notify_expired_http(user_id: int, plan: str) -> bool:
+    label = "trial" if plan == "trial" else "subscription"
+    return await _send_bot_message(
+        user_id,
+        f"<b>Your Ghost has been paused.</b>\n\nYour {label} has expired and auto-replies are switched off. "
+        "Resume instantly in one tap, your settings are saved.",
+        "Pay ₹49/mo to Resume Instantly", "plans",
+    )
 
 
 async def cleanup_once() -> None:
@@ -667,6 +732,19 @@ async def cleanup_once() -> None:
             await db.mark_expiry_notified(uid)  # mark either way so we never spam
             await asyncio.sleep(0.05)
 
+    if config.BOT_TOKEN:  # "renew now" reminder ~24h before a paid plan ends
+        for row in await db.list_expiring_unwarned(24):
+            uid = row["telegram_user_id"]
+            hours = max(1, int(row["hours_left"]))
+            await _send_bot_message(
+                uid,
+                f"<b>Heads up!</b> Your {row['plan'].title()} plan ends in about {hours}h. "
+                "Renew now and Ghost never goes offline.",
+                "Renew Now", "plans",
+            )
+            await db.mark_expiry_warned(uid)
+            await asyncio.sleep(0.05)
+
     for table in (_last_reply,):
         for key in [k for k, ts in table.items() if now - ts > 3700]:
             table.pop(key, None)
@@ -689,6 +767,88 @@ async def cleanup_loop() -> None:
         await asyncio.sleep(config.CLEANUP_INTERVAL_SECONDS)
 
 
+# ------------------------------------------------------------------ WhatsApp bridge (Node / Baileys)
+async def _pipe_logs(proc) -> None:
+    try:
+        async for line in proc.stdout:
+            log.info("[wa-bridge] %s", line.decode(errors="replace").rstrip())
+    except Exception:
+        pass
+
+
+async def _npm_install(npm: str) -> bool:
+    log.info("Installing WhatsApp bridge dependencies (first run, 1-2 minutes)...")
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            npm, "install", "--omit=dev", "--no-audit", "--no-fund", cwd=str(BRIDGE_DIR),
+            stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT,
+        )
+        out, _ = await asyncio.wait_for(proc.communicate(), 420)
+    except Exception as exc:
+        log.warning("npm install failed to run: %s", exc.__class__.__name__)
+        return False
+    if proc.returncode != 0:
+        log.warning("npm install failed: %s", out.decode(errors="replace")[-400:])
+        return False
+    return True
+
+
+async def _wa_supervisor() -> None:
+    """Runs the WhatsApp bridge ONLY while this process holds the engine lease (=> no duplicate replies)."""
+    if not config.WA_BRIDGE_ENABLED:
+        return
+    entry = BRIDGE_DIR / "index.js"
+    node, npm = shutil.which("node"), shutil.which("npm")
+    if not entry.is_file():
+        log.info("wa_bridge/index.js not found: WhatsApp bridge disabled")
+        return
+    if not node or not npm:
+        log.warning("Node.js not found: WhatsApp bridge disabled (Telegram auto-reply is unaffected)")
+        return
+    installed = (BRIDGE_DIR / "node_modules").is_dir()
+    proc = None
+    started_at = 0.0
+    backoff = 5.0
+    try:
+        while True:
+            if _engine_active:
+                if not installed:
+                    installed = await _npm_install(npm)
+                    if not installed:
+                        await asyncio.sleep(60)
+                        continue
+                if proc is None or proc.returncode is not None:
+                    if proc is not None:
+                        log.warning("WhatsApp bridge exited (code %s), restarting in %ss", proc.returncode, int(backoff))
+                        await asyncio.sleep(backoff)
+                        backoff = min(backoff * 2, 120)
+                    proc = await asyncio.create_subprocess_exec(
+                        node, "index.js", cwd=str(BRIDGE_DIR), env=os.environ.copy(),
+                        stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT,
+                    )
+                    started_at = time.monotonic()
+                    asyncio.create_task(_pipe_logs(proc))
+                    log.info("WhatsApp bridge started (pid %s)", proc.pid)
+                elif time.monotonic() - started_at > 300:
+                    backoff = 5.0
+            elif proc is not None and proc.returncode is None:
+                log.info("Engine lease not held: stopping WhatsApp bridge")
+                proc.terminate()
+                try:
+                    await asyncio.wait_for(proc.wait(), 10)
+                except asyncio.TimeoutError:
+                    proc.kill()
+                proc = None
+            await asyncio.sleep(2)
+    finally:
+        if proc is not None and proc.returncode is None:
+            proc.terminate()
+            try:
+                await asyncio.wait_for(proc.wait(), 8)
+            except Exception:
+                proc.kill()
+
+
 # ------------------------------------------------------------------ engine + entrypoints
 async def run_engine(notifier: Optional[Callable[[int, str], Awaitable[bool]]] = None) -> None:
     """Lease keeper + Neon sync + expiry cleanup. Used by app.py (embedded) and main() (standalone)."""
@@ -698,6 +858,7 @@ async def run_engine(notifier: Optional[Callable[[int, str], Awaitable[bool]]] =
         asyncio.create_task(_lease_loop(), name="lease"),
         asyncio.create_task(sync_loop(), name="sync"),
         asyncio.create_task(cleanup_loop(), name="cleanup"),
+        asyncio.create_task(_wa_supervisor(), name="wa-bridge"),
     ]
     try:
         done, _ = await asyncio.wait(tasks, return_when=asyncio.FIRST_EXCEPTION)

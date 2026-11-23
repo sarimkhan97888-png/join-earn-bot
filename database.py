@@ -120,6 +120,50 @@ CREATE TABLE IF NOT EXISTS worker_lease (
     expires_at      TIMESTAMPTZ NOT NULL,
     updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+ALTER TABLE users ADD COLUMN IF NOT EXISTS expiry_warned BOOLEAN NOT NULL DEFAULT FALSE;
+
+-- WhatsApp bridge (Pro): session state, Baileys auth keys and a command queue (Render -> engine)
+CREATE TABLE IF NOT EXISTS wa_sessions (
+    user_id       BIGINT PRIMARY KEY REFERENCES users(telegram_user_id) ON DELETE CASCADE,
+    status        TEXT NOT NULL DEFAULT 'none',
+    phone         TEXT,
+    pairing_code  TEXT,
+    wa_number     TEXT,
+    wa_name       TEXT,
+    error         TEXT,
+    connected_at  TIMESTAMPTZ,
+    updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS wa_auth (
+    user_id  BIGINT NOT NULL,
+    key      TEXT NOT NULL,
+    value    TEXT NOT NULL,
+    PRIMARY KEY (user_id, key)
+);
+CREATE TABLE IF NOT EXISTS wa_commands (
+    id          BIGSERIAL PRIMARY KEY,
+    user_id     BIGINT NOT NULL,
+    cmd         TEXT NOT NULL,
+    payload     JSONB NOT NULL DEFAULT '{}'::jsonb,
+    status      TEXT NOT NULL DEFAULT 'pending',
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_wa_commands_pending ON wa_commands (status, id);
+
+-- Webhooks (Pro)
+CREATE TABLE IF NOT EXISTS integrations (
+    user_id         BIGINT PRIMARY KEY REFERENCES users(telegram_user_id) ON DELETE CASCADE,
+    webhook_url     TEXT,
+    webhook_secret  TEXT,
+    webhook_enabled BOOLEAN NOT NULL DEFAULT FALSE,
+    webhook_reply   BOOLEAN NOT NULL DEFAULT FALSE,
+    last_status     INTEGER,
+    last_error      TEXT,
+    last_at         TIMESTAMPTZ,
+    delivered       BIGINT NOT NULL DEFAULT 0,
+    failed          BIGINT NOT NULL DEFAULT 0
+);
 """
 
 
@@ -257,7 +301,7 @@ async def activate_plan(user_id: int, tier: str, period: str, days: int) -> date
                 """
                 UPDATE users
                 SET plan = $2, billing_period = $3, plan_status = 'active',
-                    plan_expires_at = $4, expiry_notified = FALSE, updated_at = NOW()
+                    plan_expires_at = $4, expiry_notified = FALSE, expiry_warned = FALSE, updated_at = NOW()
                 WHERE telegram_user_id = $1
                 """,
                 user_id, tier, period, new_expiry,
@@ -633,9 +677,16 @@ async def admin_overview() -> dict:
             FROM activity_log WHERE created_at >= {_TODAY} GROUP BY kind
             """
         )
+    async with pool().acquire() as conn2:
+        x = await conn2.fetchrow(
+            """
+            SELECT (SELECT COUNT(*) FROM wa_sessions WHERE status = 'connected') AS wa_connected,
+                   (SELECT COUNT(*) FROM integrations WHERE webhook_enabled AND webhook_url IS NOT NULL) AS webhooks_on
+            """
+        )
     return {
         "users": {k: int(v) for k, v in dict(u).items()},
-        "accounts": {k: int(v) for k, v in dict(c).items()},
+        "accounts": {**{k: int(v) for k, v in dict(c).items()}, **{k: int(v) for k, v in dict(x).items()}},
         "money": {
             r["currency"]: {"today": float(r["today"]), "total": float(r["total"]), "count": int(r["n"])}
             for r in money
@@ -725,3 +776,136 @@ async def admin_payments(limit: int = 30) -> list:
         d["created_at"] = d["created_at"].isoformat()
         out.append(d)
     return out
+
+
+# ------------------------------------------------------------------ webhooks (Pro)
+_EMPTY_HOOK = {
+    "webhook_url": "", "webhook_secret": "", "webhook_enabled": False, "webhook_reply": False,
+    "last_status": None, "last_error": None, "last_at": None, "delivered": 0, "failed": 0,
+}
+
+
+async def get_integration(user_id: int) -> dict:
+    async with pool().acquire() as conn:
+        row = await conn.fetchrow(
+            """
+            SELECT webhook_url, webhook_secret, webhook_enabled, webhook_reply,
+                   last_status, last_error, last_at, delivered, failed
+            FROM integrations WHERE user_id = $1
+            """,
+            user_id,
+        )
+    return dict(row) if row else dict(_EMPTY_HOOK)
+
+
+async def save_integration(user_id: int, url: str, secret: str, enabled: bool, reply: bool) -> dict:
+    async with pool().acquire() as conn:
+        await conn.execute(
+            """
+            INSERT INTO integrations (user_id, webhook_url, webhook_secret, webhook_enabled, webhook_reply)
+            VALUES ($1, $2, $3, $4, $5)
+            ON CONFLICT (user_id) DO UPDATE
+            SET webhook_url = $2, webhook_secret = $3, webhook_enabled = $4, webhook_reply = $5
+            """,
+            user_id, url, secret, enabled, reply,
+        )
+    return await get_integration(user_id)
+
+
+async def webhook_result(user_id: int, ok: bool, status: Optional[int], error: str) -> None:
+    async with pool().acquire() as conn:
+        await conn.execute(
+            """
+            UPDATE integrations
+            SET delivered = delivered + $2, failed = failed + $3,
+                last_status = $4, last_error = $5, last_at = NOW()
+            WHERE user_id = $1
+            """,
+            user_id, 1 if ok else 0, 0 if ok else 1, status, (error or "")[:200],
+        )
+
+
+# ------------------------------------------------------------------ whatsapp bridge (Pro)
+async def get_wa_session(user_id: int) -> Optional[dict]:
+    async with pool().acquire() as conn:
+        row = await conn.fetchrow(
+            """
+            SELECT status, phone, pairing_code, wa_number, wa_name, error, connected_at,
+                   EXTRACT(EPOCH FROM (NOW() - updated_at))::float AS age
+            FROM wa_sessions WHERE user_id = $1
+            """,
+            user_id,
+        )
+    if not row:
+        return None
+    d = dict(row)
+    d["connected_at"] = d["connected_at"].isoformat() if d["connected_at"] else None
+    return d
+
+
+async def wa_request_pair(user_id: int, phone: str) -> None:
+    async with pool().acquire() as conn:
+        async with conn.transaction():
+            await conn.execute(
+                """
+                INSERT INTO wa_sessions (user_id, status, phone, pairing_code, error)
+                VALUES ($1, 'pairing', $2, NULL, NULL)
+                ON CONFLICT (user_id) DO UPDATE
+                SET status = 'pairing', phone = $2, pairing_code = NULL, error = NULL, updated_at = NOW()
+                """,
+                user_id, phone,
+            )
+            await conn.execute(
+                "INSERT INTO wa_commands (user_id, cmd, payload) VALUES ($1, 'pair', $2)",
+                user_id, {"phone": phone},
+            )
+
+
+async def wa_request_logout(user_id: int) -> None:
+    async with pool().acquire() as conn:
+        async with conn.transaction():
+            await conn.execute(
+                "INSERT INTO wa_commands (user_id, cmd, payload) VALUES ($1, 'logout', '{}'::jsonb)", user_id
+            )
+            await conn.execute(
+                """
+                UPDATE wa_sessions SET status = 'none', pairing_code = NULL, error = NULL, updated_at = NOW()
+                WHERE user_id = $1
+                """,
+                user_id,
+            )
+
+
+# ------------------------------------------------------------------ retention + ops helpers
+async def list_expiring_unwarned(hours: int = 24) -> list:
+    """Paid plans ending within `hours` that have not received the 'renew now' reminder yet."""
+    async with pool().acquire() as conn:
+        rows = await conn.fetch(
+            """
+            SELECT telegram_user_id, plan,
+                   EXTRACT(EPOCH FROM (plan_expires_at - NOW())) / 3600.0 AS hours_left
+            FROM users
+            WHERE plan_status = 'active' AND plan <> 'trial' AND expiry_warned = FALSE
+              AND plan_expires_at > NOW() AND plan_expires_at < NOW() + make_interval(hours => $1::int)
+            """,
+            hours,
+        )
+    return [dict(r) for r in rows]
+
+
+async def mark_expiry_warned(user_id: int) -> None:
+    async with pool().acquire() as conn:
+        await conn.execute("UPDATE users SET expiry_warned = TRUE WHERE telegram_user_id = $1", user_id)
+
+
+async def count_live_users() -> int:
+    """Paying users that currently depend on the auto-reply engine (Telegram or WhatsApp linked)."""
+    async with pool().acquire() as conn:
+        return int(await conn.fetchval(
+            """
+            SELECT COUNT(*) FROM users u
+            WHERE u.plan_status = 'active' AND u.plan_expires_at > NOW()
+              AND (EXISTS (SELECT 1 FROM tg_sessions s WHERE s.user_id = u.telegram_user_id)
+                   OR EXISTS (SELECT 1 FROM wa_sessions w WHERE w.user_id = u.telegram_user_id AND w.status = 'connected'))
+            """
+        ))
